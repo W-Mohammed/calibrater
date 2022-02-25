@@ -1,0 +1,315 @@
+---
+title: "Random_search"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Random_search}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(calibrater)
+```
+
+This code was created by the DARTH workgroup (www.darthworkgroup.com). When using or modifying this code, please do so with attribution and cite our publications:
+
+Alarid-Escudero F, Maclehose RF, Peralta Y, Kuntz KM, Enns EA. Non-identifiability in model calibration and implications for medical decision making. Med Decis Making. 2018; 38(7):810-821.
+
+Jalal H, Pechlivanoglou P, Krijkamp E, Alarid-Escudero F, Enns E, Hunink MG. An Overview of R in Health Decision Sciences. Med Decis Making. 2017; 37(3): 735-746.
+
+A walkthrough of the code could be found in the follwing link:
+- https://darth-git.github.io/calibSMDM2018-materials/
+
+# Calibration Specifications  
+
+Model: 3-State Cancer Relative Survival (CRS) Markov Model
+Inputs to be calibrated: `p_Mets, p_DieMets`
+Targets: `Surv`
+
+# Search method: 
+
+- Random search using:
+- Full factorial grid
+- Random grid
+- Latin-Hypercube Sampling
+
+# Goodness-of-fit measure: 
+
+- Sum of log-likelihoods
+- Sum of squared errors
+
+# Load packages and function files:
+
+```{r, echo=FALSE}
+# General purposes:
+pacman::p_load(devtools, testthat, usethis, tidyverse)
+devtools::load_all()
+# Sampling data:
+pacman::p_load(lhs)
+# Visualisation:
+pacman::p_load(plotrix, psych)
+```
+
+# Load target data:
+
+```{r, echo=FALSE}
+load(file.path(here::here(), "data", "CRS_targets.rda"))
+lst_targets <- CRS_targets
+```
+
+# Visualise target data:
+
+```{r Visualise the target}
+# Plotting target data - survival ("Surv"):
+targets_pt = ggplot(data = lst_targets$Surv,
+                    aes(x = time,
+                        y = value)) +
+  geom_errorbar(aes(ymin = lb, ymax = ub)) +
+  geom_point() +
+  theme(
+    panel.border = element_rect(fill = NA, color = 'black')
+  ) + 
+  labs(title = "Calibration target",
+       x = "Time",
+       y = "Proportion survived")
+targets_pt
+targets_pt2 = ggplot(data = lst_targets$Surv,
+                     aes(x = time,
+                         y = value)) +
+  geom_line() +
+  geom_line(aes(x = time, y = lb), linetype = 'dashed', color = 'red',
+            show.legend = TRUE) +
+  geom_line(aes(x = time, y = ub), linetype = 'dashed', color = 'red',
+            show.legend = TRUE) +
+  scale_color_manual(values = c('black', 'red', 'red'),
+                     breaks = c('value', 'lb', 'ub'),
+                     labels = c('Survival', '95% CI', '95% CI')) +
+  theme(
+    panel.border = element_rect(fill = NA, color = 'black')
+  ) + 
+  labs(title = "Calibration target",
+       x = "Time",
+       y = "Proportion survived")
+targets_pt2
+```
+
+# The model is defined as a function, testing that it works:
+
+- inputs are proposed parameters to be estimated through calibration
+- outputs correspond to the target data
+
+```{r Test the model:}
+# Check that the model works:
+v_params_test <- c(p_Mets = 0.10, p_DieMets = 0.05) # true values
+# Check that inputs are handled correctly, by using true values:
+compare(CRS_markov(v_params = v_params_test), CRS_markov())
+
+# Compare outputs of default values to the targets:
+targets_pt +
+  geom_line(data = as_tibble(CRS_markov()) %>%
+              mutate(time = cbind(lst_targets$Surv$time)), 
+            aes(x = time, y = Surv),
+            color = 'red') +
+  scale_color_manual(values = c('Surv' = "red"))
+```
+
+# Specify calibration parameters:
+
+```{r Specify parameters:}
+# Specify seed (for reproducible sequence of random numbers)
+set.seed(1)
+
+# Number of random samples
+n_samples <- 1000
+
+# Names and number of input parameters to be calibrated
+v_params_names <- c("p_Mets", "p_DieMets")
+n_params <- length(v_params_names)
+
+# Range on input search space
+lb <- c(p_Mets = 0.04, p_DieMets = 0.04) # lower bound
+ub <- c(p_Mets = 0.16, p_DieMets = 0.16) # upper bound
+
+# Number of calibration targets
+v_target_names <- c("Surv")
+n_target <- length(v_target_names)
+```
+
+# Calibrate:
+
+## Calibration settings and sample propose values:
+
+```{r Set calibration and sample proposed values:}
+## Generate a random sample of input values:
+### Full factorial grid search:
+grid_points <- pmap_dfc(.l = list(v_params_names, lb, ub), 
+                        .f = function(.x, .y, .z) {
+                          assign(.x, seq(from = .y, to = .z, 
+                                         length.out = n_samples))
+                        })
+m_param_samp_fgs <- do.call(expand.grid, grid_points)
+
+# ggplot(m_param_samp_fgs) +
+#   geom_point(aes(x = p_Mets, y = p_DieMets), shape = 21, size = 1) +
+#   theme(
+#     panel.border = element_rect(fill = NA, color = 'black')
+#   )
+
+### Random grid search:
+params_args <- tibble(vars = v_params_names,
+                      fs = c("runif", "runif"),
+                      args = pmap(.l = list(n_samples, lb, ub), 
+                                  .f = function(.x, .y, .z) {
+                                    list(n = .x, min = .y, max = .z)
+                                  }))
+
+m_param_samp_rgs <- pmap_dfc(.l = list(params_args$vars,
+                                       params_args$fs, 
+                                       params_args$args),
+                         .f = function(name, fn, arg) {
+                           assign(name,
+                                  exec(.fn = fn, !!!arg))
+                         })
+
+# ggplot(m_param_samp_rgs) +
+#   geom_point(aes(x = p_Mets, y = p_DieMets), shape = 21, size = 1) +
+#   theme(
+#     panel.border = element_rect(fill = NA, color = 'black')
+#   )
+
+### Latin Hypercube Sampling (LHS) grid search:
+#### Sample unit Latin Hypercube:
+m_lhs_unit <- lhs::randomLHS(n_samples, n_params)
+
+#### Rescale to min/max of each parameter:
+m_param_samp_lhs <- matrix(nrow = n_samples, ncol = n_params)
+for (i in 1:n_params) {
+  m_param_samp_lhs[,i] <- qunif(m_lhs_unit[,i],
+                                min = lb[i],
+                                max = ub[i])
+}
+colnames(m_param_samp_lhs) <- v_params_names
+
+#### Choose the search strategy:
+m_param_samp <- m_param_samp_lhs
+
+### Visualise sampled parameter sets:
+pairs.panels(m_param_samp)
+```
+
+## Run the model using all proposed parameter sets and record predicted values:
+
+```{r Run model and record predicted values}
+## Record start time of calibration:
+t_init <- Sys.time()
+
+## Initialize goodness-of-fit vector
+m_GOF_llk <- m_GOF_sse <- matrix(nrow = n_samples, ncol = n_target)
+colnames(m_GOF_llk) <- colnames(m_GOF_sse) <- paste0(v_target_names, "_fit")
+
+## Loop through sampled sets of input values
+for (j in 1:n_samples) {
+  
+  ### Run model for a given parameter set:
+  model_res <- CRS_markov(v_params = m_param_samp[j, ])
+  
+  ### Calculate goodness-of-fit of model outputs to targets:
+  
+  ### TARGET 1: Survival ("Surv")
+  ### Log likelihood:
+  m_GOF_llk[j, 1] <- sum(dnorm(x = lst_targets$Surv$value,
+                               mean = model_res$Surv,
+                               sd = lst_targets$Surv$se,
+                               log = TRUE))
+  
+  ### Weighted sum of squared errors:
+  w <- 1/(lst_targets$Surv$se^2)
+  m_GOF_sse[j, 1] <- -sum(w * (lst_targets$Surv$value - model_res$Surv)^2)
+  
+} # End loop over sampled parameter sets
+
+```
+
+## Combine fits to the different targets into single GOF:
+
+```{r Combine fits to different targets to get a single GOF}
+## Different targets can have different weights: here all have same weight
+v_weights <- matrix(1, nrow = n_target, ncol = 1)
+
+## Calculate weighted sum of each GOF row by matrix multiplication:
+v_GOF_overall_llk <- m_GOF_llk %*% v_weights
+v_GOF_overall_sse <- m_GOF_sse %*% v_weights
+
+## Store in GOF matrix with column name "Overall"
+m_GOF_llk <- m_GOF_llk %>% 
+  as_tibble() %>% 
+  mutate('Overall_fit' = v_GOF_overall_llk)
+m_GOF_sse <- m_GOF_sse %>% 
+  as_tibble() %>% 
+  mutate('Overall_fit' = v_GOF_overall_sse)
+
+## Calculate computation time
+comp_time <- Sys.time() - t_init
+comp_time
+```
+
+## Exploring best-fitting input sets:
+
+```{r Find best-fitting input sets}
+## Arrange parameter sets in order of fit:
+m_calib_res_llk <- cbind(m_param_samp, m_GOF_llk)
+m_calib_res_sse <- cbind(m_param_samp, m_GOF_sse)
+
+## Sort in descending order for LLK and ascending for SSE:   
+m_calib_res_llk <- m_calib_res_llk %>% 
+  arrange(desc(Overall_fit))
+m_calib_res_sse <- m_calib_res_sse %>% 
+  arrange(desc(Overall_fit))
+
+## Examine the top 10 best-fitting sets:
+m_calib_res_llk[1:10,]
+m_calib_res_sse[1:10,]
+
+# Plot the top 100 (top 10%):
+ggplot() +
+  geom_point(data = m_calib_res_sse[1:100,],
+             aes(x = p_Mets,
+                 y = p_DieMets)) +
+  theme(
+    panel.border = element_rect(fill = NA, colour = 'black')
+  ) +
+  labs(title = "SSE parameters")
+
+ggplot() +
+  geom_point(data = m_calib_res_llk[1:100,],
+             aes(x = p_Mets,
+                 y = p_DieMets)) +
+  theme(
+    panel.border = element_rect(fill = NA, colour = 'black')
+  ) +
+  labs(title = "Likelihood parameters")
+
+# Pairwise comparison of top 100 sets:
+pairs.panels(m_calib_res_llk[1:100, v_params_names])
+pairs.panels(m_calib_res_sse[1:100, v_params_names])
+
+# Plot model-predicted output at best set vs targets:
+v_out_best_llk <- CRS_markov(m_calib_res_llk[1,])
+v_out_best_sse <- CRS_markov(m_calib_res_sse[1,])
+
+targets_pt +
+  geom_point(data = tibble('Likelihood' = v_out_best_llk$Surv) %>%
+               mutate('SSE' = v_out_best_sse$Surv,
+                      'time' = cbind(lst_targets$Surv$time)) %>% 
+               pivot_longer(cols = -time, names_to = 'GOF', 
+                            values_to = 'Survival'),
+             aes(x = time, y = Survival, color = GOF, shape = GOF), 
+             alpha = 0.5)
+```
