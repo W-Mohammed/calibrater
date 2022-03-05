@@ -1,0 +1,126 @@
+#' Hypothetical Infectious Disease (HID) Markov Model
+#'
+#' @param .v_params a named vector of model parameters in the following
+#' order: "mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho", "b", "c".
+#' @param project_future TRUE/FALSE, whether to project future outcomes for
+#' policy comparison
+#' @param pop_size Population size default is 1 million
+#' @param mu_b Background mortality default is 0.015
+#'
+#' @return
+#' @export
+#'
+#' @examples
+HID_markov <- function(.v_params = NULL, project_future = FALSE,
+                       pop_size = 1e6, mu_b = 0.015) {
+  with(as.list(.v_params), {
+    # mu_e: Cause-specific mortality rate with early-stage disease
+    # mu_l: Cause-specific mortality rate with late-stage disease
+    # mu_t: Cause-specific mortality rate on treatment
+    # p: Transition rate from early to late-stage disease
+    # r_l: Rate of uptake onto treatment (r_l = late-stage disease)
+    # r_e: Rate of uptake onto treatment (r_e = early-stage disease)
+    # rho: Effective contact rate
+    # b: Fraction of population in at-risk group
+    # c: Annual cost of treatment
+
+    # Prepare to run model:
+    # Years to simulate (30 to present, 51 for 20 year analytic horizon):
+    n_yrs    <- if(project_future) { 51 } else { 30 }
+    # Scenarios to simulate: 1 = base case, 2 = expanded treatment access:
+    sim      <- if(project_future) { 1:2 } else { 1 }
+    # Vector of mortality rates:
+    v_mu     <- c(0, 0, mu_e, mu_l, mu_t) + mu_b
+    # Calculate birth rate for equilibrium population before epidemic:
+    births   <- pop_size * mu_b * c(1-b, b)
+    # Creates starting vector for population:
+    init_pop <- pop_size * c(1 - b, b - 0.001, 0.001, 0, 0, 0)
+    # Creates a table to store simulation trace:
+    trace    <- matrix(NA, 12 * n_yrs, 6)
+    colnames(trace) <- c("N", "S", "E", "L", "T", "D")
+    # Creates a list to store results:
+    results  <- list()
+
+    # Run model:
+    for(s in sim) {
+      P0 <- P1 <- init_pop
+      for(m in 1:(12 * n_yrs)) {
+        # Calculates force of infection: "Lambda"
+        lambda    <- rho * sum(P0[3:4]) / sum(P0[2:5])
+        # Births
+        P1[1:2]   <- P1[1:2] + births / 12
+        # Deaths: N, S, E, L, T, to D
+        P1[-6]    <- P1[-6] - P0[-6] * v_mu / 12
+        # Deaths: N, S, E, L, T, to D
+        P1[6]     <- P1[6] + sum(P0[-6] * v_mu / 12)
+        # Infection: S to E
+        P1[2]     <- P1[2] - P0[2] * lambda / 12
+        # Infection: S to E
+        P1[3]     <- P1[3] + P0[2] * lambda / 12
+        # Progression: E to L
+        P1[3]     <- P1[3] - P0[3] * p / 12
+        # Progression: E to L
+        P1[4]     <- P1[4] + P0[3] * p / 12
+        # Treatment uptake: L to T
+        P1[4]     <- P1[4] - P0[4] * r_l / 12
+        # Treatment uptake: L to T
+        P1[5]     <- P1[5] + P0[4] * r_l / 12
+        if(s == 2 & m > (12 * 30)) {
+          # Treatment uptake: E to T (scenario 2)
+          P1[3]   <- P1[3] - P0[3] * r_e / 12
+          # Treatment uptake: E to T (scenario 2)
+          P1[5]   <- P1[5] + P0[3] * r_e / 12
+        }
+        # Fill trace, reset pop vectors:
+        trace[m,] <- P0 <- P1
+      }
+      # Save results for each scenario:
+      results[[s]] <- trace
+    }
+
+    # Report results:
+    if(project_future == FALSE) {
+      # Return calibration metrics, if project_future = FALSE:
+      return(
+        list(
+          # Prevalence at 10, 20, 30 years:
+          prev = (rowSums(trace[, 3:5]) /
+                    rowSums(trace[, 1:5]))[c(10, 20, 30) * 12],
+          # HIV survival without treatment:
+          surv = 1/(v_mu[3] + p) + p / (v_mu[3] + p) * (1 / v_mu[4]),
+          # Treatment volume at 30 years:
+          tx = trace[30 * 12, 5]
+        ) )
+    } else {
+      # Policy projections for CE analysis, if project_future = TRUE:
+      return(
+        list(
+          # Trace without expanded treatment access:
+          trace0 = results[[1]],
+          # Trace with expanded treatment access:
+          trace1 = results[[2]],
+          # Incremental LY lived with expanded tx:
+          inc_LY = sum(results[[2]][(30 * 12 + 1):(51 * 12), -6] -
+                         results[[1]][(30 * 12 + 1):(51 * 12), -6]) / 12,
+          # Incremental costs with expanded tx:
+          inc_cost = sum(results[[2]][(30 * 12 + 1):(51 * 12), 5] -
+                           results[[1]][(30 * 12 + 1):(51 * 12), 5]) *
+            c / 12))}
+  })
+}
+
+#' Helper function to set the hypothetical infectious disease (HID) model
+#'
+#' @param .v_params an unamed vector of model parameters in the following
+#' order: "mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho", "b", "c".
+#'
+#' @return
+#' @export
+#'
+#' @examples
+name_HID_params <- function(.v_params) {
+  names(.v_params) <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho",
+                        "b", "c")
+
+  return(.v_params)
+}

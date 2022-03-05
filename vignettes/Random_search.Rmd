@@ -35,7 +35,7 @@ Targets: `Surv`
 
 # Search method: 
 
-- Random search using:
+Random search using:
 - Full factorial grid
 - Random grid
 - Latin-Hypercube Sampling

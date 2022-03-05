@@ -1,6 +1,8 @@
 #' Cancer Relative Survival (CRS) 3-State Markov Model
 #'
 #' @param v_params
+#' @param p_Mets
+#' @param p_DieMets
 #'
 #' @return
 #' @export
@@ -11,7 +13,7 @@ CRS_markov <- function(v_params = NULL, p_Mets = 0.10, p_DieMets = 0.05) {
     ## Markov model parameters
     n_t  <- 60                        # time horizon, number of cycles
     v_n  <- c("NED", "Mets", "Death") # the 3 states of the model
-    n_s <- length(v_n)                # number of health states
+    n_s  <- length(v_n)                # number of health states
 
     # Transition probabilities
     # p_Mets    = 0.10         	  # probability to become sicker when sick
