@@ -49,43 +49,44 @@ log_likelihood <- function(.func, .args = list(NULL), .samples,
   # Define inputs list for the log likelihood function:
   l_llk <- list(.l_targets[['v_targets_names']],
                 paste0('d', .l_targets[['v_targets_dists']]),
-                .l_targets[['v_targets_dists']])
+                .l_targets[['v_targets_dists']],
+                .l_targets[['v_targets_weights']])
   # Estimate the log likelihood for each model output:
-  log_likelihood <- pmap(
+  summed_log_likelihood <- pmap(
     .l = l_llk,
-    .f = function(.name, .func, .dist) {
-      map_dfc(
+    .f = function(.name, .func, .dist, .weight) {
+      map_dbl(
         .x = model_results,
         .f = function(.mod_res) {
           if(.dist != 'lnorm') {
-            exec(.func,
-                 .l_targets[[.name]]$value,
-                 .mod_res[[.name]],
-                 .l_targets[[.name]]$se,
-                 log = TRUE)
+            sum( # Sum all values
+              exec(.func,
+                   .l_targets[[.name]]$value, # target's sd
+                   .mod_res[[.name]], # mean value
+                   .l_targets[[.name]]$se, # sd value (target's sd)
+                   log = TRUE)
+            ) * .weight # target weight
           } else {
-            exec(.func,
-                 .l_targets[[.name]]$value,
-                 log(.mod_res[[.name]]) - (1/2) * .l_targets[[.name]]$se^2,
-                 .l_targets[[.name]]$se,
-                 log = TRUE)
+            sum( # Sum all values
+              exec(.func,
+                   .l_targets[[.name]]$value, # target's mean
+                   log(.mod_res[[.name]]) - (1/2) *
+                     .l_targets[[.name]]$se^2, # mean value (model output)
+                   .l_targets[[.name]]$se, # sd value (target's sd)
+                   log = TRUE)
+            ) * .weight # target weight
           }
         })
     })
   # Name lists correctly:
-  names(log_likelihood) <- .l_targets[['v_targets_names']]
-  # Sum values accordingly:
-  summed_log_likelihood <- pmap_dfc(
-    .l = list(.l_targets[['v_targets_names']],
-              log_likelihood,
-              .l_targets[['v_targets_weights']]),
-    .f = function(.name, .llik, .weight) {
-      assign(.name,
-             colSums(.llik) * .weight)
-    }
-  )
+  names(summed_log_likelihood) <- .l_targets[['v_targets_names']]
   # Overall log likelihood (over all targets):
-  overall_log_likelihood <- rowSums(summed_log_likelihood)
+  overall_log_likelihood <- pmap_dbl(
+    .l = summed_log_likelihood,
+    .f = function(...) {
+      dots = list(...) # grab all targets' llik for proposed parameter sets
+      reduce(.x = dots, .f = `+`, .init = 1) # sum them together
+    })
   # Prepare the output table:
   output <- .samples %>%
     mutate('Overall_fit' = overall_log_likelihood) %>%
