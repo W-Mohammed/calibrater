@@ -1,10 +1,10 @@
 #' A function to estimate log likelihood (LLK) goodness-of-fit
 #'
+#' @param .samples A table with sampled parameter values
 #' @param .func A function defining the model to be calibrated
 #' @param .args A list of arguments to be passed to .func
-#' @param .samples A table with sampled parameter values
 #' @param .l_targets A list containing a vector of targets' names, a vector
-#' of targets' weights a vector of targets' distributions, and a table for
+#' of targets' weights, a vector of targets' distributions, and a table for
 #' each target that contains the values (column name 'value') and standard
 #' errors (column name 'sd') of the corresponding target.
 #'
@@ -37,7 +37,7 @@
 #' GOF_llik <- log_likelihood(.func = CRS_markov, .samples = samples,
 #'                           .l_targets = l_targets)
 #'
-log_likelihood <- function(.func, .args = list(NULL), .samples,
+log_likelihood <- function(.samples, .func, .args = list(NULL),
                            .l_targets) {
   # Run the model using each set of sampled parameters:
   model_results <- pmap(
@@ -98,13 +98,13 @@ log_likelihood <- function(.func, .args = list(NULL), .samples,
 #' A function to estimate weighted sum of squared errors (WSSE)
 #' goodness-of-fit
 #'
+#' @param .samples A table with sampled parameter values
 #' @param .func A function defining the model to be calibrated
 #' @param .args A list of arguments to be passed to .func
-#' @param .samples A table with sampled parameter values
-#' @param .l_targets A list containing a vector of targets' names, weights
-#' and a table for each target that contains the values (column name
-#' 'value') and standard errors (column name 'sd') of the corresponding
-#' target.
+#' @param .l_targets A list containing a vector of targets' names, a vector
+#' of targets' weights and a table for each target that contains the values
+#' (column name 'value') and standard errors (column name 'sd') of the
+#' corresponding target.
 #' @param .maximise Logical for whether the output of the function is used
 #' in a maximising optimisation function. Default is \code{TRUE}.
 #' @param .weighted Logical for whether the SSR was to be weighted, default
@@ -134,7 +134,7 @@ log_likelihood <- function(.func, .args = list(NULL), .samples,
 #' GOF_wsse <- wSSE_GOF(.func = CRS_markov, .samples = samples,
 #'                      .l_targets = l_targets)
 #'
-wSSE_GOF <- function(.func, .args = list(NULL), .samples, .weighted = TRUE,
+wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
                      .l_targets, .maximise = TRUE) {
   # Run the model using each set of sampled parameters:
   model_results <- pmap(
