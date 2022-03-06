@@ -1,12 +1,16 @@
 #' A function to estimate log likelihood (LLK) goodness-of-fit
 #'
-#' @param .samples A table with sampled parameter values
+#' @param .samples A table or vector of sampled parameter values
 #' @param .func A function defining the model to be calibrated
 #' @param .args A list of arguments to be passed to .func
 #' @param .l_targets A list containing a vector of targets' names, a vector
 #' of targets' weights, a vector of targets' distributions, and a table for
 #' each target that contains the values (column name 'value') and standard
 #' errors (column name 'sd') of the corresponding target.
+#' @param .maximise Logical for whether the output of the function is used
+#' in a maximising optimisation function. Default is \code{TRUE}.
+#' @param .optim Logical for whether the function is used by an
+#' optimisation algorithm. Default is \code{FALSE}.
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall likelihood values sorted in descending order.
@@ -38,10 +42,10 @@
 #'                           .l_targets = l_targets)
 #'
 log_likelihood <- function(.samples, .func, .args = list(NULL),
-                           .l_targets) {
+                           .l_targets, .maximise = TRUE, .optim = FALSE) {
   # Run the model using each set of sampled parameters:
   model_results <- pmap(
-    .l = .samples,
+    .l = as.list(.samples),
     .f = function(...) {
       dots <- list(...)
       exec(.func, dots, !!!.args)
@@ -87,8 +91,17 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
       dots = list(...) # grab all targets' llik for proposed parameter sets
       reduce(.x = dots, .f = `+`, .init = 0) # sum them together
     })
-  # Prepare the output table:
+  # Amend output if optimisation function was a minimiser (flip signs):
+  if(!.maximise)
+    overall_log_likelihood <- -overall_log_likelihood
+
+  # Return overall GoF if used in an optimisation function:
+  if(.optim)
+    return(overall_log_likelihood)
+
+  # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
+    as_tibble() %>% # when .samples is a vector
     mutate('Overall_fit' = overall_log_likelihood) %>%
     arrange(desc(Overall_fit))
 
@@ -98,17 +111,19 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
 #' A function to estimate weighted sum of squared errors (WSSE)
 #' goodness-of-fit
 #'
-#' @param .samples A table with sampled parameter values
+#' @param .samples A table or vector of sampled parameter values
 #' @param .func A function defining the model to be calibrated
 #' @param .args A list of arguments to be passed to .func
+#' @param .weighted Logical for whether the SSR was to be weighted, default
+#' is \code{TRUE}. The weight used by function is \code{1/(sd^2)}.
 #' @param .l_targets A list containing a vector of targets' names, a vector
 #' of targets' weights and a table for each target that contains the values
 #' (column name 'value') and standard errors (column name 'sd') of the
 #' corresponding target.
 #' @param .maximise Logical for whether the output of the function is used
 #' in a maximising optimisation function. Default is \code{TRUE}.
-#' @param .weighted Logical for whether the SSR was to be weighted, default
-#' is \code{TRUE}. The weight used by function is \code{1/(sd^2)}.
+#' @param .optim Logical for whether the function is used by an
+#' optimisation algorithm. Default is \code{FALSE}.
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall weighted sum of square values sorted in descending order.
@@ -135,10 +150,10 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
 #'                      .l_targets = l_targets)
 #'
 wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
-                     .l_targets, .maximise = TRUE) {
+                     .l_targets, .maximise = TRUE, .optim = FALSE) {
   # Run the model using each set of sampled parameters:
   model_results <- pmap(
-    .l = .samples,
+    .l = as.list(.samples),
     .f = function(...) {
       dots <- list(...)
       exec(.func, dots, !!!.args)
@@ -174,8 +189,14 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
   # Amend output if optimisation function was a minimiser (flip signs):
   if(!.maximise)
     overall_weighted_sse <- -overall_weighted_sse
-  # Prepare the output table:
+
+  # Return overall GoF if used in an optimisation function:
+  if(.optim)
+    return(overall_weighted_sse)
+
+  # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
+    as_tibble() %>% # when .samples is a vector
     mutate('Overall_fit' = overall_weighted_sse) %>%
     arrange(desc(Overall_fit))
 

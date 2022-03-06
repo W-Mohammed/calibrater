@@ -31,7 +31,7 @@ summ_optim <- function(.params_name = v_params_names, .GoF_value,
   }
 
   # If .func was not maximising or .hessian resulted from a minimiser function:
-  if(!.maximiser) {
+  if(.maximiser) {
     .hessian <- -.hessian
   }
 
@@ -49,7 +49,7 @@ summ_optim <- function(.params_name = v_params_names, .GoF_value,
   upper <- .par + (1.96 * prop_se)
   lower <- .par - (1.96 * prop_se)
 
-  return(tibble(Params = .params_name, 'GoF value' = .GoF_value,
+  return(list(Params = .params_name, 'GoF value' = .GoF_value,
                 'GoF algorithm' = .GoF_method, Estimate = .par,
                 Lower = lower, Upper = upper))
 }
@@ -83,33 +83,38 @@ optimise_model <- function(.params_name = v_params_names, .func, .args,
                            .l_targets, ...) {
   # Capture the arguments in the .dots:
   arguments = list(...)
-  # Assign passed arguments to the corresponding optim function arguments:
-  control = list( # Control list
-    fnscale = `if`(.maximise, -1, arguments[['fnscale']]), # max/minimise
-    temp = arguments[['temp']], # SANN algorithm tuning parameters
-    tmax = arguments[['tmax']], # SANN algorithm tuning parameters
-    maxit = arguments[['maxit']]) # maximum number of iterations
   # Map over sampled values:
-  fit <- pmap(
-    .l = list(.samples),
-    .f = function(.params_set) {
-      names(.params_set) <- v_params_names
-      fit <- optim(par = .params_set,
-                   fn = .gof,
-                   method = .method,
-                   control = control,
-                   hessian = TRUE, # Hard coded
-                   .func = .func, # model to be optimised
-                   .args = .args, # arguments to be passed to the model
-                   .l_targets = .l_targets) %>% # targets passed to .gof
-        summ_optim(.params_name = v_params_names,
-                   .GoF_value = fit$value,
-                   .GoF_method = .method,
-                   .par = fit$par,
-                   .func = .func,
-                   .hessian = fit$hessian)
+  fits <- pmap(
+    .l = .samples,
+    .f = function(...) {
+      params_set = c(...) # grab a parameter set
+      # Run the optimisation function optim:
+      fit <- optim(
+        par = params_set,
+        fn = .gof,
+        method = .method,
+        control = list(
+          fnscale = ifelse(.maximise, -1, # maximiser/minimiser
+                           arguments[['fnscale']]),
+          temp = arguments[['temp']], # SANN algorithm tuning
+          tmax = arguments[['tmax']], # SANN algorithm tuning
+          maxit = arguments[['maxit']]), # maximum iterations
+        hessian = TRUE, # estimate hessian matirx
+        .func = .func, # model to be optimised
+        .args = .args, # arguments to be passed to the model
+        .l_targets = .l_targets, # targets passed to .gof
+        .optim = TRUE) # .gof reports gof value only
+      # Summarise output produced by optim():
+      fit_summary <- summ_optim(
+        .params_name = v_params_names,
+        .GoF_value = fit$value, # best GoF value estimated by optim()
+        .GoF_method = .method,
+        .par = fit$par, # best parameter set identified by optim()
+        .func = .func,
+        .hessian = fit$hessian) # hessian matrix estimated by optim()
     })
-  return(fit)
+
+  return(fits)
 }
 
 

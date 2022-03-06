@@ -155,6 +155,51 @@ GOF_wsse3 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
 compare(GOF_wsse, GOF_wsse2)
 ###########################
 
+tsts = function(...) {
+  dots = list(...)
+  # moz = NULL
+  moz = dots[['moz']]
+  if(is.null(moz))
+    cat('I can find the default')
+  cat(moz)
+}
+tsts(2, 3)
+`if`(0, "test", "not")
+##########################################################
+data("CRS_targets")
+Surv <- CRS_targets$Surv
+v_targets_names <- c("Surv")
+v_targets_dists <- c('norm')
+v_targets_weights <- c(1)
+l_targets <-
+  list('v_targets_names' = v_targets_names,
+       'Surv' = Surv,
+       'v_targets_dists' = v_targets_dists,
+       'v_targets_weights' = v_targets_weights)
+v_params_names <- c("p_Mets", "p_DieMets")
+v_params_dists <- c("unif", "unif")
+args <- list(list(min = 0.04, max = 0.16),
+             list(min = 0.04, max = 0.12))
+
+samples <- sample_prior_LHS(
+  .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
+
+NM_optimise_mod3 <- optimise_model(.params_name = v_params_names,
+                       .func = CRS_markov,
+                       .args = NULL,
+                       .gof = log_likelihood,
+                       .samples = samples[1:10,],
+                       .method = 'Nelder-Mead',
+                       .maximise = TRUE,
+                       .l_targets = l_targets,
+                       maxit = 1000)
+
+
+
+
+
+
+
 
 
 
