@@ -3,10 +3,10 @@
 #' @param .func A function defining the model to be calibrated
 #' @param .args A list of arguments to be passed to .func
 #' @param .samples A table with sampled parameter values
-#' @param .l_targets A list containing a vector of targets' names,
-#' a vector of targets' distributions, and a table for each target that
-#' contains the values (column name 'value') and standard errors (column
-#' name 'sd') of the corresponding target.
+#' @param .l_targets A list containing a vector of targets' names, a vector
+#' of targets' weights a vector of targets' distributions, and a table for
+#' each target that contains the values (column name 'value') and standard
+#' errors (column name 'sd') of the corresponding target.
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall likelihood values sorted in descending order.
@@ -85,7 +85,7 @@ log_likelihood <- function(.func, .args = list(NULL), .samples,
     .l = summed_log_likelihood,
     .f = function(...) {
       dots = list(...) # grab all targets' llik for proposed parameter sets
-      reduce(.x = dots, .f = `+`, .init = 1) # sum them together
+      reduce(.x = dots, .f = `+`, .init = 0) # sum them together
     })
   # Prepare the output table:
   output <- .samples %>%
@@ -101,9 +101,10 @@ log_likelihood <- function(.func, .args = list(NULL), .samples,
 #' @param .func A function defining the model to be calibrated
 #' @param .args A list of arguments to be passed to .func
 #' @param .samples A table with sampled parameter values
-#' @param .l_targets A list containing a vector of targets' names, and a
-#' table for each target that contains the values (column name 'value') and
-#' standard errors (column name 'sd') of the corresponding target.
+#' @param .l_targets A list containing a vector of targets' names, weights
+#' and a table for each target that contains the values (column name
+#' 'value') and standard errors (column name 'sd') of the corresponding
+#' target.
 #' @param .maximise Logical for whether the output of the function is used
 #' in a maximising optimisation function. Default is \code{TRUE}.
 #' @param .weighted Logical for whether the SSR was to be weighted, default
@@ -117,7 +118,9 @@ log_likelihood <- function(.func, .args = list(NULL), .samples,
 #' data("CRS_targets")
 #' Surv <- CRS_targets$Surv
 #' v_targets_names <- c("Surv")
-#' l_targets <- list('v_targets_names' = v_targets_names, 'Surv' = Surv)
+#' v_targets_weights <- c(1)
+#' l_targets <- list('v_targets_names' = v_targets_names, 'Surv' = Surv,
+#'                  'v_targets_weights' = v_targets_weights)
 #' v_params_names <- c("p_Mets", "p_DieMets")
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
@@ -141,20 +144,23 @@ wSSE_GOF <- function(.func, .args = list(NULL), .samples, .weighted = TRUE,
       exec(.func, dots, !!!.args)
     })
   # Define inputs list for the weighted sum of squared errors function:
-  l_wsse <- list(.l_targets[['v_targets_names']])
+  l_wsse <- list(.l_targets[['v_targets_names']],
+                 .l_targets[['v_targets_weights']])
   # Estimate the weighted sum of squared errors for each model output:
   wsse <- pmap(
     .l = l_wsse,
-    .f = function(.name) {
+    .f = function(.name, .weight) {
       map_dbl(
         .x = model_results,
         .f = function(.mod_res) {
           if(.weighted) {
-            weight <- 1/(.l_targets[[.name]]$se^2)
-            -sum(weight *
-                   ((.l_targets[[.name]]$value - .mod_res[[.name]])^2))
+            weights <- 1/(.l_targets[[.name]]$se^2)
+            -sum(weights *
+                   ((.l_targets[[.name]]$value - .mod_res[[.name]])^2)) *
+              .weight
           } else {
-            -sum((.l_targets[[.name]]$value - .mod_res[[.name]])^2)
+            -sum((.l_targets[[.name]]$value - .mod_res[[.name]])^2) *
+              .weight
           }
         })
     })
@@ -163,7 +169,7 @@ wSSE_GOF <- function(.func, .args = list(NULL), .samples, .weighted = TRUE,
     .l = wsse,
     .f = function(...) {
       dots = list(...) # grab all targets' wsse for proposed parameter sets
-      reduce(.x = dots, .f = `+`, .init = 1) # sum them together
+      reduce(.x = dots, .f = `+`, .init = 0) # sum them together
     })
   # Amend output if optimisation function was a minimiser (flip signs):
   if(!.maximise)

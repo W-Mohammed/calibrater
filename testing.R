@@ -13,123 +13,160 @@ sample.prior.lhs <- function(n) {
   return(as.matrix(draws))
 }
 
-sample_prior_LHS <- function(.l_params, .n_samples) {
-  # Get the number of parameters:
-  n_params <- length(.l_params[["v_params_names"]])
-  # Get LHS samples:
-  tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
-    as_tibble()
-  # Make sure parameter names are in a named vector:
-  names(.l_params[['v_params_names']]) <- .l_params[['v_params_names']]
-  # Define inputs list:
-  l_lhs <- list(.l_params[['v_params_names']],
-                tbl_lhs_unit,
-                paste0('q', .l_params[['v_params_dists']]),
-                .l_params[['args']])
-  # Map over parameters to scale up LHS samples to appropriate values:
-  tbl_lhs_samp <- pmap_dfc(
-    .l = l_lhs,
-    .f = function(.name, p, .func, .arg) {
-      names(.name) = .name
-      assign(.name,
-             exec(.func, p, !!!.arg))
-    })
-
-  return(tbl_lhs_samp)
+### A LINEAR REGRESSION EXAMPLE ####
+## Define a Bayesian linear regression model
+li_reg<-function(pars,data)
+{
+  a<-pars[1] #intercept
+  b<-pars[2] #slope
+  sd_e<-pars[3] #error (residuals)
+  if(sd_e<=0){return(NaN)}
+  pred <- a + b * data[,1]
+  log_likelihood<-sum( dnorm(data[,2],pred,sd_e, log=TRUE) )
+  prior<- prior_reg(pars)
+  return(log_likelihood + prior)
+}
+## Define the Prior distributions
+prior_reg<-function(pars)
+{
+  a<-pars[1] #intercept
+  b<-pars[2] #slope
+  epsilon<-pars[3] #error
+  prior_a<-dnorm(a,0,100,log=TRUE) ## non-informative (flat) priors on all
+  prior_b<-dnorm(b,0,100,log=TRUE) ## parameters.
+  prior_epsilon<-dgamma(epsilon,1,1/100,log=TRUE)
+  return(prior_a + prior_b + prior_epsilon)
 }
 
-sample_prior_FGS <- function(.l_params, .n_samples) {
-  # Define inputs list:
-  l_fgs <- list(.l_params[['v_params_names']],
-                paste0('r', .l_params[['v_params_dists']]),
-                .l_params[['args']])
-  # Make sure parameter names are in a named vector:
-  names(l_fgs[[1]]) <- l_fgs[[1]]
-  # Map over parameters and sample values accordingly:
-  tbl_fgs_samp <- pmap_dfc(
-    .l = l_fgs,
-    .f = function(.name, .func, .arg) {
-      assign(.name,
-             exec(.func, .n_samples, !!!.arg))
-    })
-
-  return(tbl_fgs_samp)
-}
-
-sample_prior_RGS <- function(.l_params, .n_samples) {
-  # Define inputs list:
-  l_rgs <- list(.l_params[['v_params_names']],
-                paste0('r', .l_params[['v_params_dists']]),
-                .l_params[['args']])
-  # Make sure parameter names are in a named vector:
-  names(l_rgs[[1]]) <- l_rgs[[1]]
-  # Map over parameters to scale up LHS samples to appropriate values:
-  tbl_lhs_samp <- pmap_dfc(
-    .l = l_lhs,
-    .f = function(.name, p, .func, .arg) {
-      names(.name) = .name
-      assign(.name,
-             exec(.func, p, !!!.arg))
-    })
-
-  return(tbl_lhs_samp)
-}
-
-log_likelihood <- function(.func, .args = NULL, .samples, .l_targets) {
-  # Run the model using each set of sampled parameters:
-  model_results <- pmap(
-    .l = .samples,
-    .f = function(.params) {
-      exec(.func, .params, !!!args)
-    }
-  )
-  # Define inputs list for the log likelihood function:
-  l_llk <- list(.l_targets[['v_targets_names']],
-                paste0('d', .l_targets[['v_targets_dists']]),
-                .l_targets[['v_targets_dists']],
-                model_results)
-  log_likelihood <- pmap_dbl(
-    .l = l_llk,
-    .f = function(.name, .func, .dist, .mod_res) {
-      if(.dist != 'lnorm') {
-        exec(.func,
-             .l_targets[[.name]]$value,
-             .mod_res[[.name]],
-             .l_targets[[.name]]$se,
-             log = TRUE)
-      } else {
-        exec(.func,
-             .l_targets[[.name]]$value,
-             log(.mod_res[[.name]]) - (1/2) * .l_targets[[.name]]$se^2,
-             .l_targets[[.name]]$se,
-             log = TRUE)
-      }
-    })
-}
-
-## Record start time of calibration:
-t_init <- Sys.time()
-
-## Initialize goodness-of-fit vector
-m_GOF_llk <- m_GOF_sse <- matrix(nrow = n_samples, ncol = n_target)
-colnames(m_GOF_llk) <- colnames(m_GOF_sse) <- paste0(v_target_names, "_fit")
-
-## Loop through sampled sets of input values
-tmps = matrix(NA, nrow = nrow(tst), ncol = 1)
-for (j in 1:nrow(tst)) {
-
-  tmp = as_vector(tst[j, ])
-  ### Run model for a given parameter set:
-  model_res <- CRS_markov(v_params = tmp)
-
-  ### Calculate goodness-of-fit of model outputs to targets:
-
-  ### TARGET 1: Survival ("Surv")
-  ### Log likelihood:
-  tmps[j, 1] <- sum(dnorm(x = lst_targets$Surv$value,
-                               mean = model_res$Surv,
-                               sd = lst_targets$Surv$se,
-                               log = TRUE))
+# simulate data
+x<-runif(30,5,15)
+y<-x+rnorm(30,0,5)
+d<-cbind(x,y)
+mcmc_r<-Metro_Hastings(li_func=li_reg,pars=c(0,1,1),
+                       par_names=c('a','b','epsilon'),data=d)
+## For best results, run again with the previously
+## adapted variance-covariance matrix.
+mcmc_r<-Metro_Hastings(li_func=li_reg,pars=c(0,1,1),
+                       prop_sigma=mcmc_r$prop_sigma,par_names=c('a','b','epsilon'),data=d)
+mcmc_r<-mcmc_thin(mcmc_r)
+plotMH(mcmc_r)
 
 
-} # End loop over sampled parameter sets
+tst = HID_markov(.v_params = name_HID_params(rep(0.5, 9)))
+
+tst2 = HID_markov(.v_params = name_HID_params(rep(0.5, 9)), project_future = T)
+
+
+v_params_names <- c("p_Mets", "p_DieMets")
+v_params_dists <- c("unif", "unif")
+args <- list(list(min = 0.04, max = 0.16),
+             list(min = 0.04, max = 0.12))
+
+tst = sample_prior_LHS(.l_params = list(v_params_names = v_params_names,
+                                        v_params_dists = v_params_dists, args = args), 10)
+
+tst2 = sample_prior_FGS(.l_params = list(v_params_names = v_params_names,
+                                         v_params_dists = v_params_dists, args = args),.n_samples = 10)
+tst2
+
+tst3 = sample_prior_RGS(.l_params = list(v_params_names = v_params_names,
+                                         v_params_dists = v_params_dists, args = args),.n_samples = 10)
+tst3
+###########################
+load(file.path(here::here(), "data", "CRS_targets.rda"))
+v_targets_names <- c("Surv")
+v_targets_dists <- c('norm')
+data("CRS_targets")
+Surv <- CRS_targets$Surv
+l_targets <- list(
+  'v_targets_names' = v_targets_names,
+  'Surv' = Surv,
+  'v_targets_dists' = v_targets_dists)
+
+testing <- log_likelihood(.func = CRS_markov,
+                          .samples = tst,
+                          .l_targets = l_targets)
+###########################
+data("CRS_targets")
+Surv <- CRS_targets$Surv
+v_targets_names <- c("Surv", "Surv")
+v_targets_dists <- c('norm', 'norm')
+v_targets_weights <- c(0.2, 0.8)
+l_targets <- list('v_targets_names' = v_targets_names, 'Surv' = Surv, 'v_targets_dists' = v_targets_dists, 'v_targets_weights' = v_targets_weights)
+v_params_names <- c("p_Mets", "p_DieMets")
+v_params_dists <- c("unif", "unif")
+args <- list(list(min = 0.04, max = 0.16),
+             list(min = 0.04, max = 0.12))
+
+samples <- sample_prior_LHS(
+  .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
+
+GOF_llik <- log_likelihood(.func = CRS_markov, .samples = samples,
+                           .l_targets = l_targets)
+###########################
+data("CRS_targets")
+Surv <- CRS_targets$Surv
+v_targets_names <- c("Surv")
+v_targets_dists <- c('norm')
+v_targets_weights <- c(1)
+l_targets <-
+  list('v_targets_names' = v_targets_names,
+       'Surv' = Surv, 'v_targets_dists' = v_targets_dists,
+       'v_targets_weights' = v_targets_weights)
+v_params_names <- c("p_Mets", "p_DieMets")
+v_params_dists <- c("unif", "unif")
+args <- list(list(min = 0.04, max = 0.16),
+             list(min = 0.04, max = 0.12))
+
+samples <- sample_prior_LHS(
+  .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
+
+GOF_llik3 <- log_likelihood(.func = CRS_markov, .samples = samples,
+                            .l_targets = l_targets)
+###########################
+data("CRS_targets")
+Surv <- CRS_targets$Surv
+# v_targets_names <- c("Surv", "Surv")
+# v_targets_weights <- c(1, 1)
+v_targets_names <- c("Surv")
+v_targets_weights <- c(1)
+l_targets <-
+  list('v_targets_names' = v_targets_names,
+       'v_targets_weights' = v_targets_weights,
+       'Surv' = Surv)
+v_params_names <- c("p_Mets", "p_DieMets")
+v_params_dists <- c("unif", "unif")
+args <- list(list(min = 0.04, max = 0.16),
+             list(min = 0.04, max = 0.12))
+
+# samples <- sample_prior_LHS(
+#   .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
+
+GOF_wsse <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+                     .l_targets = l_targets)
+GOF_wsse2 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+                      .l_targets = l_targets)
+GOF_wsse3 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+                      .l_targets = l_targets)
+# GOF_wsse4 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+#                       .l_targets = l_targets)
+# GOF_wsse5 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+#                       .l_targets = l_targets)
+compare(GOF_wsse, GOF_wsse2)
+###########################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
