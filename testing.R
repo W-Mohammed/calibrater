@@ -106,9 +106,11 @@ GOF_llik <- log_likelihood(.func = CRS_markov, .samples = samples,
 ###########################
 data("CRS_targets")
 Surv <- CRS_targets$Surv
-v_targets_names <- c("Surv")
+v_targets_names <- c("Surv", "Surv")
+v_targets_weights <- c(0.5, 0.5)
+# v_targets_names <- c("Surv")
 v_targets_dists <- c('norm')
-v_targets_weights <- c(1)
+# v_targets_weights <- c(1)
 l_targets <-
   list('v_targets_names' = v_targets_names,
        'Surv' = Surv, 'v_targets_dists' = v_targets_dists,
@@ -121,15 +123,19 @@ args <- list(list(min = 0.04, max = 0.16),
 samples <- sample_prior_LHS(
   .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
 
-GOF_llik3 <- log_likelihood(.func = CRS_markov, .samples = samples,
+GOF_llik12 <- log_likelihood(.func = CRS_markov, .samples = samples,
                             .l_targets = l_targets)
+GOF_llik2 <- log_likelihood(.func = CRS_markov, .samples = samples,
+                            .l_targets = l_targets, .optim = TRUE)
+GOF_llik4 <- log_likelihood(.func = CRS_markov, .samples = samples,
+                            .l_targets = l_targets, .optim = TRUE)
 ###########################
 data("CRS_targets")
 Surv <- CRS_targets$Surv
-# v_targets_names <- c("Surv", "Surv")
-# v_targets_weights <- c(1, 1)
-v_targets_names <- c("Surv")
-v_targets_weights <- c(1)
+v_targets_names <- c("Surv", "Surv")
+v_targets_weights <- c(0.5, 0.5)
+# v_targets_names <- c("Surv")
+# v_targets_weights <- c(1)
 l_targets <-
   list('v_targets_names' = v_targets_names,
        'v_targets_weights' = v_targets_weights,
@@ -142,12 +148,12 @@ args <- list(list(min = 0.04, max = 0.16),
 # samples <- sample_prior_LHS(
 #   .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
 
-GOF_wsse <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+GOF_wsse12 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
                      .l_targets = l_targets)
-GOF_wsse2 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+GOF_wsse2 <- wSSE_GOF(.func = CRS_markov, .samples = samples[1:2,],
                       .l_targets = l_targets)
-GOF_wsse3 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
-                      .l_targets = l_targets)
+GOF_wsse5 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+                      .l_targets = l_targets, .optim = TRUE)
 # GOF_wsse4 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
 #                       .l_targets = l_targets)
 # GOF_wsse5 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
@@ -210,12 +216,12 @@ GB_optimise_mod <- optimise_model(.l_params = list(
   .l_targets = l_targets,
   maxit = 1000)
 
-SA_optimise_mod4 <- optimise_model(.l_params = list(
+SA_optimise_mod <- optimise_model(.l_params = list(
   v_params_names = v_params_names,
   v_params_dists = v_params_dists,
   args = args),
   .func = CRS_markov,
-  .args = NULL,
+  .args = list(NULL),
   .gof = wSSE_GOF,
   .samples = samples[1:10,],
   .method = 'SANN',
@@ -225,6 +231,47 @@ SA_optimise_mod4 <- optimise_model(.l_params = list(
   temp = 10,
   tmax = 10)
 
+NM_optimise_mod2 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = NULL,
+  .gof = log_likelihood,
+  .samples = samples[1:10,],
+  .method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000)
+
+GB_optimise_mod2 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = NULL,
+  .gof = log_likelihood,
+  .samples = samples[1:10,],
+  .method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000)
+
+SA_optimise_mod2 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = NULL,
+  .gof = log_likelihood,
+  .samples = samples[1:10,],
+  .method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  fnscale = -1,
+  temp = 10,
+  tmax = 10,
+  maxit = 1000)
 
 compare(NM_optimise_mod, NM_optimise_mod2)
 compare(GB_optimise_mod, GB_optimise_mod2)
@@ -232,7 +279,40 @@ compare(SA_optimise_mod, SA_optimise_mod2)
 compare(SA_optimise_mod3, SA_optimise_mod2)
 compare(SA_optimise_mod3, SA_optimise_mod)
 
+#############################################################
+# Number of initial starting points - Nelder-mead:
+n_init <- 100
+# Number of random samples:
+n_samples <- 10
+# Names and number of input parameters to be calibrated:
+v_params_names <- c("p_Mets", "p_DieMets")
+n_params <- length(v_params_names)
+v_params_init <- samples[1:10,]
+n_init <- nrow(v_params_init)
+## Run Gradient-based for each starting point:
+res_llk = list()
+res_sse = list()
+m_calib_res_llk <- m_calib_res_sse <-
+  matrix(nrow = n_init, ncol = n_params + 1)
+colnames(m_calib_res_llk) <- colnames(m_calib_res_sse) <-
+  c(v_params_names, "Overall_fit")
 
+for (j in 1:n_init) {
+  fit_sa <- optim(par = v_params_init[j, ],
+                  fn = log_likelihood, # GOF is log likelihood
+                  method = "SANN",
+                  control = list(  fnscale = -1,
+                                   temp = 10,
+                                   tmax = 10,
+                                   maxit = 1000), # maximum iterations
+                  hessian = TRUE,
+                  .func = CRS_markov, # model to be optimised
+                  .args = NULL, # arguments to be passed to the model
+                  .l_targets = l_targets, # targets passed to .gof
+                  .maximise = TRUE, # .gof should maximise
+                  .optim = TRUE)
+  m_calib_res_llk[j, ] <- c(fit_sa$par, fit_sa$value)
+}
 
 
 

@@ -66,7 +66,7 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
         .x = model_results,
         .f = function(.mod_res) {
           if(.dist != 'lnorm') {
-            sum( # Sum all values
+            sum( # Sum all values of that one target, if many
               exec(.func,
                    .l_targets[[.name]]$value, # target's sd
                    .mod_res[[.name]], # mean value
@@ -74,7 +74,7 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
                    log = TRUE)
             ) * .weight # target weight
           } else {
-            sum( # Sum all values
+            sum( # Sum all values of that one target, if many
               exec(.func,
                    .l_targets[[.name]]$value, # target's mean
                    log(.mod_res[[.name]]) - (1/2) *
@@ -91,8 +91,8 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
   overall_log_likelihood <- pmap_dbl(
     .l = summed_log_likelihood,
     .f = function(...) {
-      dots = list(...) # grab all targets' llik for proposed parameter sets
-      reduce(.x = dots, .f = `+`, .init = 0) # sum them together
+      dots <- c(...) # grab all targets' llik for proposed sets
+      sum(dots) # sum them together
     })
   # Amend output if optimisation function was a minimiser (flip signs):
   if(!.maximise)
@@ -185,12 +185,12 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
           }
         })
     })
-  # Overall log likelihood (over all targets):
+  # Overall weighted sse (over all targets):
   overall_weighted_sse <- pmap_dbl(
     .l = wsse,
     .f = function(...) {
-      dots = list(...) # grab all targets' wsse for proposed parameter sets
-      reduce(.x = dots, .f = `+`, .init = 0) # sum them together
+      dots <- c(...) # grab all targets' wsse for proposed sets
+      sum(dots) # sum them together
     })
   # Amend output if optimisation function was a minimiser (flip signs):
   if(!.maximise)
