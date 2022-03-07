@@ -11,6 +11,7 @@
 #' in a maximising optimisation function. Default is \code{TRUE}.
 #' @param .optim Logical for whether the function is used by an
 #' optimisation algorithm. Default is \code{FALSE}.
+#' @param .seed_no Integer for a random number generator seed number.
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall likelihood values sorted in descending order.
@@ -42,7 +43,9 @@
 #'                           .l_targets = l_targets)
 #'
 log_likelihood <- function(.samples, .func, .args = list(NULL),
-                           .l_targets, .maximise = TRUE, .optim = FALSE) {
+                           .l_targets, .maximise = TRUE, .optim = FALSE,
+                           .seed_no = 1) {
+  set.seed(.seed_no)
   # Run the model using each set of sampled parameters:
   model_results <- pmap(
     .l = as.list(.samples),
@@ -124,6 +127,7 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
 #' in a maximising optimisation function. Default is \code{TRUE}.
 #' @param .optim Logical for whether the function is used by an
 #' optimisation algorithm. Default is \code{FALSE}.
+#' @param .seed_no Integer for a random number generator seed number.
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall weighted sum of square values sorted in descending order.
@@ -150,7 +154,9 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
 #'                      .l_targets = l_targets)
 #'
 wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
-                     .l_targets, .maximise = TRUE, .optim = FALSE) {
+                     .l_targets, .maximise = TRUE, .optim = FALSE,
+                     .seed_no = 1) {
+  set.seed(.seed_no)
   # Run the model using each set of sampled parameters:
   model_results <- pmap(
     .l = as.list(.samples),
