@@ -72,7 +72,42 @@ tst2
 tst3 = sample_prior_RGS(.l_params = list(v_params_names = v_params_names,
                                          v_params_dists = v_params_dists, args = args),.n_samples = 10)
 tst3
-###########################
+#########################################################################
+# Number of initial starting points - Nelder-mead:
+n_init <- 100
+# Number of random samples:
+n_samples <- 10
+# Names and number of input parameters to be calibrated:
+v_params_names <- c("p_Mets", "p_DieMets")
+n_params <- length(v_params_names)
+v_params_init <- samples[1:10,]
+n_init <- nrow(v_params_init)
+## Run Gradient-based for each starting point:
+res_llk = list()
+res_sse = list()
+m_calib_res_llk <- m_calib_res_sse <-
+  matrix(nrow = n_init, ncol = n_params + 1)
+colnames(m_calib_res_llk) <- colnames(m_calib_res_sse) <-
+  c(v_params_names, "Overall_fit")
+
+for (j in 1:n_init) {
+  fit_sa <- optim(par = v_params_init[j, ],
+                  fn = log_likelihood, # GOF is log likelihood
+                  method = "SANN",
+                  control = list(  fnscale = -1,
+                                   temp = 10,
+                                   tmax = 10,
+                                   maxit = 1000), # maximum iterations
+                  hessian = TRUE,
+                  .func = CRS_markov, # model to be optimised
+                  .args = NULL, # arguments to be passed to the model
+                  .l_targets = l_targets, # targets passed to .gof
+                  .maximise = TRUE, # .gof should maximise
+                  .optim = TRUE)
+  m_calib_res_llk[j, ] <- c(fit_sa$par, fit_sa$value)
+}
+
+#########################################################################
 load(file.path(here::here(), "data", "CRS_targets.rda"))
 v_targets_names <- c("Surv")
 v_targets_dists <- c('norm')
@@ -108,8 +143,8 @@ data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv", "Surv")
 v_targets_weights <- c(0.5, 0.5)
-# v_targets_names <- c("Surv")
 v_targets_dists <- c('norm')
+# v_targets_names <- c("Surv")
 # v_targets_weights <- c(1)
 l_targets <-
   list('v_targets_names' = v_targets_names,
@@ -134,6 +169,7 @@ data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv", "Surv")
 v_targets_weights <- c(0.5, 0.5)
+v_targets_dists <- c('norm')
 # v_targets_names <- c("Surv")
 # v_targets_weights <- c(1)
 l_targets <-
@@ -186,9 +222,9 @@ v_params_names <- c("p_Mets", "p_DieMets")
 v_params_dists <- c("unif", "unif")
 args <- list(list(min = 0.04, max = 0.16),
              list(min = 0.04, max = 0.12))
-
+set.seed(1)
 samples <- sample_prior_LHS(
-  .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
+  .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 100)
 
 NM_optimise_mod <- optimise_model(.l_params = list(
   v_params_names = v_params_names,
@@ -197,7 +233,7 @@ NM_optimise_mod <- optimise_model(.l_params = list(
   .func = CRS_markov,
   .args = NULL,
   .gof = wSSE_GOF,
-  .samples = samples[1:10,],
+  .samples = samples,
   .method = 'Nelder-Mead',
   .maximise = TRUE,
   .l_targets = l_targets,
@@ -210,7 +246,7 @@ GB_optimise_mod <- optimise_model(.l_params = list(
   .func = CRS_markov,
   .args = NULL,
   .gof = wSSE_GOF,
-  .samples = samples[1:10,],
+  .samples = samples,
   .method = 'BFGS',
   .maximise = TRUE,
   .l_targets = l_targets,
@@ -223,7 +259,7 @@ SA_optimise_mod <- optimise_model(.l_params = list(
   .func = CRS_markov,
   .args = list(NULL),
   .gof = wSSE_GOF,
-  .samples = samples[1:10,],
+  .samples = samples,
   .method = 'SANN',
   .maximise = TRUE,
   .l_targets = l_targets,
@@ -238,7 +274,7 @@ NM_optimise_mod2 <- optimise_model(.l_params = list(
   .func = CRS_markov,
   .args = NULL,
   .gof = log_likelihood,
-  .samples = samples[1:10,],
+  .samples = samples,
   .method = 'Nelder-Mead',
   .maximise = TRUE,
   .l_targets = l_targets,
@@ -251,7 +287,7 @@ GB_optimise_mod2 <- optimise_model(.l_params = list(
   .func = CRS_markov,
   .args = NULL,
   .gof = log_likelihood,
-  .samples = samples[1:10,],
+  .samples = samples,
   .method = 'BFGS',
   .maximise = TRUE,
   .l_targets = l_targets,
@@ -264,7 +300,7 @@ SA_optimise_mod2 <- optimise_model(.l_params = list(
   .func = CRS_markov,
   .args = NULL,
   .gof = log_likelihood,
-  .samples = samples[1:10,],
+  .samples = samples,
   .method = 'SANN',
   .maximise = TRUE,
   .l_targets = l_targets,
@@ -280,39 +316,105 @@ compare(SA_optimise_mod3, SA_optimise_mod2)
 compare(SA_optimise_mod3, SA_optimise_mod)
 
 #############################################################
-# Number of initial starting points - Nelder-mead:
-n_init <- 100
-# Number of random samples:
-n_samples <- 10
-# Names and number of input parameters to be calibrated:
-v_params_names <- c("p_Mets", "p_DieMets")
-n_params <- length(v_params_names)
-v_params_init <- samples[1:10,]
-n_init <- nrow(v_params_init)
-## Run Gradient-based for each starting point:
-res_llk = list()
-res_sse = list()
-m_calib_res_llk <- m_calib_res_sse <-
-  matrix(nrow = n_init, ncol = n_params + 1)
-colnames(m_calib_res_llk) <- colnames(m_calib_res_sse) <-
-  c(v_params_names, "Overall_fit")
 
-for (j in 1:n_init) {
-  fit_sa <- optim(par = v_params_init[j, ],
-                  fn = log_likelihood, # GOF is log likelihood
-                  method = "SANN",
-                  control = list(  fnscale = -1,
-                                   temp = 10,
-                                   tmax = 10,
-                                   maxit = 1000), # maximum iterations
-                  hessian = TRUE,
-                  .func = CRS_markov, # model to be optimised
-                  .args = NULL, # arguments to be passed to the model
-                  .l_targets = l_targets, # targets passed to .gof
-                  .maximise = TRUE, # .gof should maximise
-                  .optim = TRUE)
-  m_calib_res_llk[j, ] <- c(fit_sa$par, fit_sa$value)
-}
+NM_optimise_mod3 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = NULL,
+  .gof = log_likelihood,
+  .samples = samples,
+  .method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000)
+
+GB_optimise_mod3 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = NULL,
+  .gof = log_likelihood,
+  .samples = samples,
+  .method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000)
+
+SA_optimise_mod3 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = list(NULL),
+  .gof = log_likelihood,
+  .samples = samples,
+  .method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+compare(NM_optimise_mod3, NM_optimise_mod2)
+compare(GB_optimise_mod3, GB_optimise_mod2)
+compare(SA_optimise_mod3, SA_optimise_mod2)
+
+NM_optimise_mod4 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = NULL,
+  .gof = wSSE_GOF,
+  .samples = samples,
+  .method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000)
+
+GB_optimise_mod4 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = NULL,
+  .gof = wSSE_GOF,
+  .samples = samples,
+  .method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000)
+
+SA_optimise_mod4 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = list(NULL),
+  .gof = wSSE_GOF,
+  .samples = samples,
+  .method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+compare(NM_optimise_mod, NM_optimise_mod4)
+compare(GB_optimise_mod, GB_optimise_mod4)
+compare(SA_optimise_mod, SA_optimise_mod4)
+
+
+
+
+
+
+
+
+
 
 
 

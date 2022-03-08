@@ -53,18 +53,19 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
       dots <- list(...)
       exec(.func, dots, !!!.args)
     })
-  # Define inputs list for the log likelihood function:
-  l_llk <- list(.l_targets[['v_targets_names']],
-                paste0('d', .l_targets[['v_targets_dists']]),
-                .l_targets[['v_targets_dists']],
-                .l_targets[['v_targets_weights']])
-  # Estimate the log likelihood for each model output:
-  summed_log_likelihood <- pmap(
-    .l = l_llk,
-    .f = function(.name, .func, .dist, .weight) {
-      map_dbl(
-        .x = model_results,
-        .f = function(.mod_res) {
+  # Define inputs list for the pmap function:
+  l_llik <- list(.l_targets[['v_targets_names']],
+                 paste0('d', .l_targets[['v_targets_dists']]),
+                 .l_targets[['v_targets_dists']],
+                 .l_targets[['v_targets_weights']])
+  # Estimate the overall log likelihood for each model output:
+  overall_lliks <- map_dbl(
+    .x = model_results,
+    .f = function(.mod_res) {
+      # Log likelihood (for each target):
+      overall_llik <- pmap(
+        .l = l_llik,
+        .f = function(.name, .func, .dist, .weight) {
           if(.dist != 'lnorm') {
             sum( # Sum all values of that one target, if many
               exec(.func,
@@ -84,28 +85,23 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
             ) * .weight # target weight
           }
         })
+      # Overall log likelihood (for all targets):
+      overall_llik <- overall_llik %>%
+        reduce(`+`, .init = 0)
     })
-  # Name lists correctly:
-  names(summed_log_likelihood) <- .l_targets[['v_targets_names']]
-  # Overall log likelihood (over all targets):
-  overall_log_likelihood <- pmap_dbl(
-    .l = summed_log_likelihood,
-    .f = function(...) {
-      dots <- c(...) # grab all targets' llik for proposed sets
-      sum(dots) # sum them together
-    })
+
   # Amend output if optimisation function was a minimiser (flip signs):
   if(!.maximise)
-    overall_log_likelihood <- -overall_log_likelihood
+    overall_lliks <- -overall_lliks
 
   # Return overall GoF if used in an optimisation function:
   if(.optim)
-    return(overall_log_likelihood)
+    return(overall_lliks)
 
   # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
     as_tibble() %>% # when .samples is a vector
-    mutate('Overall_fit' = overall_log_likelihood) %>%
+    mutate('Overall_fit' = overall_lliks) %>%
     arrange(desc(Overall_fit))
 
   return(output)
@@ -164,16 +160,17 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
       dots <- list(...)
       exec(.func, dots, !!!.args)
     })
-  # Define inputs list for the weighted sum of squared errors function:
+  # Define inputs list for the pmap function:
   l_wsse <- list(.l_targets[['v_targets_names']],
                  .l_targets[['v_targets_weights']])
   # Estimate the weighted sum of squared errors for each model output:
-  wsse <- pmap(
-    .l = l_wsse,
-    .f = function(.name, .weight) {
-      map_dbl(
-        .x = model_results,
-        .f = function(.mod_res) {
+  overall_wsses <- map_dbl(
+    .x = model_results,
+    .f = function(.mod_res) {
+      # Overall weighted sum of squares errors (for each targets):
+      overall_wsse <- pmap(
+        .l = l_wsse,
+        .f = function(.name, .weight) {
           if(.weighted) {
             weights <- 1/(.l_targets[[.name]]$se^2)
             -sum(weights *
@@ -184,26 +181,23 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
               .weight
           }
         })
+      # Overall weighted sum of squares errors (for all targets):
+      overall_wsse <- overall_wsse %>%
+        reduce(`+`, .init = 0)
     })
-  # Overall weighted sse (over all targets):
-  overall_weighted_sse <- pmap_dbl(
-    .l = wsse,
-    .f = function(...) {
-      dots <- c(...) # grab all targets' wsse for proposed sets
-      sum(dots) # sum them together
-    })
+
   # Amend output if optimisation function was a minimiser (flip signs):
   if(!.maximise)
-    overall_weighted_sse <- -overall_weighted_sse
+    overall_wsses <- -overall_wsses
 
   # Return overall GoF if used in an optimisation function:
   if(.optim)
-    return(overall_weighted_sse)
+    return(overall_wsses)
 
   # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
     as_tibble() %>% # when .samples is a vector
-    mutate('Overall_fit' = overall_weighted_sse) %>%
+    mutate('Overall_fit' = overall_wsses) %>%
     arrange(desc(Overall_fit))
 
   return(output)

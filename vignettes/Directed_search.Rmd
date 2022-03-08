@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(calibrater)
+#library(calibrater)
 ```
 
 This code was created by the DARTH workgroup (www.darthworkgroup.com). When using or modifying this code, please do so with attribution and cite our publications:
