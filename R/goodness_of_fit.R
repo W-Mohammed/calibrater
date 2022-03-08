@@ -11,7 +11,8 @@
 #' in a maximising optimisation function. Default is \code{TRUE}.
 #' @param .optim Logical for whether the function is used by an
 #' optimisation algorithm. Default is \code{FALSE}.
-#' @param .seed_no Integer for a random number generator seed number.
+#' @param ... Extra arguments, e.g. seed number and vector of calibrated
+#' parameters' names.
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall likelihood values sorted in descending order.
@@ -44,8 +45,12 @@
 #'
 log_likelihood <- function(.samples, .func, .args = list(NULL),
                            .l_targets, .maximise = TRUE, .optim = FALSE,
-                           .seed_no = 1) {
-  set.seed(.seed_no)
+                           ...) {
+  # Grab and assign additional arguments:
+  dots <- list(...)
+  set.seed(dots[['seed_no']])
+  if(!is.null(dots[['v_params_names']]))
+    names(.samples) <- dots[['v_params_names']]
   # Run the model using each set of sampled parameters:
   model_results <- pmap(
     .l = as.list(.samples),
@@ -123,7 +128,8 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
 #' in a maximising optimisation function. Default is \code{TRUE}.
 #' @param .optim Logical for whether the function is used by an
 #' optimisation algorithm. Default is \code{FALSE}.
-#' @param .seed_no Integer for a random number generator seed number.
+#' @param ... Extra arguments, e.g. seed number and vector of calibrated
+#' parameters' names.
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall weighted sum of square values sorted in descending order.
@@ -150,9 +156,12 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
 #'                      .l_targets = l_targets)
 #'
 wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
-                     .l_targets, .maximise = TRUE, .optim = FALSE,
-                     .seed_no = 1) {
-  set.seed(.seed_no)
+                     .l_targets, .maximise = TRUE, .optim = FALSE, ...) {
+  # Grab and assign additional arguments:
+  dots <- list(...)
+  set.seed(dots[['seed_no']])
+  if(!is.null(dots[['v_params_names']]))
+    names(.samples) <- dots[['v_params_names']]
   # Run the model using each set of sampled parameters:
   model_results <- pmap(
     .l = as.list(.samples),

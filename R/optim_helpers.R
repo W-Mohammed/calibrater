@@ -3,36 +3,45 @@
 #' @param .params_name Character vector containing the names of the
 #' parameters that were passed to the goodness-of-fit algorithm or will be
 #' passed to .func.
-#' @param .GoF_value Numeric goodness-of-fit value for the corresponding
+#' @param .gof goodness-of-fit function used or to be used in the
+#' optimisation.
+#' @param .goF_value Numeric goodness-of-fit value for the corresponding
 #' parameters.
-#' @param .GoF_method Character naming goodness-of-fit algorithm that
+#' @param .goF_method Character naming goodness-of-fit algorithm that
 #' produced .GoF_value.
 #' @param .par Parameter values to be used to generate \code{95% confidence
 #' interval} and/or passed to .func to generate the .hessian matrix.
-#' @param .func A function to be used to estimate the .hessian matrix.
+#' @param .func A function passed to and to be optimised by .gof.
 #' @param .args A list of arguments passed to .func.
 #' @param .hessian The hessian matrix.
 #' @param .maximiser Logical for whether algorithm that created (or .func
 #' which will create) the hessian matrix maximised the goodness-of-fit
 #' function. Default is \code{TRUE}.
+#' @param ... Extra arguments to be passed to .gof.
 #'
 #' @return A tibble with the best identified parameters, their 95%
 #' confidence intervals and corresponding goodness-of-fit values.
 #' @export
 #'
 #' @examples
-summ_optim <- function(.params_name = v_params_names, .GoF_value,
-                       .GoF_method, .par, .func = NULL, .args = NULL,
-                       .hessian = NULL, .maximiser = TRUE) {
-  # Stop if neither the .hessian matrix nor .func were supplied:
-  stopifnot((!is.null(.hessian) | !is.null(.func)))
-  # Approximate the .hessian matrix if not estimated by the optimisation function:
+summ_optim <- function(.params_name = v_params_names, .gof = NULL,
+                       .gof_value, .gof_method, .par, .func = NULL,
+                       .args = NULL, .hessian = NULL, .maximiser = TRUE,
+                       ...) {
+  # Grab and assign additional arguments:
+  dots <- list(...)
+  if(!is.null(dots[['.l_targets']])) .l_targets <- dots[['.l_targets']]
+  # Stop if neither the .hessian matrix nor .gof & .func were supplied:
+  stopifnot((!is.null(.hessian) | (!is.null(.gof)) & !is.null(.func)))
+  # Approximate the .hessian if not estimated by the optimisation function:
   if(is.null(.hessian)) {
-    .hessian <- hessian(func = .func, x = .par, .args = .args,
-                        .maximise = .maximiser)
+    .hessian <- numDeriv::hessian(func = .gof, x = .par, .func = .func,
+                                  .args = .args, .l_targets = .l_targets,
+                                  .maximise = .maximiser, .optim = TRUE,
+                                  v_params_names = .params_name)
   }
 
-  # If .func was not maximising or .hessian resulted from a minimiser function:
+  # If .func was not maximising or .hessian resulted from a minimiser:
   if(.maximiser) {
     .hessian <- -.hessian
   }
@@ -51,8 +60,8 @@ summ_optim <- function(.params_name = v_params_names, .GoF_value,
   upper <- .par + (1.96 * prop_se)
   lower <- .par - (1.96 * prop_se)
 
-  return(list(Params = .params_name, 'GoF value' = .GoF_value,
-              'GoF algorithm' = .GoF_method, Estimate = .par,
+  return(list(Params = .params_name, 'GOF value' = .gof_value,
+              'GOF algorithm' = .gof_method, Estimate = .par,
               Lower = lower, Upper = upper))
 }
 
@@ -179,15 +188,19 @@ optimise_model <- function(.l_params = l_params, .func, .args,
           .args = .args, # arguments to be passed to the model
           .l_targets = .l_targets, # targets passed to .gof
           .maximise = TRUE, # .gof should maximise
-          .optim = TRUE) # .gof reports gof value only
+          .optim = TRUE, # .gof reports gof value only
+          seed_no = .seed_no)
         # Summarise output produced by optim():
         fit_summary <- summ_optim(
           .params_name = params_name,
-          .GoF_value = fit$value, # best GoF value estimated by optim()
-          .GoF_method = .method,
-          .par = fit$par, # best parameter set identified by optim()
-          .func = .gof, # .gof function
-          .hessian = fit$hessian) # hessian matrix estimated by optim()
+          .gof = .gof, # goodness-of-fit function used/to be used.
+          .gof_value = fit$value, # best goodness-of-fit value
+          .gof_method = .method, # the name of the goodness-of-fit method
+          .par = fit$par, # best parameter set identified
+          .func = .func, # the optimised function
+          .args = .args, # arguments passed to .func
+          .hessian = fit$hessian, # hessian matrix estimated by optim()
+          .l_targets = .l_targets) # targets passed to .gof
       })
   } else {
     # Collect lower and upper bounds for DEoptim():
@@ -208,21 +221,27 @@ optimise_model <- function(.l_params = l_params, .func, .args,
           .args = .args, # arguments to be passed to the model
           .l_targets = .l_targets, # targets passed to .gof
           .maximise = FALSE, # .gof should minimise
-          .optim = TRUE) # .gof reports gof value only
+          .optim = TRUE, # .gof reports gof value only
+          seed_no = .seed_no,
+          # DEoptim() requires params names to be re-assigned in .gof:
+          v_params_names = params_name)
         # Summarise output produced by DEoptim():
         fit_summary <- summ_optim(
           .params_name = params_name,
-          .GoF_value = fit$optim$bestval, # best GoF value
-          .GoF_method = .method,
-          .par = fit$optim$bestmem, # best parameter set
-          .func = .gof, # .gof function
-          .maximiser = FALSE) # arguments passed to .gof
+          .gof = .gof, # goodness-of-fit function used/to be used.
+          .gof_value = -fit$optim$bestval, # best goodness-of-fit value
+          .gof_method = .method, # the name of the goodness-of-fit method
+          .par = fit$optim$bestmem, # best parameter set identified
+          .func = .func, # the optimised function
+          .args = .args, # arguments passed to .func
+          .maximiser = FALSE, # GA is a minimiser
+          .l_targets = .l_targets) # targets passed to .gof
       })
   }
 
   # Sort items on the list based on overall fit:
   fits <- fits %>%
-    rlist::list.sort(-`GoF value`)
+    rlist::list.sort(-`GOF value`)
 
   return(fits)
 }

@@ -208,6 +208,19 @@ tsts = function(...) {
 tsts(2, 3)
 `if`(0, "test", "not")
 ##########################################################
+DEoptim::DEoptim(
+  fn = wSSE_GOF,
+  lower = lb,
+  upper = ub,
+  control = DEoptim::DEoptim.control( # control parameters
+    trace = FALSE), # printing a trace
+  .func = CRS_markov, # model to be optimised
+  .args = NULL, # arguments to be passed to the model
+  .l_targets = l_targets, # targets passed to .gof
+  .maximise = FALSE, # .gof should minimise
+  .optim = TRUE)
+##########################################################
+
 data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv", "Surv")
