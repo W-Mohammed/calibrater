@@ -76,7 +76,9 @@ summ_optim <- function(.params_name = v_params_names, .GoF_value,
 #' @param .seed_no Integer for a random number generator seed number.
 #' @param ... Arguments to be passed to the optimisation function.
 #'
-#' @return
+#' @return A list containing GOF values, identified parameters and
+#' associated uncertainty. The returned list is sorted in descending order
+#' based on the GOF values.
 #' @export
 #'
 #' @examples
@@ -219,16 +221,8 @@ optimise_model <- function(.l_params = l_params, .func, .args,
   }
 
   # Sort items on the list based on overall fit:
-
+  fits <- fits %>%
+    rlist::list.sort(-`GoF value`)
 
   return(fits)
 }
-
-
-
-
-
-
-
-
-

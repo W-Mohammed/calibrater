@@ -210,9 +210,15 @@ tsts(2, 3)
 ##########################################################
 data("CRS_targets")
 Surv <- CRS_targets$Surv
-v_targets_names <- c("Surv")
-v_targets_dists <- c('norm')
-v_targets_weights <- c(1)
+v_targets_names <- c("Surv", "Surv")
+v_targets_weights <- c(0.5, 0.5)
+v_targets_dists <- c("norm", "norm")
+# v_targets_names <- c("Surv")
+# v_targets_weights <- c(1)
+v_params_names <- c("p_Mets", "p_DieMets")
+v_params_dists <- c("unif", "unif")
+args <- list(list(min = 0.04, max = 0.16),
+             list(min = 0.04, max = 0.12))
 l_targets <-
   list('v_targets_names' = v_targets_names,
        'Surv' = Surv,
@@ -267,6 +273,21 @@ SA_optimise_mod <- optimise_model(.l_params = list(
   temp = 10,
   tmax = 10)
 
+GA_optimise_mod <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = list(NULL),
+  .gof = wSSE_GOF,
+  .samples = samples,
+  .method = 'GA',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
 NM_optimise_mod2 <- optimise_model(.l_params = list(
   v_params_names = v_params_names,
   v_params_dists = v_params_dists,
@@ -308,6 +329,21 @@ SA_optimise_mod2 <- optimise_model(.l_params = list(
   temp = 10,
   tmax = 10,
   maxit = 1000)
+
+GA_optimise_mod2 <- optimise_model(.l_params = list(
+  v_params_names = v_params_names,
+  v_params_dists = v_params_dists,
+  args = args),
+  .func = CRS_markov,
+  .args = list(NULL),
+  .gof = log_likelihood,
+  .samples = samples,
+  .method = 'GA',
+  .maximise = TRUE,
+  .l_targets = l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
 
 compare(NM_optimise_mod, NM_optimise_mod2)
 compare(GB_optimise_mod, GB_optimise_mod2)
