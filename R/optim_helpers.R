@@ -101,9 +101,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #' # v_targets_weights <- c(1)
 #' l_targets <-
 #'   list('v_targets_names' = v_targets_names,
-#'          'Surv' = Surv,
-#'                 'v_targets_dists' = v_targets_dists,
-#'                        'v_targets_weights' = v_targets_weights)
+#'        'Surv' = Surv,
+#'        'v_targets_dists' = v_targets_dists,
+#'        'v_targets_weights' = v_targets_weights)
 #'
 #' v_params_names <- c("p_Mets", "p_DieMets")
 #' v_params_dists <- c("unif", "unif")
@@ -111,7 +111,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'              list(min = 0.04, max = 0.12))
 #' l_params <- list('v_params_names' = v_params_names,
 #'                  'v_params_dists' = v_params_dists,
-#'                                   'args' = args)
+#'                  'args' = args)
 #'
 #' set.seed(1)
 #' samples <- sample_prior_LHS(.l_params = l_params,

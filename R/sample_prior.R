@@ -14,9 +14,11 @@
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
 #'              list(min = 0.04, max = 0.12))
+#' l_params <- list('v_params_names' = v_params_names,
+#'                  'v_params_dists' = v_params_dists,
+#'                  'args' = args)
 #'
-#' sample_prior_LHS(.l_params = list(v_params_names = v_params_names,
-#'                  v_params_dists = v_params_dists, args = args),
+#' sample_prior_LHS(.l_params = l_params,
 #'                  .n_samples = 10)
 #'
 sample_prior_LHS <- function(.l_params, .n_samples, .seed_no = 1) {
@@ -70,9 +72,11 @@ sample_prior_LHS <- function(.l_params, .n_samples, .seed_no = 1) {
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
 #'              list(min = 0.04, max = 0.12))
+#' l_params <- list('v_params_names' = v_params_names,
+#'                  'v_params_dists' = v_params_dists,
+#'                  'args' = args)
 #'
-#' sample_prior_FGS(.l_params = list(v_params_names = v_params_names,
-#'                  v_params_dists = v_params_dists, args = args),
+#' sample_prior_FGS(.l_params = l_params,
 #'                  .n_samples = 10)
 #'
 sample_prior_FGS <- function(.l_params, .n_samples, .seed_no = 1) {
@@ -120,9 +124,11 @@ sample_prior_FGS <- function(.l_params, .n_samples, .seed_no = 1) {
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
 #'              list(min = 0.04, max = 0.12))
+#' l_params <- list('v_params_names' = v_params_names,
+#'                  'v_params_dists' = v_params_dists,
+#'                  'args' = args)
 #'
-#' sample_prior_RGS(.l_params = list(v_params_names = v_params_names,
-#'                  v_params_dists = v_params_dists, args = args),
+#' sample_prior_RGS(.l_params = l_params,
 #'                  .n_samples = 10)
 #'
 sample_prior_RGS <- function(.l_params, .n_samples, .seed_no = 1) {
