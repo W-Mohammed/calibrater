@@ -33,15 +33,15 @@
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
 #'              list(min = 0.04, max = 0.12))
+#' l_params = list(v_params_names = v_params_names,
+#'                 v_params_dists = v_params_dists,
+#'                 args = args)
 #'
-#' samples <- sample_prior_LHS(
-#'           .l_params = list(v_params_names = v_params_names,
-#'                            v_params_dists = v_params_dists,
-#'                            args = args),
-#'                        .n_samples = 10)
+#' samples <- sample_prior_LHS(.l_params = l_params,
+#'                             .n_samples = 10)
 #'
 #' GOF_llik <- log_likelihood(.func = CRS_markov, .samples = samples,
-#'                           .l_targets = l_targets)
+#'                            .l_targets = l_targets)
 #'
 log_likelihood <- function(.samples, .func, .args = list(NULL),
                            .l_targets, .maximise = TRUE, .optim = FALSE,
@@ -136,21 +136,26 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
 #' @export
 #'
 #' @examples
+#' library(calibrater)
 #' data("CRS_targets")
 #' Surv <- CRS_targets$Surv
 #' v_targets_names <- c("Surv")
+#' v_targets_dists <- c('norm')
 #' v_targets_weights <- c(1)
 #' l_targets <- list('v_targets_names' = v_targets_names, 'Surv' = Surv,
-#'                  'v_targets_weights' = v_targets_weights)
+#'                   'v_targets_dists' = v_targets_dists,
+#'                   'v_targets_weights' = v_targets_weights)
+#'
 #' v_params_names <- c("p_Mets", "p_DieMets")
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
 #'              list(min = 0.04, max = 0.12))
-#' samples <- sample_prior_LHS(
-#'            .l_params = list(v_params_names = v_params_names,
-#'                            v_params_dists = v_params_dists,
-#'                            args = args),
-#'            .n_samples = 10000)
+#' l_params <- list(v_params_names = v_params_names,
+#'                  v_params_dists = v_params_dists,
+#'                  args = args)
+#'
+#' samples <- sample_prior_LHS(.l_params = l_params,
+#'                             .n_samples = 10)
 #'
 #' GOF_wsse <- wSSE_GOF(.func = CRS_markov, .samples = samples,
 #'                      .l_targets = l_targets)

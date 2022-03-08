@@ -91,6 +91,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #' @export
 #'
 #' @examples
+#' library(calibrater)
 #' data("CRS_targets")
 #' Surv <- CRS_targets$Surv
 #' v_targets_names <- c("Surv", "Surv")
