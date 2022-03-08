@@ -158,8 +158,8 @@ args <- list(list(min = 0.04, max = 0.16),
 samples <- sample_prior_LHS(
   .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
 
-GOF_llik12 <- log_likelihood(.func = CRS_markov, .samples = samples,
-                            .l_targets = l_targets)
+GOF_llik1 <- log_likelihood(.func = CRS_markov, .samples = samples,
+                             .l_targets = l_targets)
 GOF_llik2 <- log_likelihood(.func = CRS_markov, .samples = samples,
                             .l_targets = l_targets, .optim = TRUE)
 GOF_llik4 <- log_likelihood(.func = CRS_markov, .samples = samples,
@@ -185,7 +185,7 @@ args <- list(list(min = 0.04, max = 0.16),
 #   .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
 
 GOF_wsse12 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
-                     .l_targets = l_targets)
+                       .l_targets = l_targets)
 GOF_wsse2 <- wSSE_GOF(.func = CRS_markov, .samples = samples[1:2,],
                       .l_targets = l_targets)
 GOF_wsse5 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
@@ -228,10 +228,6 @@ v_targets_weights <- c(0.5, 0.5)
 v_targets_dists <- c("norm", "norm")
 # v_targets_names <- c("Surv")
 # v_targets_weights <- c(1)
-v_params_names <- c("p_Mets", "p_DieMets")
-v_params_dists <- c("unif", "unif")
-args <- list(list(min = 0.04, max = 0.16),
-             list(min = 0.04, max = 0.12))
 l_targets <-
   list('v_targets_names' = v_targets_names,
        'Surv' = Surv,
@@ -241,14 +237,18 @@ v_params_names <- c("p_Mets", "p_DieMets")
 v_params_dists <- c("unif", "unif")
 args <- list(list(min = 0.04, max = 0.16),
              list(min = 0.04, max = 0.12))
-set.seed(1)
-samples <- sample_prior_LHS(
-  .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 100)
+l_params <- list('v_params_names' = v_params_names,
+                 'v_params_dists' = v_params_dists,
+                 'args' = args)
+rm(v_params_names, v_params_dists, v_targets_dists, v_targets_weights,
+   v_targets_names, args)
 
-NM_optimise_mod <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
+set.seed(1)
+samples <- sample_prior_LHS(.l_params = l_params,
+                            .n_samples = 5)
+
+NM_optimise_wSSE <- optimise_model(
+  .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
   .gof = wSSE_GOF,
@@ -258,10 +258,8 @@ NM_optimise_mod <- optimise_model(.l_params = list(
   .l_targets = l_targets,
   maxit = 1000)
 
-GB_optimise_mod <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
+GB_optimise_wSSE <- optimise_model(
+  .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
   .gof = wSSE_GOF,
@@ -271,10 +269,8 @@ GB_optimise_mod <- optimise_model(.l_params = list(
   .l_targets = l_targets,
   maxit = 1000)
 
-SA_optimise_mod <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
+SA_optimise_wSSE <- optimise_model(
+  .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
   .gof = wSSE_GOF,
@@ -286,10 +282,8 @@ SA_optimise_mod <- optimise_model(.l_params = list(
   temp = 10,
   tmax = 10)
 
-GA_optimise_mod <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
+GA_optimise_wSSE <- optimise_model(
+  .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
   .gof = wSSE_GOF,
@@ -301,10 +295,8 @@ GA_optimise_mod <- optimise_model(.l_params = list(
   temp = 10,
   tmax = 10)
 
-NM_optimise_mod2 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
+NM_optimise_lLLK <- optimise_model(
+  .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
   .gof = log_likelihood,
@@ -314,10 +306,8 @@ NM_optimise_mod2 <- optimise_model(.l_params = list(
   .l_targets = l_targets,
   maxit = 1000)
 
-GB_optimise_mod2 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
+GB_optimise_lLLK <- optimise_model(
+  .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
   .gof = log_likelihood,
@@ -327,10 +317,8 @@ GB_optimise_mod2 <- optimise_model(.l_params = list(
   .l_targets = l_targets,
   maxit = 1000)
 
-SA_optimise_mod2 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
+SA_optimise_lLLK <- optimise_model(
+  .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
   .gof = log_likelihood,
@@ -343,10 +331,8 @@ SA_optimise_mod2 <- optimise_model(.l_params = list(
   tmax = 10,
   maxit = 1000)
 
-GA_optimise_mod2 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
+GA_optimise_lLLK <- optimise_model(
+  .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
   .gof = log_likelihood,
@@ -358,103 +344,7 @@ GA_optimise_mod2 <- optimise_model(.l_params = list(
   temp = 10,
   tmax = 10)
 
-compare(NM_optimise_mod, NM_optimise_mod2)
-compare(GB_optimise_mod, GB_optimise_mod2)
-compare(SA_optimise_mod, SA_optimise_mod2)
-compare(SA_optimise_mod3, SA_optimise_mod2)
-compare(SA_optimise_mod3, SA_optimise_mod)
-
 #############################################################
-
-NM_optimise_mod3 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
-  .func = CRS_markov,
-  .args = NULL,
-  .gof = log_likelihood,
-  .samples = samples,
-  .method = 'Nelder-Mead',
-  .maximise = TRUE,
-  .l_targets = l_targets,
-  maxit = 1000)
-
-GB_optimise_mod3 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
-  .func = CRS_markov,
-  .args = NULL,
-  .gof = log_likelihood,
-  .samples = samples,
-  .method = 'BFGS',
-  .maximise = TRUE,
-  .l_targets = l_targets,
-  maxit = 1000)
-
-SA_optimise_mod3 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
-  .func = CRS_markov,
-  .args = list(NULL),
-  .gof = log_likelihood,
-  .samples = samples,
-  .method = 'SANN',
-  .maximise = TRUE,
-  .l_targets = l_targets,
-  maxit = 1000,
-  temp = 10,
-  tmax = 10)
-
-compare(NM_optimise_mod3, NM_optimise_mod2)
-compare(GB_optimise_mod3, GB_optimise_mod2)
-compare(SA_optimise_mod3, SA_optimise_mod2)
-
-NM_optimise_mod4 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
-  .func = CRS_markov,
-  .args = NULL,
-  .gof = wSSE_GOF,
-  .samples = samples,
-  .method = 'Nelder-Mead',
-  .maximise = TRUE,
-  .l_targets = l_targets,
-  maxit = 1000)
-
-GB_optimise_mod4 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
-  .func = CRS_markov,
-  .args = NULL,
-  .gof = wSSE_GOF,
-  .samples = samples,
-  .method = 'BFGS',
-  .maximise = TRUE,
-  .l_targets = l_targets,
-  maxit = 1000)
-
-SA_optimise_mod4 <- optimise_model(.l_params = list(
-  v_params_names = v_params_names,
-  v_params_dists = v_params_dists,
-  args = args),
-  .func = CRS_markov,
-  .args = list(NULL),
-  .gof = wSSE_GOF,
-  .samples = samples,
-  .method = 'SANN',
-  .maximise = TRUE,
-  .l_targets = l_targets,
-  maxit = 1000,
-  temp = 10,
-  tmax = 10)
-
-compare(NM_optimise_mod, NM_optimise_mod4)
-compare(GB_optimise_mod, GB_optimise_mod4)
-compare(SA_optimise_mod, SA_optimise_mod4)
 
 
 

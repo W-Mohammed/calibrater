@@ -93,64 +93,119 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #' @examples
 #' data("CRS_targets")
 #' Surv <- CRS_targets$Surv
-#' v_targets_names <- c("Surv")
-#' v_targets_dists <- c('norm')
-#' v_targets_weights <- c(1)
+#' v_targets_names <- c("Surv", "Surv")
+#' v_targets_weights <- c(0.5, 0.5)
+#' v_targets_dists <- c("norm", "norm")
+#' # v_targets_names <- c("Surv")
+#' # v_targets_weights <- c(1)
 #' l_targets <-
 #'   list('v_targets_names' = v_targets_names,
 #'          'Surv' = Surv,
 #'                 'v_targets_dists' = v_targets_dists,
 #'                        'v_targets_weights' = v_targets_weights)
+#'
 #' v_params_names <- c("p_Mets", "p_DieMets")
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
 #'              list(min = 0.04, max = 0.12))
+#' l_params <- list('v_params_names' = v_params_names,
+#'                  'v_params_dists' = v_params_dists,
+#'                                   'args' = args)
 #'
-#' samples <- sample_prior_LHS(
-#'   .l_params = list(v_params_names = v_params_names,
-#'    v_params_dists = v_params_dists, args = args),
-#'   .n_samples = 10000)
+#' set.seed(1)
+#' samples <- sample_prior_LHS(.l_params = l_params,
+#'                             .n_samples = 5)
 #'
-#' NM_optimise_mod <- optimise_model(.l_params = list(
-#'                     v_params_names = v_params_names,
-#'                     v_params_dists = v_params_dists,
-#'                     args = args),
-#'                                   .func = CRS_markov,
-#'                                   .args = NULL,
-#'                                   .gof = log_likelihood,
-#'                                   .samples = samples[1:10,],
-#'                                   .method = 'Nelder-Mead',
-#'                                   .maximise = TRUE,
-#'                                   .l_targets = l_targets,
-#'                                   maxit = 1000)
+#' NM_optimise_wSSE <- optimise_model(
+#'   .l_params = l_params,
+#'   .func = CRS_markov,
+#'   .args = NULL,
+#'   .gof = wSSE_GOF,
+#'   .samples = samples,
+#'   .method = 'Nelder-Mead',
+#'   .maximise = TRUE,
+#'   .l_targets = l_targets,
+#'   maxit = 1000)
 #'
-#' GB_optimise_mod <- optimise_model(.l_params = list(
-#'                     v_params_names = v_params_names,
-#'                     v_params_dists = v_params_dists,
-#'                     args = args),
-#'                                   .func = CRS_markov,
-#'                                   .args = NULL,
-#'                                   .gof = log_likelihood,
-#'                                   .samples = samples[1:10,],
-#'                                   .method = 'BFGS',
-#'                                   .maximise = TRUE,
-#'                                   .l_targets = l_targets,
-#'                                   maxit = 1000)
+#' GB_optimise_wSSE <- optimise_model(
+#'   .l_params = l_params,
+#'   .func = CRS_markov,
+#'   .args = NULL,
+#'   .gof = wSSE_GOF,
+#'   .samples = samples,
+#'   .method = 'BFGS',
+#'   .maximise = TRUE,
+#'   .l_targets = l_targets,
+#'   maxit = 1000)
 #'
-#' SA_optimise_mod <- optimise_model(.l_params = list(
-#'                     v_params_names = v_params_names,
-#'                     v_params_dists = v_params_dists,
-#'                     args = args),
-#'                                   .func = CRS_markov,
-#'                                   .args = NULL,
-#'                                   .gof = log_likelihood,
-#'                                   .samples = samples[1:10,],
-#'                                   .method = 'SANN',
-#'                                   .maximise = TRUE,
-#'                                   .l_targets = l_targets,
-#'                                   maxit = 1000,
-#'                                   temp = 10,
-#'                                   tmax = 10)
+#' SA_optimise_wSSE <- optimise_model(
+#'   .l_params = l_params,
+#'   .func = CRS_markov,
+#'   .args = list(NULL),
+#'   .gof = wSSE_GOF,
+#'   .samples = samples,
+#'   .method = 'SANN',
+#'   .maximise = TRUE,
+#'   .l_targets = l_targets,
+#'   maxit = 1000,
+#'   temp = 10,
+#'   tmax = 10)
+#'
+#' GA_optimise_wSSE <- optimise_model(
+#'   .l_params = l_params,
+#'   .func = CRS_markov,
+#'   .args = list(NULL),
+#'   .gof = wSSE_GOF,
+#'   .samples = samples,
+#'   .method = 'GA',
+#'   .maximise = TRUE,
+#'   .l_targets = l_targets,
+#'   maxit = 1000)
+#'
+#' NM_optimise_lLLK <- optimise_model(
+#'   .l_params = l_params,
+#'   .func = CRS_markov,
+#'   .args = NULL,
+#'   .gof = log_likelihood,
+#'   .samples = samples,
+#'   .method = 'Nelder-Mead',
+#'   .maximise = TRUE,
+#'   .l_targets = l_targets,
+#'   maxit = 1000)
+#'
+#' GB_optimise_lLLK <- optimise_model(
+#'   .l_params = l_params,
+#'   .func = CRS_markov,
+#'   .args = NULL,
+#'   .gof = log_likelihood,
+#'   .samples = samples,
+#'   .method = 'BFGS',
+#'   .maximise = TRUE,
+#'   .l_targets = l_targets,
+#'   maxit = 1000)
+#'
+#' SA_optimise_lLLK <- optimise_model(
+#'   .l_params = l_params,
+#'   .func = CRS_markov,
+#'   .args = NULL,
+#'   .gof = log_likelihood,
+#'   .samples = samples,
+#'   .method = 'SANN',
+#'   .maximise = TRUE,
+#'   .l_targets = l_targets,
+#'   temp = 10,
+#'   tmax = 10,
+#'   maxit = 1000)
+#' GA_optimise_lLLK <- optimise_model(
+#'   .l_params = l_params,
+#'   .func = CRS_markov,
+#'   .args = list(NULL),
+#'   .gof = log_likelihood,
+#'   .samples = samples,
+#'   .method = 'GA',
+#'   .maximise = TRUE,
+#'   .l_targets = l_targets,
+#'   maxit = 1000)
 #'
 optimise_model <- function(.l_params = l_params, .func, .args,
                            .gof = log_likelihood, .samples,
