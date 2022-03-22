@@ -1,3 +1,6 @@
+pacman::p_load(devtools)
+load_all()
+#########################################################################
 sample.prior.lhs <- function(n) {
   # n: the number of samples desired
   draws0 <- randomLHS(n=n,k=8)
@@ -137,8 +140,8 @@ samples <- sample_prior_LHS(
   .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
 
 GOF_llik <- log_likelihood(.func = CRS_markov, .samples = samples,
-                           .l_targets = l_targets)
-###########################
+                           .l_targets = l_targets, .sample_method = "LHS")
+#log_likelihood##########################
 data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv", "Surv")
@@ -154,17 +157,19 @@ v_params_names <- c("p_Mets", "p_DieMets")
 v_params_dists <- c("unif", "unif")
 args <- list(list(min = 0.04, max = 0.16),
              list(min = 0.04, max = 0.12))
+l_params <- list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args)
 
 samples <- sample_prior_LHS(
-  .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
+  .l_params = l_params, .n_samples = 10000)
 
 GOF_llik1 <- log_likelihood(.func = CRS_markov, .samples = samples,
-                             .l_targets = l_targets)
-GOF_llik2 <- log_likelihood(.func = CRS_markov, .samples = samples,
-                            .l_targets = l_targets, .optim = TRUE)
-GOF_llik4 <- log_likelihood(.func = CRS_markov, .samples = samples,
-                            .l_targets = l_targets, .optim = TRUE)
-###########################
+                             .l_targets = l_targets,
+                            .sample_method = "LHS")
+# GOF_llik2 <- log_likelihood(.func = CRS_markov, .samples = samples,
+#                             .l_targets = l_targets, .optim = TRUE)
+# GOF_llik4 <- log_likelihood(.func = CRS_markov, .samples = samples,
+#                             .l_targets = l_targets, .optim = TRUE)
+#wSSE_GOF##########################
 data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv", "Surv")
@@ -184,12 +189,12 @@ args <- list(list(min = 0.04, max = 0.16),
 # samples <- sample_prior_LHS(
 #   .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
 
-GOF_wsse12 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
-                       .l_targets = l_targets)
-GOF_wsse2 <- wSSE_GOF(.func = CRS_markov, .samples = samples[1:2,],
-                      .l_targets = l_targets)
-GOF_wsse5 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
-                      .l_targets = l_targets, .optim = TRUE)
+GOF_wsse1 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+                       .l_targets = l_targets, .sample_method = "LHS")
+# GOF_wsse2 <- wSSE_GOF(.func = CRS_markov, .samples = samples[1:2,],
+#                       .l_targets = l_targets)
+# GOF_wsse5 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
+#                       .l_targets = l_targets, .optim = TRUE)
 # GOF_wsse4 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
 #                       .l_targets = l_targets)
 # GOF_wsse5 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
@@ -219,7 +224,8 @@ DEoptim::DEoptim(
   .l_targets = l_targets, # targets passed to .gof
   .maximise = FALSE, # .gof should minimise
   .optim = TRUE)
-##########################################################
+#Directed_search####################################################
+load_all()
 
 data("CRS_targets")
 Surv <- CRS_targets$Surv
@@ -245,15 +251,15 @@ rm(v_params_names, v_params_dists, v_targets_dists, v_targets_weights,
 
 set.seed(1)
 samples <- sample_prior_LHS(.l_params = l_params,
-                            .n_samples = 5)
+                            .n_samples = 20)
 
 NM_optimise_wSSE <- optimise_model(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = wSSE_GOF,
+  .gof = 'wSumSquareError',
   .samples = samples,
-  .method = 'Nelder-Mead',
+  .s_method = 'Nelder-Mead',
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000)
@@ -262,9 +268,9 @@ GB_optimise_wSSE <- optimise_model(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = wSSE_GOF,
+  .gof = 'wSumSquareError',
   .samples = samples,
-  .method = 'BFGS',
+  .s_method = 'BFGS',
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000)
@@ -273,9 +279,9 @@ SA_optimise_wSSE <- optimise_model(
   .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
-  .gof = wSSE_GOF,
+  .gof = 'wSumSquareError',
   .samples = samples,
-  .method = 'SANN',
+  .s_method = 'SANN',
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000,
@@ -286,9 +292,9 @@ GA_optimise_wSSE <- optimise_model(
   .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
-  .gof = wSSE_GOF,
+  .gof = 'wSumSquareError',
   .samples = samples,
-  .method = 'GA',
+  .s_method = 'GA',
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000,
@@ -299,9 +305,9 @@ NM_optimise_lLLK <- optimise_model(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = log_likelihood,
+  .gof = 'log_likelihood',
   .samples = samples,
-  .method = 'Nelder-Mead',
+  .s_method = 'Nelder-Mead',
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000)
@@ -310,9 +316,9 @@ GB_optimise_lLLK <- optimise_model(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = log_likelihood,
+  .gof = 'log_likelihood',
   .samples = samples,
-  .method = 'BFGS',
+  .s_method = 'BFGS',
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000)
@@ -321,9 +327,9 @@ SA_optimise_lLLK <- optimise_model(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = log_likelihood,
+  .gof = 'log_likelihood',
   .samples = samples,
-  .method = 'SANN',
+  .s_method = 'SANN',
   .maximise = TRUE,
   .l_targets = l_targets,
   fnscale = -1,
@@ -335,27 +341,63 @@ GA_optimise_lLLK <- optimise_model(
   .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
-  .gof = log_likelihood,
+  .gof = 'log_likelihood',
   .samples = samples,
-  .method = 'GA',
+  .s_method = 'GA',
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000,
   temp = 10,
   tmax = 10)
 
-#############################################################
+#PSA_values##################################################
+
+l_optim_lists <- list(GA_optimise_lLLK, GA_optimise_wSSE, GB_optimise_lLLK,
+                      GB_optimise_wSSE, NM_optimise_lLLK, NM_optimise_wSSE,
+                      SA_optimise_lLLK, SA_optimise_wSSE)
+
+testing <- PSA_calib_values(.l_optim_lists = l_optim_lists,
+                            .search_method = "Directed")
+testing %>% transpose() %>% View()
 
 
+l_optim_lists2 <- list(GOF_llik1, GOF_wsse1)
+
+testing2 <- PSA_calib_values(.l_optim_lists = l_optim_lists2,
+                             .search_method = "Random")
+
+#Bayesian_calibration##################################################
+
+testing_B <- 1
+calc_log_prior(.samples = samples[1,], .l_params = l_params)
+calc_log_prior2 <- function(.n_param = n_params, .v_params,
+                           .v_params_names = v_params_names) {
+  if(is.null(dim(.v_params))) { # If vector, change to matrix
+    .v_params <- t(.v_params)
+  }
+  n_samp <- nrow(.v_params)
+  colnames(.v_params) <- .v_params_names
+  lprior <- rep(0, n_samp)
+  for (i in 1:.n_param){
+    lprior <- lprior + dunif(.v_params[, i],
+                             min = lb[i],
+                             max = ub[i],
+                             log = TRUE)
+    # ALTERNATIVE prior using beta distributions
+    # lprior <- lprior + dbeta(v_params[, i],
+    #                          shape1 = 1,
+    #                          shape2 = 1,
+    #                          log = T)
+  }
+  return(lprior)
+}
+# Range on input search space
+lb <- c(p_Mets = 0.04, p_DieMets = 0.04) # lower bound
+ub <- c(p_Mets = 0.16, p_DieMets = 0.12) # upper bound
+calc_log_prior2(.v_params = v,.n_param = 2, .v_params_names = v_params_names) == calc_log_prior(.samples = samples[1,], .l_params = l_params)
 
 
-
-
-
-
-
-
-
+v = samples[1,] %>% as_vector()
 
 
 

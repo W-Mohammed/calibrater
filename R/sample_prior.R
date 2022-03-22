@@ -27,7 +27,9 @@ sample_prior_LHS <- function(.l_params, .n_samples, .seed_no = 1) {
   n_params <- length(.l_params[["v_params_names"]])
   # Get LHS samples:
   tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
-    as_tibble()
+    as_tibble(~ vctrs::vec_as_names(...,
+                                    repair = "unique",
+                                    quiet = TRUE))
   # Define inputs list:
   l_lhs <- list(.l_params[['v_params_names']],
                 paste0('q', .l_params[['v_params_dists']]),

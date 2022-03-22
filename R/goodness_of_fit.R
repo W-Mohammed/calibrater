@@ -12,7 +12,7 @@
 #' @param .optim Logical for whether the function is used by an
 #' optimisation algorithm. Default is \code{FALSE}.
 #' @param ... Extra arguments, e.g. seed number and vector of calibrated
-#' parameters' names.
+#' parameters' names or .sample_method (for labelling purposes).
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall likelihood values sorted in descending order.
@@ -40,14 +40,15 @@
 #' samples <- sample_prior_LHS(.l_params = l_params,
 #'                             .n_samples = 10)
 #'
-#' GOF_llik <- log_likelihood(.func = CRS_markov, .samples = samples,
+#' GOF_llik <- LLK_GOF(.func = CRS_markov, .samples = samples,
 #'                            .l_targets = l_targets)
 #'
-log_likelihood <- function(.samples, .func, .args = list(NULL),
-                           .l_targets, .maximise = TRUE, .optim = FALSE,
-                           ...) {
+LLK_GOF <- function(.samples, .func, .args = list(NULL),
+                    .l_targets, .maximise = TRUE, .optim = FALSE,
+                    ...) {
   # Grab and assign additional arguments:
   dots <- list(...)
+  .sample_method <- dots[['.sample_method']]
   set.seed(dots[['seed_no']])
   if(!is.null(dots[['v_params_names']]))
     names(.samples) <- dots[['v_params_names']]
@@ -105,9 +106,14 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
 
   # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
-    as_tibble() %>% # when .samples is a vector
+    as_tibble(.name_repair = "unique") %>% # when .samples is a vector
     mutate('Overall_fit' = overall_lliks) %>%
     arrange(desc(Overall_fit))
+
+  # If the sampling procedure was provided as an argument to the function:
+  if(!is.null(.sample_method))
+    output <- output %>%
+    mutate('Label' = paste0("log_likelihood", "_", .sample_method))
 
   return(output)
 }
@@ -129,7 +135,7 @@ log_likelihood <- function(.samples, .func, .args = list(NULL),
 #' @param .optim Logical for whether the function is used by an
 #' optimisation algorithm. Default is \code{FALSE}.
 #' @param ... Extra arguments, e.g. seed number and vector of calibrated
-#' parameters' names.
+#' parameters' names or .sample_method (for labelling purposes).
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall weighted sum of square values sorted in descending order.
@@ -164,6 +170,7 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
                      .l_targets, .maximise = TRUE, .optim = FALSE, ...) {
   # Grab and assign additional arguments:
   dots <- list(...)
+  .sample_method <- dots[['.sample_method']]
   set.seed(dots[['seed_no']])
   if(!is.null(dots[['v_params_names']]))
     names(.samples) <- dots[['v_params_names']]
@@ -210,9 +217,14 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
 
   # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
-    as_tibble() %>% # when .samples is a vector
+    as_tibble(.name_repair = "unique") %>% # when .samples is a vector
     mutate('Overall_fit' = overall_wsses) %>%
     arrange(desc(Overall_fit))
+
+  # If the sampling procedure was provided as an argument to the function:
+  if(!is.null(.sample_method))
+    output <- output %>%
+    mutate('Label' = paste0("wSumSquareError", "_", .sample_method))
 
   return(output)
 }

@@ -5,10 +5,6 @@
 #' passed to .func.
 #' @param .gof goodness-of-fit function used or to be used in the
 #' optimisation.
-#' @param .goF_value Numeric goodness-of-fit value for the corresponding
-#' parameters.
-#' @param .goF_method Character naming goodness-of-fit algorithm that
-#' produced .GoF_value.
 #' @param .par Parameter values to be used to generate \code{95% confidence
 #' interval} and/or passed to .func to generate the .hessian matrix.
 #' @param .func A function passed to and to be optimised by .gof.
@@ -18,6 +14,12 @@
 #' which will create) the hessian matrix maximised the goodness-of-fit
 #' function. Default is \code{TRUE}.
 #' @param ... Extra arguments to be passed to .gof.
+#' @param .gof_value Numeric goodness-of-fit value for the corresponding
+#' parameters.
+#' @param .s_method Character naming search algorithm that produced
+#' .GoF_value.
+#' @param .gof_name Character naming goodness-of-fit method that produced
+#' samples
 #'
 #' @return A tibble with the best identified parameters, their 95%
 #' confidence intervals and corresponding goodness-of-fit values.
@@ -25,9 +27,9 @@
 #'
 #' @examples
 summ_optim <- function(.params_name = v_params_names, .gof = NULL,
-                       .gof_value, .gof_method, .par, .func = NULL,
-                       .args = NULL, .hessian = NULL, .maximiser = TRUE,
-                       ...) {
+                       .gof_name, .gof_value, .s_method, .par,
+                       .func = NULL, .args = NULL, .hessian = NULL,
+                       .maximiser = TRUE, ...) {
   # Grab and assign additional arguments:
   dots <- list(...)
   if(!is.null(dots[['.l_targets']])) .l_targets <- dots[['.l_targets']]
@@ -39,6 +41,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
                                   .args = .args, .l_targets = .l_targets,
                                   .maximise = .maximiser, .optim = TRUE,
                                   v_params_names = .params_name)
+    # Name columns and rows:
+    dimnames(.hessian) <- list(.params_name, .params_name)
+    names(.par) <- .params_name
   }
 
   # If .func was not maximising or .hessian resulted from a minimiser:
@@ -46,8 +51,10 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
     .hessian <- -.hessian
   }
 
-  # Estimate  Fisher Information Matrix (FIM):
+  # Estimate Fisher Information Matrix (FIM), also the covariance matrix:
   fisher_info <- solve(.hessian)
+  covr_mat <- fisher_info
+  diag(covr_mat) <- 1
 
   # # Negative numbers don't have real square roots, correct if diag is < 0:
   # # If optim minimised GOF then we need negative hessian:
@@ -60,9 +67,10 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
   upper <- .par + (1.96 * prop_se)
   lower <- .par - (1.96 * prop_se)
 
-  return(list(Params = .params_name, 'GOF value' = .gof_value,
-              'GOF algorithm' = .gof_method, Estimate = .par,
-              Lower = lower, Upper = upper))
+  return(list(Params = .params_name, Estimate = .par, Lower = lower,
+              Upper = upper, 'GOF value' = .gof_value,
+              'Calibration method' = paste0(.s_method, "_", .gof_name),
+              'Sigma' = covr_mat))
 }
 
 #' Optimise model parameters
@@ -73,7 +81,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #' @param .args A list of arguments to be passed to .func.
 #' @param .gof A goodness-of-fit function, default is log-likelihood.
 #' @param .samples A table with sampled parameter values.
-#' @param .method A Character, "Nelder-Mead", "BFGS", "SANN" or "GA", that
+#' @param .s_method A Character, "Nelder-Mead", "BFGS", "SANN" or "GA", that
 #' would identify the optimisation algorithm to be used.
 #' @param .maximise Logical for whether algorithm that created (or .func
 #' which will create) the hessian matrix maximised the goodness-of-fit
@@ -121,9 +129,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = wSSE_GOF,
+#'   .gof = 'wSumSquareError',
 #'   .samples = samples,
-#'   .method = 'Nelder-Mead',
+#'   .s_method = 'Nelder-Mead',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
@@ -132,9 +140,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = wSSE_GOF,
+#'   .gof = 'wSumSquareError',
 #'   .samples = samples,
-#'   .method = 'BFGS',
+#'   .s_method = 'BFGS',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
@@ -143,9 +151,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = list(NULL),
-#'   .gof = wSSE_GOF,
+#'   .gof = 'wSumSquareError',
 #'   .samples = samples,
-#'   .method = 'SANN',
+#'   .s_method = 'SANN',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000,
@@ -156,9 +164,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = list(NULL),
-#'   .gof = wSSE_GOF,
+#'   .gof = 'wSumSquareError',
 #'   .samples = samples,
-#'   .method = 'GA',
+#'   .s_method = 'GA',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
@@ -167,9 +175,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = log_likelihood,
+#'   .gof = 'log_likelihood',
 #'   .samples = samples,
-#'   .method = 'Nelder-Mead',
+#'   .s_method = 'Nelder-Mead',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
@@ -178,9 +186,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = log_likelihood,
+#'   .gof = 'log_likelihood',
 #'   .samples = samples,
-#'   .method = 'BFGS',
+#'   .s_method = 'BFGS',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
@@ -189,39 +197,45 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = log_likelihood,
+#'   .gof = 'log_likelihood',
 #'   .samples = samples,
-#'   .method = 'SANN',
+#'   .s_method = 'SANN',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   temp = 10,
 #'   tmax = 10,
 #'   maxit = 1000)
+#'
 #' GA_optimise_lLLK <- optimise_model(
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = list(NULL),
-#'   .gof = log_likelihood,
+#'   .gof = 'log_likelihood',
 #'   .samples = samples,
-#'   .method = 'GA',
+#'   .s_method = 'GA',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
 #'
 optimise_model <- function(.l_params = l_params, .func, .args,
-                           .gof = log_likelihood, .samples,
-                           .method = 'Nelder-Mead', .maximise = TRUE,
+                           .gof = 'log_likelihood', .samples,
+                           .s_method = 'Nelder-Mead', .maximise = TRUE,
                            .l_targets, .seed_no = 1, ...) {
   set.seed(.seed_no)
-  # Ensure that .method is supported by the function:
-  stopifnot(".method is supported by the function" =
-              any(.method %in% c('Nelder-Mead', 'BFGS', 'SANN', 'GA')))
+  # Ensure that .s_method is supported by the function:
+  stopifnot(".s_method is supported by the function" =
+              any(.s_method %in% c('Nelder-Mead', 'BFGS', 'SANN', 'GA')))
+  # Get the .gof method:
+  .gof_name <- .gof
+  .gof <- switch(.gof,
+                 log_likelihood = LLK_GOF,
+                 wSumSquareError = wSSE_GOF)
   # Get parameters' names:
   params_name <- .l_params[['v_params_names']]
   # Capture the arguments in the .dots:
   arguments <- list(...)
   # Apply appropriate method:
-  if(any(.method %in% c('Nelder-Mead', 'BFGS', 'SANN'))) {
+  if(any(.s_method %in% c('Nelder-Mead', 'BFGS', 'SANN'))) {
     # Map over sampled values:
     fits <- pmap(
       .l = .samples,
@@ -232,7 +246,7 @@ optimise_model <- function(.l_params = l_params, .func, .args,
         fit <- optim(
           par = params_set,
           fn = .gof,
-          method = .method,
+          method = .s_method,
           control = list( # control parameters
             fnscale = ifelse(.maximise, -1, # maximiser/minimiser
                              arguments[['fnscale']]),
@@ -251,12 +265,13 @@ optimise_model <- function(.l_params = l_params, .func, .args,
           .params_name = params_name,
           .gof = .gof, # goodness-of-fit function used/to be used.
           .gof_value = fit$value, # best goodness-of-fit value
-          .gof_method = .method, # the name of the goodness-of-fit method
+          .s_method = .s_method, # the name of the goodness-of-fit method
           .par = fit$par, # best parameter set identified
           .func = .func, # the optimised function
           .args = .args, # arguments passed to .func
           .hessian = fit$hessian, # hessian matrix estimated by optim()
-          .l_targets = .l_targets) # targets passed to .gof
+          .l_targets = .l_targets, # targets passed to .gof
+          .gof_name = .gof_name) # the name of the goodness-of-fit function
       })
   } else {
     # Collect lower and upper bounds for DEoptim():
@@ -286,12 +301,13 @@ optimise_model <- function(.l_params = l_params, .func, .args,
           .params_name = params_name,
           .gof = .gof, # goodness-of-fit function used/to be used.
           .gof_value = -fit$optim$bestval, # best goodness-of-fit value
-          .gof_method = .method, # the name of the goodness-of-fit method
+          .s_method = .s_method, # the name of the goodness-of-fit method
           .par = fit$optim$bestmem, # best parameter set identified
           .func = .func, # the optimised function
           .args = .args, # arguments passed to .func
           .maximiser = FALSE, # GA is a minimiser
-          .l_targets = .l_targets) # targets passed to .gof
+          .l_targets = .l_targets, # targets passed to .gof
+          .gof_name = .gof_name) # the name of the goodness-of-fit function
       })
   }
 
@@ -300,4 +316,66 @@ optimise_model <- function(.l_params = l_params, .func, .args,
     rlist::list.sort(-`GOF value`)
 
   return(fits)
+}
+
+#' Merge calibration outputs and sample PSA values
+#'
+#' @param .l_optim_lists
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' l_optim_lists <- list(GA_optimise_lLLK, GA_optimise_wSSE,
+#'                       GB_optimise_lLLK, GB_optimise_wSSE,
+#'                       NM_optimise_lLLK, NM_optimise_wSSE,
+#'                       SA_optimise_lLLK, SA_optimise_wSSE)
+#'
+#' calibrated_values <- extract_calib_values()
+#'
+PSA_calib_values <- function(.l_optim_lists = l_optim_lists,
+                             .search_method = 'Directed', .PSA_runs = 1000,
+                             .l_params = l_params) {
+  # Stop the .search_method is not supported by this function:
+  stopifnot(".search_method is supported by the function" =
+              any(.search_method %in% c('Directed', 'Random', 'Bayesian')))
+  # Apply appropriate extraction method:
+  if(.search_method == 'Directed') {
+    results <- map(
+      .x = .l_optim_lists,
+      .f = function(.list_ = .x) {
+        list(
+          'Calib_results' = .list_[[1]],
+          'PSA_calib_draws' =
+            tmvtnorm::rtmvnorm(
+              n = .PSA_runs,
+              mean = .list_[[1]][["Estimate"]],
+              sigma = .list_[[1]][["Sigma"]] %>% `dimnames<-`(NULL),
+              lower = .list_[[1]][["Lower"]],
+              upper = .list_[[1]][["Upper"]],
+              algorithm = "gibbs",
+              burn.in.samples = 10000) %>%
+            as_tibble(~ vctrs::vec_as_names(...,
+                                            repair = "unique",
+                                            quiet = TRUE)) %>%
+            `colnames<-`(.list_[[1]][["Params"]]) %>%
+            mutate(Label = .list_[[1]][["Calibration method"]]) %>%
+            select(Label, everything())
+        )
+      })
+  } else if(.search_method == 'Random') {
+    if(nrow(.l_optim_lists[[1]]) < .PSA_runs)
+      stop(paste("Please sample at least", .PSA_runs,
+                 "samples, and assess their goodness-of-fit."))
+    results <- map(
+      .x = .l_optim_lists,
+      .f = function(.data_ = .x) {
+        .data_ %>%
+          slice(1:.PSA_runs)
+      })
+  } else {
+
+  }
+
+  return(results)
 }
