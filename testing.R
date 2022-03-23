@@ -163,7 +163,7 @@ samples <- sample_prior_LHS(
   .l_params = l_params, .n_samples = 10000)
 
 GOF_llik1 <- log_likelihood(.func = CRS_markov, .samples = samples,
-                             .l_targets = l_targets,
+                            .l_targets = l_targets,
                             .sample_method = "LHS")
 # GOF_llik2 <- log_likelihood(.func = CRS_markov, .samples = samples,
 #                             .l_targets = l_targets, .optim = TRUE)
@@ -190,7 +190,7 @@ args <- list(list(min = 0.04, max = 0.16),
 #   .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
 
 GOF_wsse1 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
-                       .l_targets = l_targets, .sample_method = "LHS")
+                      .l_targets = l_targets, .sample_method = "LHS")
 # GOF_wsse2 <- wSSE_GOF(.func = CRS_markov, .samples = samples[1:2,],
 #                       .l_targets = l_targets)
 # GOF_wsse5 <- wSSE_GOF(.func = CRS_markov, .samples = samples,
@@ -251,9 +251,9 @@ rm(v_params_names, v_params_dists, v_targets_dists, v_targets_weights,
 
 set.seed(1)
 samples <- sample_prior_LHS(.l_params = l_params,
-                            .n_samples = 20)
+                            .n_samples = 50)
 
-NM_optimise_wSSE <- optimise_model(
+NM_optimise_wSSE <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
@@ -264,7 +264,7 @@ NM_optimise_wSSE <- optimise_model(
   .l_targets = l_targets,
   maxit = 1000)
 
-GB_optimise_wSSE <- optimise_model(
+GB_optimise_wSSE <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
@@ -275,7 +275,7 @@ GB_optimise_wSSE <- optimise_model(
   .l_targets = l_targets,
   maxit = 1000)
 
-SA_optimise_wSSE <- optimise_model(
+SA_optimise_wSSE <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
@@ -288,7 +288,7 @@ SA_optimise_wSSE <- optimise_model(
   temp = 10,
   tmax = 10)
 
-GA_optimise_wSSE <- optimise_model(
+GA_optimise_wSSE <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
@@ -301,7 +301,7 @@ GA_optimise_wSSE <- optimise_model(
   temp = 10,
   tmax = 10)
 
-NM_optimise_lLLK <- optimise_model(
+NM_optimise_lLLK <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
@@ -312,7 +312,7 @@ NM_optimise_lLLK <- optimise_model(
   .l_targets = l_targets,
   maxit = 1000)
 
-GB_optimise_lLLK <- optimise_model(
+GB_optimise_lLLK <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
@@ -323,7 +323,7 @@ GB_optimise_lLLK <- optimise_model(
   .l_targets = l_targets,
   maxit = 1000)
 
-SA_optimise_lLLK <- optimise_model(
+SA_optimise_lLLK <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
@@ -337,7 +337,7 @@ SA_optimise_lLLK <- optimise_model(
   tmax = 10,
   maxit = 1000)
 
-GA_optimise_lLLK <- optimise_model(
+GA_optimise_lLLK <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
@@ -366,11 +366,10 @@ l_optim_lists2 <- list(GOF_llik1, GOF_wsse1)
 testing2 <- PSA_calib_values(.l_optim_lists = l_optim_lists2,
                              .search_method = "Random")
 
-#Bayesian_calibration##################################################
-
-testing_B <- 1
-calc_log_prior(.samples = samples[1,], .l_params = l_params)
-calc_log_prior2 <- function(.n_param = n_params, .v_params,
+#Bayesian_calibration_helpers###########################################
+##### prior:
+log_prior(.samples = samples[1,], .l_params = l_params)
+calc_log_prior <- function(.n_param = n_params, .v_params,
                            .v_params_names = v_params_names) {
   if(is.null(dim(.v_params))) { # If vector, change to matrix
     .v_params <- t(.v_params)
@@ -391,13 +390,133 @@ calc_log_prior2 <- function(.n_param = n_params, .v_params,
   }
   return(lprior)
 }
-# Range on input search space
 lb <- c(p_Mets = 0.04, p_DieMets = 0.04) # lower bound
 ub <- c(p_Mets = 0.16, p_DieMets = 0.12) # upper bound
-calc_log_prior2(.v_params = v,.n_param = 2, .v_params_names = v_params_names) == calc_log_prior(.samples = samples[1,], .l_params = l_params)
+v = samples %>% as.matrix()
+calc_log_prior(.v_params = v, .n_param = 2,
+               .v_params_names = v_params_names) ==
+  log_prior(.samples = samples, .l_params = l_params)
+
+log_prior(.samples = samples, .l_params = l_params)
+calculate_prior(.samples = samples[1,], .l_params = l_params)
+##### likelihood:
+calc_log_lik <- function(.func = CRS_markov, .lst_targets = lst_targets,
+                         .v_params, .n_target = n_target){
+  if(is.null(dim(.v_params))) { # If vector, change to matrix
+    .v_params <- t(.v_params)
+  }
+  n_samp <- nrow(.v_params)
+  v_llik <- matrix(0, nrow = n_samp, ncol = .n_target)
+  llik_overall <- numeric(n_samp)
+  for(j in 1:n_samp) { # j=1
+    jj <- tryCatch( {
+      ### Run model for a given parameter set:
+      model_res <- exec(.fn = .func, .v_params[j, ])
+
+      ###  Calculate log-likelihood of model outputs to targets  ###
+      # TARGET 1: Survival ("Surv")
+      # log likelihood
+      v_llik[j, 1] <- sum(dnorm(x = .lst_targets$Surv$value,
+                                mean = model_res$Surv,
+                                sd = .lst_targets$Surv$se,
+                                log = TRUE))
+
+      # TARGET 2: (if you had more...)
+      # log likelihood
+      # v_llik[j, 2] <- sum(dnorm(x = lst_targets$Target2$value,
+      #                        mean = model_res$Target2,
+      #                        sd = lst_targets$Target2$se,
+      #                        log = T))
+
+      # OVERALL
+      llik_overall[j] <- sum(v_llik[j, ])
+    }, error = function(e) NA)
+    if(is.na(jj)) { llik_overall <- -Inf }
+  } # End loop over sampled parameter sets
+  # return LLIK
+  return(llik_overall)
+}
+
+log_likelihood(.samples = samples, .func = CRS_markov,
+               .args = NULL, .l_targets = l_targets)
+calc_log_lik(.v_params = v)
+calculate_likelihood(.samples = samples, .func = CRS_markov,
+                     .args = NULL, .l_targets = l_targets)
+calc_likelihood(.v_params = v)
+calc_likelihood(.v_params = v) ==
+  calculate_likelihood(.samples = samples, .func = CRS_markov,
+                       .args = NULL, .l_targets = l_targets)
+##### posterior:
+calc_log_post <- function(.v_params, .target = lst_targets) {
+  # Call log-likelihood function:
+  log_likelihood <- calc_log_lik(.v_params = .v_params,
+                                 .lst_targets = .target)
+  # Call log-prior function:
+  lprior <- calc_log_prior(.v_params = .v_params)
+  # Compute log-posterior:
+  lpost <- log_likelihood + lprior
+
+  return(lpost)
+}
+calc_log_post(.v_params = v[1,], .target = lst_targets)
+exp(calc_log_post(.v_params = v[1,], .target = lst_targets))
+
+log_posterior(.samples = samples, .func = CRS_markov, .args = NULL,
+              .l_targets = l_targets, .l_params = l_params)
+calculate_posterior(.samples = samples, .func = CRS_markov,
+                    .args = NULL, .l_targets = l_targets,
+                    .l_params = l_params)
+
+#Bayesian_calibration##################################################
+data("CRS_targets")
+Surv <- CRS_targets$Surv
+v_targets_names <- c("Surv", "Surv")
+v_targets_weights <- c(0.5, 0.5)
+v_targets_dists <- c("norm", "norm")
+# v_targets_names <- c("Surv")
+# v_targets_weights <- c(1)
+l_targets <-
+  list('v_targets_names' = v_targets_names,
+       'Surv' = Surv,
+       'v_targets_dists' = v_targets_dists,
+       'v_targets_weights' = v_targets_weights)
+v_params_names <- c("p_Mets", "p_DieMets")
+v_params_dists <- c("unif", "unif")
+args <- list(list(min = 0.04, max = 0.16),
+             list(min = 0.04, max = 0.12))
+l_params <- list('v_params_names' = v_params_names,
+                 'v_params_dists' = v_params_dists,
+                 'args' = args)
+rm(v_params_names, v_params_dists, v_targets_dists, v_targets_weights,
+   v_targets_names, args)
+
+set.seed(1)
+samples <- sample_prior_LHS(.l_params = l_params,
+                            .n_samples = 1000)
+
+test_Bayesian = calibrateModel_beyesian(
+  .b_method = 'SIR', .func = CRS_markov, .args = NULL,
+  .l_targets = l_targets, .l_params = l_params, .samples = samples)
+
+test_Bayesian2 = calibrateModel_beyesian(
+  .b_method = 'IMIS', .func = CRS_markov, .args = NULL,
+  .l_targets = l_targets, .l_params = l_params, .samples = samples,
+  .n_resample = 1000)
+
+#HID_model#############################################################
+tst = HID_markov(.v_params = name_HID_params(rep(0.5, 9)))
+
+tst2 = HID_markov(.v_params = name_HID_params(rep(0.5, 9)), project_future = T)
 
 
-v = samples[1,] %>% as_vector()
+
+
+
+
+
+
+
+
 
 
 

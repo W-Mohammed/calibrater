@@ -4,7 +4,8 @@
 #' distributions and distributions' arguments.
 #' @param .n_samples An integer specifying the number of samples to be
 #' generated.
-#' @param .seed_no Integer for a random number generator seed number.
+#' @param ... additional arguments, for example: .seed_no to set a seed
+#' number.
 #'
 #' @return A table with each parameter LHS samples in a separate column
 #' @export
@@ -21,8 +22,12 @@
 #' sample_prior_LHS(.l_params = l_params,
 #'                  .n_samples = 10)
 #'
-sample_prior_LHS <- function(.l_params, .n_samples, .seed_no = 1) {
-  set.seed(.seed_no)
+sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
+                             ...) {
+  # Grab additional arguments:
+  dots = list(...)
+  if(!is.null(dots[['.ssed_no']]))
+    set.seed(dots[['.ssed_no']])
   # Get the number of parameters:
   n_params <- length(.l_params[["v_params_names"]])
   # Get LHS samples:
@@ -64,7 +69,8 @@ sample_prior_LHS <- function(.l_params, .n_samples, .seed_no = 1) {
 #' distributions and distributions' arguments.
 #' @param .n_samples An integer specifying the number of samples to be
 #' generated.
-#' @param .seed_no Integer for a random number generator seed number.
+#' @param ... additional arguments, for example: .seed_no to set a seed
+#' number.
 #'
 #' @return A table with each parameter FGS samples in a separate column
 #' @export
@@ -81,8 +87,12 @@ sample_prior_LHS <- function(.l_params, .n_samples, .seed_no = 1) {
 #' sample_prior_FGS(.l_params = l_params,
 #'                  .n_samples = 10)
 #'
-sample_prior_FGS <- function(.l_params, .n_samples, .seed_no = 1) {
-  set.seed(.seed_no)
+sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
+                             ...) {
+  # Grab additional arguments:
+  dots = list(...)
+  if(!is.null(dots[['.ssed_no']]))
+    set.seed(dots[['.ssed_no']])
   # Define inputs list:
   l_fgs <- list(.l_params[['v_params_names']],
                 .l_params[['v_params_dists']],
@@ -116,7 +126,8 @@ sample_prior_FGS <- function(.l_params, .n_samples, .seed_no = 1) {
 #' distributions and distributions' arguments.
 #' @param .n_samples An integer specifying the number of samples to be
 #' generated.
-#' @param .seed_no Integer for a random number generator seed number.
+#' @param ... additional arguments, for example: .seed_no to set a seed
+#' number.
 #'
 #' @return A table with each parameter RGS samples in a separate column
 #' @export
@@ -133,8 +144,12 @@ sample_prior_FGS <- function(.l_params, .n_samples, .seed_no = 1) {
 #' sample_prior_RGS(.l_params = l_params,
 #'                  .n_samples = 10)
 #'
-sample_prior_RGS <- function(.l_params, .n_samples, .seed_no = 1) {
-  set.seed(.seed_no)
+sample_prior_RGS <- function(.n_samples = 1, .l_params = .l_params_,
+                             ...) {
+  # Grab additional arguments:
+  dots = list(...)
+  if(!is.null(dots[['.ssed_no']]))
+    set.seed(dots[['.ssed_no']])
   # Define inputs list:
   l_rgs <- list(.l_params[['v_params_names']],
                 paste0('r', .l_params[['v_params_dists']]),

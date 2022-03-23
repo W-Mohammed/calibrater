@@ -5,8 +5,14 @@
 #' passed to .func.
 #' @param .gof goodness-of-fit function used or to be used in the
 #' optimisation.
+#' @param .gof_name Character naming goodness-of-fit method that produced
+#' samples
+#' @param .gof_value Numeric goodness-of-fit value for the corresponding
+#' parameters.
 #' @param .par Parameter values to be used to generate \code{95% confidence
 #' interval} and/or passed to .func to generate the .hessian matrix.
+#' @param .s_method Character naming search algorithm that produced
+#' .GoF_value.
 #' @param .func A function passed to and to be optimised by .gof.
 #' @param .args A list of arguments passed to .func.
 #' @param .hessian The hessian matrix.
@@ -14,12 +20,6 @@
 #' which will create) the hessian matrix maximised the goodness-of-fit
 #' function. Default is \code{TRUE}.
 #' @param ... Extra arguments to be passed to .gof.
-#' @param .gof_value Numeric goodness-of-fit value for the corresponding
-#' parameters.
-#' @param .s_method Character naming search algorithm that produced
-#' .GoF_value.
-#' @param .gof_name Character naming goodness-of-fit method that produced
-#' samples
 #'
 #' @return A tibble with the best identified parameters, their 95%
 #' confidence intervals and corresponding goodness-of-fit values.
@@ -75,14 +75,14 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 
 #' Optimise model parameters
 #'
-#' @param .params_name Character vector containing the names of the
-#' parameters that were passed to the goodness-of-fit algorithm.
+#' @param .l_params A list that contains a vector of parameter names,
+#' distributions and distributions' arguments.
 #' @param .func A function defining the model to be optimised.
 #' @param .args A list of arguments to be passed to .func.
 #' @param .gof A goodness-of-fit function, default is log-likelihood.
 #' @param .samples A table with sampled parameter values.
-#' @param .s_method A Character, "Nelder-Mead", "BFGS", "SANN" or "GA", that
-#' would identify the optimisation algorithm to be used.
+#' @param .s_method A Character, "Nelder-Mead", "BFGS", "SANN" or "GA",
+#' that would identify the optimisation algorithm to be used.
 #' @param .maximise Logical for whether algorithm that created (or .func
 #' which will create) the hessian matrix maximised the goodness-of-fit
 #' function. Default is \code{TRUE}.
@@ -125,7 +125,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #' samples <- sample_prior_LHS(.l_params = l_params,
 #'                             .n_samples = 5)
 #'
-#' NM_optimise_wSSE <- optimise_model(
+#' NM_optimise_wSSE <- calibrateModel_directed(
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
@@ -136,7 +136,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
 #'
-#' GB_optimise_wSSE <- optimise_model(
+#' GB_optimise_wSSE <- calibrateModel_directed(
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
@@ -147,7 +147,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
 #'
-#' SA_optimise_wSSE <- optimise_model(
+#' SA_optimise_wSSE <- calibrateModel_directed(
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = list(NULL),
@@ -160,7 +160,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   temp = 10,
 #'   tmax = 10)
 #'
-#' GA_optimise_wSSE <- optimise_model(
+#' GA_optimise_wSSE <- calibrateModel_directed(
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = list(NULL),
@@ -171,7 +171,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
 #'
-#' NM_optimise_lLLK <- optimise_model(
+#' NM_optimise_lLLK <- calibrateModel_directed(
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
@@ -182,7 +182,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
 #'
-#' GB_optimise_lLLK <- optimise_model(
+#' GB_optimise_lLLK <- calibrateModel_directed(
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
@@ -193,7 +193,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
 #'
-#' SA_optimise_lLLK <- optimise_model(
+#' SA_optimise_lLLK <- calibrateModel_directed(
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
@@ -206,7 +206,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   tmax = 10,
 #'   maxit = 1000)
 #'
-#' GA_optimise_lLLK <- optimise_model(
+#' GA_optimise_lLLK <- calibrateModel_directed(
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = list(NULL),
@@ -217,10 +217,11 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
 #'
-optimise_model <- function(.l_params = l_params, .func, .args,
-                           .gof = 'log_likelihood', .samples,
-                           .s_method = 'Nelder-Mead', .maximise = TRUE,
-                           .l_targets, .seed_no = 1, ...) {
+calibrateModel_directed <- function(.l_params = l_params, .func, .args,
+                                    .gof = 'log_likelihood', .samples,
+                                    .s_method = 'Nelder-Mead',
+                                    .maximise = TRUE,
+                                    .l_targets, .seed_no = 1, ...) {
   set.seed(.seed_no)
   # Ensure that .s_method is supported by the function:
   stopifnot(".s_method is supported by the function" =
