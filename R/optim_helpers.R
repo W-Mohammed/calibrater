@@ -276,8 +276,8 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
       })
   } else {
     # Collect lower and upper bounds for DEoptim():
-    lb = map_dbl(.x = .l_params$args, .f = function(.x) .x$min)
-    ub = map_dbl(.x = .l_params$args, .f = function(.x) .x$max)
+    lb = map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$min)
+    ub = map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$max)
     # Map over sampled values:
     fits <- pmap(
       .l = .samples,

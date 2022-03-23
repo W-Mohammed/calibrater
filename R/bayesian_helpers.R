@@ -48,16 +48,10 @@ sample_prior_IMIS <- function(.n_samples, .l_params = .l_params_,
     .l = l_lhs,
     .f = function(.name, .func, p, .arg, .dist) {
       assign(.name,
-             if(.dist != 'lnorm') {
-               exec(.func,
-                    p,
-                    !!!.arg)
-             } else {
-               exec(.func,
-                    p,
-                    log(.arg$mean) - (1/2) * .arg$sd^2,
-                    .arg$sd)
-             })
+             exec(.func,
+                  p,
+                  !!!.arg)
+      )
     })
 
   return(tbl_lhs_samp %>% as.matrix())
@@ -177,9 +171,9 @@ log_likelihood <- function(.samples, .func, .args, .l_targets, ...) {
     .samples <- t(.samples)
   if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
     .samples <- .samples %>%
-    as_tibble(~ vctrs::vec_as_names(...,
-                                    repair = "unique",
-                                    quiet = TRUE))
+      as_tibble(~ vctrs::vec_as_names(...,
+                                      repair = "unique",
+                                      quiet = TRUE))
   # Run the model using each set of sampled parameters:
   model_results <- pmap(
     .l = as.list(.samples),

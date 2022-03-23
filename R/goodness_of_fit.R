@@ -72,7 +72,7 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
       overall_llik <- pmap(
         .l = l_llik,
         .f = function(.name, .func, .dist, .weight) {
-          if(.dist != 'lnorm') {
+          if(.dist == 'norm') {
             sum( # Sum all values of that one target, if many
               exec(.func,
                    .l_targets[[.name]]$value, # target's sd
@@ -80,7 +80,15 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
                    .l_targets[[.name]]$se, # sd value (target's sd)
                    log = TRUE)
             ) * .weight # target weight
-          } else {
+          } else if(.dist == 'binom') {
+            sum( # Sum all values of that one target, if many
+              exec(.func,
+                   prob = .mod_res[[.name]],
+                   x = .l_targets[[.name]]$x,
+                   size = .l_targets[[.name]]$size,
+                   log = TRUE)
+            ) * .weight # target weight
+          } else if(.dist == 'lnorm') {
             sum( # Sum all values of that one target, if many
               exec(.func,
                    .l_targets[[.name]]$value, # target's mean

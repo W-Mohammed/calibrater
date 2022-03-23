@@ -48,17 +48,12 @@ sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
     .l = l_lhs,
     .f = function(.name, .func, p, .arg, .dist) {
       assign(.name,
-             if(.dist != 'lnorm') {
-               exec(.func,
-                    p,
-                    !!!.arg)
-             } else {
-               exec(.func,
-                    p,
-                    log(.arg$mean) - (1/2) * .arg$sd^2,
-                    .arg$sd)
-             })
-    })
+             exec(.func,
+                  p,
+                  !!!.arg)
+      )
+    }
+  )
 
   return(tbl_lhs_samp)
 }
@@ -96,23 +91,18 @@ sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
   # Define inputs list:
   l_fgs <- list(.l_params[['v_params_names']],
                 .l_params[['v_params_dists']],
-                .l_params[['args']])
+                .l_params[['Xargs']])
   # Make sure parameter names are in a named vector:
   names(l_fgs[[1]]) <- l_fgs[[1]]
   # Get grid points for each variable:
   tbl_grid_points <- pmap_dfc(
     .l = l_fgs,
-    .f = function(.name, .dist, .arg) {
+    .f = function(.name, .dist, .xarg) {
       assign(.name,
-             if(.dist == 'unif') {
-               seq(from = .arg$min,
-                   to = .arg$max,
-                   length.out = .n_samples)
-             } else if (.dist == 'norm'){
-               seq(from = .arg$mean - .arg$sd * 3,
-                   to = .arg$mean + .arg$sd * 3,
-                   length.out = .n_samples)
-             })
+             seq(from = .xarg$min,
+                 to = .xarg$max,
+                 length.out = .n_samples)
+      )
     })
 
   tbl_fgs_samp <- do.call(expand.grid, tbl_grid_points)
@@ -162,16 +152,10 @@ sample_prior_RGS <- function(.n_samples = 1, .l_params = .l_params_,
     .l = l_rgs,
     .f = function(.name, .func, .arg, .dist) {
       assign(.name,
-             if(.dist != 'lnorm') {
-               exec(.func,
-                    .n_samples,
-                    !!!.arg)
-             } else {
-               exec(.func,
-                    .n_samples,
-                    log(.arg$mean) - (1/2) * .arg$sd^2,
-                    .arg$sd)
-             })
+             exec(.func,
+                  .n_samples,
+                  !!!.arg)
+      )
     })
 
   return(tbl_rgs_samp)
