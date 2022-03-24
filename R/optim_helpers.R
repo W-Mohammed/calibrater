@@ -360,27 +360,61 @@ PSA_calib_values <- function(.l_optim_lists = l_optim_lists,
               any(.search_method %in% c('Directed', 'Random', 'Bayesian')))
   # Apply appropriate extraction method:
   if(.search_method == 'Directed') {
+    # Collect lower and upper bounds for tmvtnorm::rtmvnorm():
+    lb <- map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$min)
+    ub <- map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$max)
     results <- map(
       .x = .l_optim_lists,
       .f = function(.list_ = .x) {
-        list(
-          'Calib_results' = .list_[[1]],
-          'PSA_calib_draws' =
-            tmvtnorm::rtmvnorm(
-              n = .PSA_runs,
-              mean = .list_[[1]][["Estimate"]],
-              sigma = .list_[[1]][["Sigma"]] %>% `dimnames<-`(NULL),
-              lower = .list_[[1]][["Lower"]],
-              upper = .list_[[1]][["Upper"]],
-              algorithm = "gibbs",
-              burn.in.samples = 10000) %>%
-            as_tibble(~ vctrs::vec_as_names(...,
-                                            repair = "unique",
-                                            quiet = TRUE)) %>%
-            `colnames<-`(.list_[[1]][["Params"]]) %>%
-            mutate(Label = .list_[[1]][["Calibration method"]]) %>%
-            select(Label, everything())
-        )
+        Sigma_ <- round(.list_[[1]][["Sigma"]] %>%
+                          `dimnames<-`(NULL), 10)
+        # Can not sample PSA values if any cov-mat (Sigma) values < 0 | NA:
+        if(!any(is.na(Sigma_)) &
+           if(!any(is.na(Sigma_)))
+             matrixcalc::is.positive.definite(Sigma_)
+           else
+             FALSE) {
+          # Sample from a multivariate normal distribution:
+          list(
+            'Calib_results' = .list_[[1]],
+            'PSA_calib_draws' =
+              tmvtnorm::rtmvnorm(
+                n = .PSA_runs,
+                mean = .list_[[1]][["Estimate"]],
+                sigma = Sigma_,
+                lower = lb,
+                upper = ub,
+                algorithm = "gibbs",
+                burn.in.samples = 10000) %>%
+              as_tibble(~ vctrs::vec_as_names(...,
+                                              repair = "unique",
+                                              quiet = TRUE)) %>%
+              `colnames<-`(.list_[[1]][["Params"]]) %>%
+              mutate(Label =
+                       paste0(.list_[[1]][["Calibration method"]],
+                              "[",
+                              round(.list_[[1]][["GOF value"]], 1),
+                              "]")) %>%
+              select(Label, everything())
+          )
+        } else {
+          # Retain the point estimates if sigma is NA or not +ve definite:
+          list(
+            'Calib_results' = .list_[[1]],
+            'PSA_calib_draws' = .list_[[1]][["Estimate"]] %>%
+              t() %>%
+              as_tibble(~ vctrs::vec_as_names(...,
+                                              repair = "unique",
+                                              quiet = TRUE)) %>%
+              `colnames<-`(.list_[[1]][["Params"]]) %>%
+              mutate(Label =
+                       paste0(.list_[[1]][["Calibration method"]],
+                              "[",
+                              round(.list_[[1]][["GOF value"]], 1),
+                              "]")) %>%
+              select(Label, everything())
+          )
+        }
       })
   } else if(.search_method == 'Random') {
     if(nrow(.l_optim_lists[[1]]) < .PSA_runs)

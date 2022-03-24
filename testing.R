@@ -532,15 +532,14 @@ l_targets <-
                           'ub' = 80000),
        'v_targets_dists' = v_targets_dists,
        'v_targets_weights' = v_targets_weights)
-v_params_names <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "r_e",
-                    "rho", "b")
+v_params_names <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "rho",
+                    "b")
 v_params_dists <- c("lnorm", "lnorm", "lnorm", "lnorm", "lnorm", "lnorm",
-                    "lnorm", "beta")
+                    "beta")
 args <- list(list(meanlog = -3.121, sdlog = 0.5),
              list(meanlog = -1.511, sdlog = 0.5),
              list(meanlog = -3.814, sdlog = 0.5),
              list(meanlog = -2.428, sdlog = 0.5),
-             list(meanlog = -0.818, sdlog = 0.5),
              list(meanlog = -0.818, sdlog = 0.5),
              list(meanlog = -0.818, sdlog = 0.5),
              list(shape1 = 2, shape2 = 8))
@@ -548,7 +547,6 @@ extra_args <- list(list(min = 0.02, max = 0.12),
                    list(min = 0.08, max = 0.59),
                    list(min = 0.01, max = 0.06),
                    list(min = 0.03, max = 0.24),
-                   list(min = 0.17, max = 1.18),
                    list(min = 0.17, max = 1.18),
                    list(min = 0.01, max = 0.06),
                    list(min = 0.03, max = 0.48))
@@ -571,6 +569,8 @@ GOF_llik2 <- LLK_GOF(.func = HID_markov, .optim = FALSE,
                      .args = list(project_future = FALSE),
                      .samples = samples,
                      .l_targets = l_targets, .sample_method = "LHS")
+
+samples <- sample_prior_LHS(.n_samples = 5,.l_params = l_params)
 
 NM_optimise_wSSE <- calibrateModel_directed(
   .l_params = l_params,
@@ -669,16 +669,25 @@ GA_optimise_lLLK <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
+l_optim_lists <- list(GA_optimise_lLLK, GA_optimise_wSSE,
+                      GB_optimise_lLLK, GB_optimise_wSSE,
+                      NM_optimise_lLLK, NM_optimise_wSSE,
+                      SA_optimise_lLLK, SA_optimise_wSSE)
+
+PSA_values <- PSA_calib_values(.l_optim_lists = l_optim_lists)
+
+samples <- sample_prior_LHS(.n_samples = 1000,.l_params = l_params)
+
 test_Bayesian = calibrateModel_beyesian(
   .b_method = 'SIR', .func = HID_markov,
   .args = list(project_future = FALSE),
   .l_targets = l_targets, .l_params = l_params, .samples = samples)
 
+set.seed(2) # Function crashes on set.seed(1)
 test_Bayesian2 = calibrateModel_beyesian(
   .b_method = 'IMIS', .func = HID_markov,
   .args = list(project_future = FALSE),
-  .l_targets = l_targets, .l_params = l_params, .samples = samples,
-  .n_resample = 1000)
+  .l_targets = l_targets, .l_params = l_params, .n_resample = 1000)
 
 
 

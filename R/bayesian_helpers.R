@@ -89,14 +89,7 @@ log_prior <- function(.samples, .l_params) {
   v_lprior <- rowSums(pmap_df(
     .l = l_lprior,
     .f = function(.name, .func, .dist, .arg, .param) {
-      if(.dist != 'lnorm') {
-        exec(.func, .param, !!!.arg, log = TRUE)
-      } else {
-        exec(.func, .param, log(.arg[['mean']]) - (1/2) *
-               .arg[['sd']]^2,
-             .arg[['sd']],
-             log = TRUE)
-      }
+      exec(.func, .param, !!!.arg, log = TRUE)
     }
   ))
 
@@ -186,6 +179,7 @@ log_likelihood <- function(.samples, .func, .args, .l_targets, ...) {
                  paste0('d', .l_targets[['v_targets_dists']]),
                  .l_targets[['v_targets_dists']],
                  .l_targets[['v_targets_weights']])
+
   # Estimate the overall log likelihood for each model output:
   overall_lliks <- map_dbl(
     .x = model_results,
@@ -194,33 +188,37 @@ log_likelihood <- function(.samples, .func, .args, .l_targets, ...) {
       overall_llik <- pmap(
         .l = l_llik,
         .f = function(.name, .func, .dist, .weight) {
-          if(.dist == 'norm') {
-            sum( # Sum all values of that one target, if many
-              exec(.func,
-                   .l_targets[[.name]]$value, # target's sd
-                   .mod_res[[.name]], # mean value
-                   .l_targets[[.name]]$se, # sd value (target's sd)
-                   log = TRUE)
-            ) * .weight # target weight
-          } else if(.dist == 'binom') {
-            sum( # Sum all values of that one target, if many
-              exec(.func,
-                   prob = .mod_res[[.name]],
-                   x = .l_targets[[.name]]$x,
-                   size = .l_targets[[.name]]$size,
-                   log = TRUE)
-            ) * .weight # target weight
-          } else if(.dist == 'lnorm') {
-            sum( # Sum all values of that one target, if many
-              exec(.func,
-                   .l_targets[[.name]]$value, # target's mean
-                   log(.mod_res[[.name]]) - (1/2) *
-                     .l_targets[[.name]]$se^2, # mean value (model output)
-                   .l_targets[[.name]]$se, # sd value (target's sd)
-                   log = TRUE)
-            ) * .weight # target weight
-          }
-        })
+          tryCatch({
+            if(.dist == 'norm') {
+              sum( # Sum all values of that one target, if many
+                exec(.func,
+                     .l_targets[[.name]]$value, # target's sd
+                     .mod_res[[.name]], # mean value
+                     .l_targets[[.name]]$se, # sd value (target's sd)
+                     log = TRUE)
+              ) * .weight # target weight
+            } else if(.dist == 'binom') {
+              sum( # Sum all values of that one target, if many
+                exec(.func,
+                     prob = .mod_res[[.name]],
+                     x = .l_targets[[.name]]$x,
+                     size = .l_targets[[.name]]$size,
+                     log = TRUE)
+              ) * .weight # target weight
+            } else if(.dist == 'lnorm') {
+              sum( # Sum all values of that one target, if many
+                exec(.func,
+                     .l_targets[[.name]]$value, # target's mean
+                     log(.mod_res[[.name]]) - (1/2) *
+                       .l_targets[[.name]]$se^2, # mean value
+                     .l_targets[[.name]]$se, # sd value (target's sd)
+                     log = TRUE)
+              ) * .weight # target weight
+            }
+          },
+          error = function(e) -Inf)
+        }
+      )
       # Overall log likelihood (for all targets):
       overall_llik <- overall_llik %>%
         reduce(`+`, .init = 0)

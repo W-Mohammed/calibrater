@@ -13,7 +13,7 @@
 #' @examples
 HID_markov <- function(.v_params = NULL, project_future = FALSE,
                        mu_e = 0.05, mu_l = 0.25, mu_t = 0.025, p = 0.10,
-                       r_l = 0.5, r_e = 0, rho = 0.025, b = 0.20) {
+                       r_l = 0.5, rho = 0.025, b = 0.20) {
   with(as.list(.v_params), {
     # mu_e: 0.05 [0.02, 0.12] Cause-specific mortality rate with early-stage disease
     # mu_l: 0.25 [0.08, 0.59] Cause-specific mortality rate with late-stage disease
@@ -25,7 +25,7 @@ HID_markov <- function(.v_params = NULL, project_future = FALSE,
     # a: 15,000 Annual birth rate
     # b: 0.20 [0.03, 0.48] Fraction of population in at-risk group
     # c: $1000 [662, 1451] Annual cost of treatment
-    pop_size = 1e6; mu_b = 0.015; c = 1000
+    pop_size <- 1e6; mu_b <- 0.015; c <- 1000; r_e <- r_l
 
     # Prepare to run model:
     # Years to simulate (30 to present, 51 for 20 year analytic horizon):
