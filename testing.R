@@ -669,7 +669,16 @@ GA_optimise_lLLK <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
+test_Bayesian = calibrateModel_beyesian(
+  .b_method = 'SIR', .func = HID_markov,
+  .args = list(project_future = FALSE),
+  .l_targets = l_targets, .l_params = l_params, .samples = samples)
 
+test_Bayesian2 = calibrateModel_beyesian(
+  .b_method = 'IMIS', .func = HID_markov,
+  .args = list(project_future = FALSE),
+  .l_targets = l_targets, .l_params = l_params, .samples = samples,
+  .n_resample = 1000)
 
 
 

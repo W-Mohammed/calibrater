@@ -52,7 +52,25 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
   }
 
   # Estimate Fisher Information Matrix (FIM), also the covariance matrix:
-  fisher_info <- solve(.hessian)
+  fisher_info <- tryCatch(
+    # Avoid "Lapack routine dgesv: system is exactly singular: U[6,6] = 0"
+    {
+      solve(.hessian)
+
+    }, error = function(e) {
+      message(paste0("\r", e))
+
+      return(NULL)
+    }
+  )
+  # Exit function early if the inverse of .hessian is unattainable:
+  if(is.null(fisher_info))
+    return(list(Params = .params_name, Estimate = .par, Lower = NA,
+                Upper = NA, 'GOF value' = .gof_value,
+                'Calibration method' = paste0(.s_method, "_", .gof_name),
+                'Sigma' = NA))
+
+  # Continue if .hessian could be inversed:
   covr_mat <- fisher_info
   diag(covr_mat) <- 1
 
