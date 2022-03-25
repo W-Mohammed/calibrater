@@ -511,160 +511,166 @@ tst1 = HID_markov(.v_params = name_HID_params(rep(1, 9)))
 tst2 =  HID_markov()
 tst2 = HID_markov(.v_params = name_HID_params(rep(0.5, 9)), project_future = T)
 
-v_targets_names <- c("Prev", "Surv", "Trt_vol")
-v_targets_weights <- c(1, 1, 1)
-v_targets_dists <- c("binom", "norm", "norm")
-l_targets <-
-  list('v_targets_names' = v_targets_names,
-       'Prev' = tibble('value' = c(5/100, 15/100, 10/100), # %
-                       'se' = c(5/1000, 15/1000, 10/1000), # 10% of value
-                       'x' = c(25, 50, 75),
-                       'size' = 500,
-                       'lb' = c(3.3, 12, 7.5),
-                       'ub' = c(7.1, 18.3, 12.8)),
-       'Surv' = tibble('value' = 10,
-                       'se' = 2/1.96,
-                       'lb' = 8,
-                       'ub' = 12),
-       'Trt_vol' = tibble('value' = 75000,
-                          'se' = 5000/1.96,
-                          'lb' = 70000,
-                          'ub' = 80000),
-       'v_targets_dists' = v_targets_dists,
-       'v_targets_weights' = v_targets_weights)
-v_params_names <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "rho",
-                    "b")
-v_params_dists <- c("lnorm", "lnorm", "lnorm", "lnorm", "lnorm", "lnorm",
-                    "beta")
-args <- list(list(meanlog = -3.121, sdlog = 0.5),
-             list(meanlog = -1.511, sdlog = 0.5),
-             list(meanlog = -3.814, sdlog = 0.5),
-             list(meanlog = -2.428, sdlog = 0.5),
-             list(meanlog = -0.818, sdlog = 0.5),
-             list(meanlog = -0.818, sdlog = 0.5),
-             list(shape1 = 2, shape2 = 8))
-extra_args <- list(list(min = 0.02, max = 0.12),
-                   list(min = 0.08, max = 0.59),
-                   list(min = 0.01, max = 0.06),
-                   list(min = 0.03, max = 0.24),
-                   list(min = 0.17, max = 1.18),
-                   list(min = 0.01, max = 0.06),
-                   list(min = 0.03, max = 0.48))
-l_params <- list('v_params_names' = v_params_names,
-                 'v_params_dists' = v_params_dists,
-                 'args' = args,
-                 'Xargs' = extra_args)
-rm(v_params_names, v_params_dists, v_targets_dists, v_targets_weights,
-   v_targets_names, args)
+# v_targets_names <- c("Prev", "Surv", "Trt_vol")
+# v_targets_weights <- c(1, 1, 1)
+# v_targets_dists <- c("binom", "norm", "norm")
+# l_targets <-
+#   list('v_targets_names' = v_targets_names,
+#        'Prev' = tibble('value' = c(5/100, 15/100, 10/100), # %
+#                        'se' = c(5/1000, 15/1000, 10/1000), # 10% of value
+#                        'x' = c(25, 50, 75),
+#                        'size' = 500,
+#                        'lb' = c(3.3, 12, 7.5),
+#                        'ub' = c(7.1, 18.3, 12.8)),
+#        'Surv' = tibble('value' = 10,
+#                        'se' = 2/1.96,
+#                        'lb' = 8,
+#                        'ub' = 12),
+#        'Trt_vol' = tibble('value' = 75000,
+#                           'se' = 5000/1.96,
+#                           'lb' = 70000,
+#                           'ub' = 80000),
+#        'v_targets_dists' = v_targets_dists,
+#        'v_targets_weights' = v_targets_weights)
+# v_params_names <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "rho",
+#                     "b")
+# v_params_dists <- c("lnorm", "lnorm", "lnorm", "lnorm", "lnorm", "lnorm",
+#                     "beta")
+# args <- list(list(meanlog = -3.121, sdlog = 0.5),
+#              list(meanlog = -1.511, sdlog = 0.5),
+#              list(meanlog = -3.814, sdlog = 0.5),
+#              list(meanlog = -2.428, sdlog = 0.5),
+#              list(meanlog = -0.818, sdlog = 0.5),
+#              list(meanlog = -0.818, sdlog = 0.5),
+#              list(shape1 = 2, shape2 = 8))
+# extra_args <- list(list(min = 0.02, max = 0.12),
+#                    list(min = 0.08, max = 0.59),
+#                    list(min = 0.01, max = 0.06),
+#                    list(min = 0.03, max = 0.24),
+#                    list(min = 0.17, max = 1.18),
+#                    list(min = 0.01, max = 0.06),
+#                    list(min = 0.03, max = 0.48))
+# l_params <- list('v_params_names' = v_params_names,
+#                  'v_params_dists' = v_params_dists,
+#                  'args' = args,
+#                  'Xargs' = extra_args)
+# rm(v_params_names, v_params_dists, v_targets_dists, v_targets_weights,
+#    v_targets_names, args)
 
-samples <- sample_prior_LHS(.n_samples = 1000,.l_params = l_params)
-samples1 <- sample_prior_FGS(.n_samples = 5,.l_params = l_params)
-samples2 <- sample_prior_RGS(.n_samples = 50,.l_params = l_params)
+samples <- sample_prior_LHS(.n_samples = 1000,
+                            .l_params = HID_data$l_params)
+samples1 <- sample_prior_FGS(.n_samples = 5,
+                             .l_params = HID_data$l_params)
+samples2 <- sample_prior_RGS(.n_samples = 50,
+                             .l_params = HID_data$l_params)
 
 GOF_wsse2 <- wSSE_GOF(.func = HID_markov, .optim = FALSE,
                       .args = list(project_future = FALSE),
                       .samples = samples,
-                      .l_targets = l_targets, .sample_method = "LHS")
+                      .l_targets = HID_data$l_targets,
+                      .sample_method = "LHS")
 GOF_llik2 <- LLK_GOF(.func = HID_markov, .optim = FALSE,
                      .args = list(project_future = FALSE),
                      .samples = samples,
-                     .l_targets = l_targets, .sample_method = "LHS")
+                     .l_targets = HID_data$l_targets,
+                     .sample_method = "LHS")
 
-samples <- sample_prior_LHS(.n_samples = 5,.l_params = l_params)
+samples <- sample_prior_LHS(.n_samples = 5,
+                            .l_params = HID_data$l_params)
 
 NM_optimise_wSSE <- calibrateModel_directed(
-  .l_params = l_params,
+  .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = list(project_future = FALSE),
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'Nelder-Mead',
   .maximise = TRUE,
-  .l_targets = l_targets,
+  .l_targets = HID_data$l_targets,
   maxit = 1000)
 
 GB_optimise_wSSE <- calibrateModel_directed(
-  .l_params = l_params,
+  .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = list(project_future = FALSE),
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
-  .l_targets = l_targets,
+  .l_targets = HID_data$l_targets,
   maxit = 1000)
 
 SA_optimise_wSSE <- calibrateModel_directed(
-  .l_params = l_params,
+  .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = list(project_future = FALSE),
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
-  .l_targets = l_targets,
+  .l_targets = HID_data$l_targets,
   maxit = 1000,
   temp = 10,
   tmax = 10)
 
 GA_optimise_wSSE <- calibrateModel_directed(
-  .l_params = l_params,
+  .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = list(project_future = FALSE),
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
-  .l_targets = l_targets,
+  .l_targets = HID_data$l_targets,
   maxit = 1000,
   temp = 10,
   tmax = 10)
 
 NM_optimise_lLLK <- calibrateModel_directed(
-  .l_params = l_params,
+  .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = list(project_future = FALSE),
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'Nelder-Mead',
   .maximise = TRUE,
-  .l_targets = l_targets,
+  .l_targets = HID_data$l_targets,
   maxit = 1000)
 
 GB_optimise_lLLK <- calibrateModel_directed(
-  .l_params = l_params,
+  .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = list(project_future = FALSE),
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
-  .l_targets = l_targets,
+  .l_targets = HID_data$l_targets,
   maxit = 1000)
 
 SA_optimise_lLLK <- calibrateModel_directed(
-  .l_params = l_params,
+  .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = list(project_future = FALSE),
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
-  .l_targets = l_targets,
+  .l_targets = HID_data$l_targets,
   fnscale = -1,
   temp = 10,
   tmax = 10,
   maxit = 1000)
 
 GA_optimise_lLLK <- calibrateModel_directed(
-  .l_params = l_params,
+  .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = list(project_future = FALSE),
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
-  .l_targets = l_targets,
+  .l_targets = HID_data$l_targets,
   maxit = 1000,
   temp = 10,
   tmax = 10)
@@ -676,18 +682,36 @@ l_optim_lists <- list(GA_optimise_lLLK, GA_optimise_wSSE,
 
 PSA_values <- PSA_calib_values(.l_optim_lists = l_optim_lists)
 
-samples <- sample_prior_LHS(.n_samples = 1000,.l_params = l_params)
+samples <- sample_prior_LHS(.n_samples = 1000,
+                            .l_params = HID_data$l_params)
 
-test_Bayesian = calibrateModel_beyesian(
+SIR = calibrateModel_beyesian(
   .b_method = 'SIR', .func = HID_markov,
   .args = list(project_future = FALSE),
-  .l_targets = l_targets, .l_params = l_params, .samples = samples)
+  .l_targets = HID_data$l_targets,
+  .l_params = HID_data$l_params, .samples = samples)
 
-set.seed(2) # Function crashes on set.seed(1)
-test_Bayesian2 = calibrateModel_beyesian(
+rm(likelihood, prior, sample.prior)
+set.seed(1) # Function crashes on set.seed(1)
+IMIS = calibrateModel_beyesian(
   .b_method = 'IMIS', .func = HID_markov,
   .args = list(project_future = FALSE),
-  .l_targets = l_targets, .l_params = l_params, .n_resample = 1000)
+  .l_targets = HID_data$l_targets,
+  .l_params = HID_data$l_params,
+  .n_resample = 1000)
+
+set.seed(1) # Function crashes on set.seed(1)
+IMIS2 = calibrateModel_beyesian2(
+  .b_method = 'IMIS', .func = HID_markov,
+  .args = list(project_future = FALSE),
+  .l_targets = HID_data$l_targets,
+  .l_params = HID_data$l_params,
+  .n_resample = 1000)
+
+#old = options('warning.length')
+#options(warning.length=8000)
+#options(old)
+
 
 
 

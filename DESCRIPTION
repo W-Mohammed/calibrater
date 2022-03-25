@@ -24,6 +24,7 @@ Depends:
 LazyData: true
 Imports: 
     DEoptim,
+    emdbook,
     IMIS,
     lhs,
     MHadaptive,
@@ -31,4 +32,5 @@ Imports:
     psych,
     purrr,
     rlist,
+    SimDesign,
     tmvtnorm

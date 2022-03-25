@@ -91,7 +91,8 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
               'Sigma' = covr_mat))
 }
 
-#' Optimise model parameters
+#' Calibrate model using Directed search algorithms (optimisation
+#' functions)
 #'
 #' @param .l_params A list that contains a vector of parameter names,
 #' distributions and distributions' arguments.

@@ -4,8 +4,6 @@
 #' distributions and distributions' arguments.
 #' @param .n_samples An integer specifying the number of samples to be
 #' generated.
-#' @param ... additional arguments, for example: .seed_no to set a seed
-#' number.
 #'
 #' @return A table with each parameter LHS samples in a separate column
 #' @export
@@ -22,12 +20,7 @@
 #' sample_prior_LHS(.l_params = l_params,
 #'                  .n_samples = 10)
 #'
-sample_prior_IMIS <- function(.n_samples, .l_params = .l_params_,
-                              ...) {
-  # Grab additional arguments:
-  dots = list(...)
-  if(!is.null(dots[['.ssed_no']]))
-    set.seed(dots[['.ssed_no']])
+sample_prior_IMIS <- function(.n_samples, .l_params = .l_params_) {
   # Get the number of parameters:
   n_params <- length(.l_params[["v_params_names"]])
   # Get LHS samples:
@@ -216,13 +209,17 @@ log_likelihood <- function(.samples, .func, .args, .l_targets, ...) {
               ) * .weight # target weight
             }
           },
-          error = function(e) -Inf)
+          error = function(e) -Inf
+          )
         }
       )
       # Overall log likelihood (for all targets):
       overall_llik <- overall_llik %>%
         reduce(`+`, .init = 0)
     })
+
+  # Set NaN values to -Inf to avoid subsequent functions from crashing:
+  overall_lliks[is.na(overall_lliks)] <- -Inf
 
   return(overall_lliks)
 }
@@ -274,7 +271,7 @@ calculate_likelihood <- function(.samples, .func = .func_, .args = .args_,
 log_posterior <- function(.samples, .func, .args, .l_targets, .l_params,
                           ...) {
   # calculate log prior:
-  l_prior <- log_prior(.samples = .samples, .l_params = l_params)
+  l_prior <- log_prior(.samples = .samples, .l_params = .l_params)
   # calculate log likelihood:
   l_lilk <- log_likelihood(.samples = .samples, .func = .func,
                            .args = .args, .l_targets = .l_targets, ...)
@@ -312,7 +309,7 @@ calculate_posterior <- function(.samples, .func = .func_, .args = .args_,
   return(posterior)
 }
 
-#' Title
+#' Calibrate models using Bayesian methods - employing local IMIS_()
 #'
 #' @param .b_method
 #' @param .func
@@ -329,6 +326,106 @@ calculate_posterior <- function(.samples, .func = .func_, .args = .args_,
 calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
                                     .l_targets, .l_params, .samples,
                                     ...) {
+  # Ensure that .b_method is supported by the function:
+  stopifnot(".b_method is supported by the function" =
+              any(.b_method %in% c('SIR', 'IMIS', 'MCMC')))
+
+  # Grab additional arguments for some of the methods:
+  dots <- list(...)
+  .n_resample <- dots[['.n_resample']]
+  if(any(.b_method %in% c('SIR', 'IMIS')) & is.null(.n_resample))
+    .n_resample <- nrow(.samples)
+
+  if(.b_method == 'IMIS' & is.null(dots[['IMIS_sample']]))
+    IMIS_sample <- 1000
+
+  # SIR:
+  if(.b_method == 'SIR') {
+    ## Calculate log-likelihood for each sample value:
+    llik <- log_likelihood(.samples = .samples, .func = .func,
+                           .args = .args, .l_targets = .l_targets)
+
+    ## Calculate weights for the re-sample:
+    # Note: subtracting off the maximum log-likelihood before
+    # exponentiating helps avoid numerical under/overflow, which would
+    # result in weights of Inf or 0.
+    weight <- exp(llik - max(llik)) / sum(exp(llik - max(llik)))
+    ## Re-sample from samples with wt as sampling weights:
+    SIR_resample  <- sample.int(.n_resample, replace = TRUE, prob = weight)
+    posterior_SIR <- .samples[SIR_resample, ]
+    ## Combine log-likelihood & posterior probability of each sample:
+    SIR_results <- cbind(posterior_SIR,
+                         "Overall_fit" = llik[SIR_resample],
+                         "Posterior_prob" = weight[SIR_resample]) %>%
+      arrange(desc(Overall_fit))
+
+    return(list('Results' = SIR_results, 'Method' = "SIR"))
+
+  } else if(.b_method == 'IMIS') { # IMIS:
+    ## Run IMIS:
+    fit_IMIS <- IMIS_(
+      B = IMIS_sample, # the incremental sample size at each IMIS iteration
+      B.re = .n_resample, # the desired posterior sample size
+      number_k = 10, # the maximum number of iterations in IMIS
+      D = 0,
+      sample.prior = sample_prior_IMIS,
+      prior = calculate_prior,
+      likelihood = calculate_likelihood,
+      .l_params_ <- .l_params, # prior/sample.prior
+      .func_ <- .func, # calculate_likelihood
+      .args_ <- .args, # calculate_likelihood
+      .l_targets_ <- .l_targets) # calculate_likelihood
+
+    ## Obtain draws from posterior:
+    m_calib_res <- fit_IMIS$resample
+    Overall_fit <- log_likelihood(
+      .samples = m_calib_res, .func = .func, .args = .args,
+      .l_targets = .l_targets)
+    Posterior_prob <- calculate_posterior(
+      .samples = m_calib_res, .func = .func, .args = .args,
+      .l_targets = .l_targets, .l_params = .l_params)
+    ## Calculate log-likelihood (overall fit) and posterior probability:
+    IMIS_results <- m_calib_res %>%
+      as_tibble(~ vctrs::vec_as_names(...,
+                                      repair = "unique",
+                                      quiet = TRUE)) %>%
+      mutate(
+        "Overall_fit" = Overall_fit,
+        "Posterior_prob" = Posterior_prob) %>%
+      arrange(desc(Overall_fit))
+    ## Name column names IMIS stats object:
+    stats <- fit_IMIS$stat %>%
+      as_tibble(~ vctrs::vec_as_names(...,
+                                      repair = "unique",
+                                      quiet = TRUE)) %>%
+      `colnames<-`(c("MargLike", "UniquePoint", "MaxWeight", "ESS",
+                     "ImpWt", "ImpWtVar"))
+
+    return(list('Results' = IMIS_results, 'Method' = "IMIS",
+                'Fit'  = fit_IMIS, 'Stats' = stats))
+
+  } else {
+
+  }
+}
+
+#' Calibrate models using Bayesian methods - employing IMIS::IMIS()
+#'
+#' @param .b_method
+#' @param .func
+#' @param .args
+#' @param .l_targets
+#' @param .l_params
+#' @param .samples
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
+                                     .l_targets, .l_params, .samples,
+                                     ...) {
   # Ensure that .b_method is supported by the function:
   stopifnot(".b_method is supported by the function" =
               any(.b_method %in% c('SIR', 'IMIS', 'MCMC')))
