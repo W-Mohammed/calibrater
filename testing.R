@@ -505,6 +505,158 @@ test_Bayesian2 = calibrateModel_beyesian(
   .l_targets = l_targets, .l_params = l_params, .samples = samples,
   .n_resample = 1000)
 
+#CRS_model################################################################
+samples <- sample_prior_LHS(.n_samples = 1000,
+                            .l_params = CRS_data$l_params)
+samples1 <- sample_prior_FGS(.n_samples = 5,
+                             .l_params = CRS_data$l_params)
+samples2 <- sample_prior_RGS(.n_samples = 50,
+                             .l_params = CRS_data$l_params)
+
+GOF_wsse2 <- wSSE_GOF(.func = CRS_markov, .optim = FALSE,
+                      .args = list(project_future = FALSE),
+                      .samples = samples,
+                      .l_targets = CRS_data$l_targets,
+                      .sample_method = "LHS")
+GOF_llik2 <- LLK_GOF(.func = CRS_markov, .optim = FALSE,
+                     .args = list(project_future = FALSE),
+                     .samples = samples,
+                     .l_targets = CRS_data$l_targets,
+                     .sample_method = "LHS")
+
+samples <- sample_prior_LHS(.n_samples = 5,
+                            .l_params = CRS_data$l_params)
+
+NM_optimise_wSSE <- calibrateModel_directed(
+  .l_params = CRS_data$l_params,
+  .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = CRS_data$l_targets,
+  maxit = 1000)
+
+GB_optimise_wSSE <- calibrateModel_directed(
+  .l_params = CRS_data$l_params,
+  .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = CRS_data$l_targets,
+  maxit = 1000)
+
+SA_optimise_wSSE <- calibrateModel_directed(
+  .l_params = CRS_data$l_params,
+  .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = CRS_data$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+GA_optimise_wSSE <- calibrateModel_directed(
+  .l_params = CRS_data$l_params,
+  .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'GA',
+  .maximise = TRUE,
+  .l_targets = CRS_data$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+NM_optimise_lLLK <- calibrateModel_directed(
+  .l_params = CRS_data$l_params,
+  .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .gof = 'log_likelihood',
+  .samples = samples,
+  .s_method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = CRS_data$l_targets,
+  maxit = 1000)
+
+GB_optimise_lLLK <- calibrateModel_directed(
+  .l_params = CRS_data$l_params,
+  .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .gof = 'log_likelihood',
+  .samples = samples,
+  .s_method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = CRS_data$l_targets,
+  maxit = 1000)
+
+SA_optimise_lLLK <- calibrateModel_directed(
+  .l_params = CRS_data$l_params,
+  .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .gof = 'log_likelihood',
+  .samples = samples,
+  .s_method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = CRS_data$l_targets,
+  fnscale = -1,
+  temp = 10,
+  tmax = 10,
+  maxit = 1000)
+
+GA_optimise_lLLK <- calibrateModel_directed(
+  .l_params = CRS_data$l_params,
+  .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .gof = 'log_likelihood',
+  .samples = samples,
+  .s_method = 'GA',
+  .maximise = TRUE,
+  .l_targets = CRS_data$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+l_optim_lists_CRS_data <- list(GA_optimise_lLLK, GA_optimise_wSSE,
+                      GB_optimise_lLLK, GB_optimise_wSSE,
+                      NM_optimise_lLLK, NM_optimise_wSSE,
+                      SA_optimise_lLLK, SA_optimise_wSSE)
+
+PSA_values <- PSA_calib_values(.l_optim_lists = l_optim_lists_CRS_data)
+
+samples <- sample_prior_LHS(.n_samples = 1000,
+                            .l_params = CRS_data$l_params)
+
+SIR = calibrateModel_beyesian(
+  .b_method = 'SIR', .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .l_targets = CRS_data$l_targets,
+  .l_params = CRS_data$l_params, .samples = samples)
+
+rm(likelihood, prior, sample.prior)
+set.seed(1) # Function crashes on set.seed(1)
+IMIS = calibrateModel_beyesian(
+  .b_method = 'IMIS', .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .l_targets = CRS_data$l_targets,
+  .l_params = CRS_data$l_params,
+  .n_resample = 1000)
+
+set.seed(1) # Function crashes on set.seed(1)
+IMIS2 = calibrateModel_beyesian2(
+  .b_method = 'IMIS', .func = CRS_markov,
+  .args = list(project_future = FALSE),
+  .l_targets = CRS_data$l_targets,
+  .l_params = CRS_data$l_params,
+  .n_resample = 1000)
+
 #HID_model#############################################################
 tst = HID_markov(.v_params = name_HID_params(rep(0.5, 9)))
 tst1 = HID_markov(.v_params = name_HID_params(rep(1, 9)))
