@@ -506,31 +506,41 @@ test_Bayesian2 = calibrateModel_beyesian(
   .n_resample = 1000)
 
 #CRS_model################################################################
-samples <- sample_prior_LHS(.n_samples = 1000,
+library(devtools)
+load_all()
+
+samples_CRS_data <- sample_prior_LHS(
+  .n_samples = 1000,
+  .l_params = CRS_data$l_params)
+samples1_CRS_data <- sample_prior_FGS(
+  .n_samples = 5,
+  .l_params = CRS_data$l_params)
+samples2_CRS_data <- sample_prior_RGS(
+  .n_samples = 1000,
+  .l_params = CRS_data$l_params)
+
+GOF_wsse_CRS_model <- wSSE_GOF(
+  .func = CRS_markov,
+  .optim = FALSE,
+  .args = NULL,
+  .samples = samples_CRS_data,
+  .l_targets = CRS_data$l_targets,
+  .sample_method = "LHS")
+
+GOF_llik_CRS_model <- LLK_GOF(
+  .func = CRS_markov, .optim = FALSE,
+  .args = NULL,
+  .samples = samples_CRS_data,
+  .l_targets = CRS_data$l_targets,
+  .sample_method = "LHS")
+
+samples <- sample_prior_LHS(.n_samples = 100,
                             .l_params = CRS_data$l_params)
-samples1 <- sample_prior_FGS(.n_samples = 5,
-                             .l_params = CRS_data$l_params)
-samples2 <- sample_prior_RGS(.n_samples = 50,
-                             .l_params = CRS_data$l_params)
 
-GOF_wsse2 <- wSSE_GOF(.func = CRS_markov, .optim = FALSE,
-                      .args = list(project_future = FALSE),
-                      .samples = samples,
-                      .l_targets = CRS_data$l_targets,
-                      .sample_method = "LHS")
-GOF_llik2 <- LLK_GOF(.func = CRS_markov, .optim = FALSE,
-                     .args = list(project_future = FALSE),
-                     .samples = samples,
-                     .l_targets = CRS_data$l_targets,
-                     .sample_method = "LHS")
-
-samples <- sample_prior_LHS(.n_samples = 5,
-                            .l_params = CRS_data$l_params)
-
-NM_optimise_wSSE <- calibrateModel_directed(
+NM_optimise_wSSE_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'Nelder-Mead',
@@ -538,10 +548,10 @@ NM_optimise_wSSE <- calibrateModel_directed(
   .l_targets = CRS_data$l_targets,
   maxit = 1000)
 
-GB_optimise_wSSE <- calibrateModel_directed(
+GB_optimise_wSSE_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'BFGS',
@@ -549,10 +559,10 @@ GB_optimise_wSSE <- calibrateModel_directed(
   .l_targets = CRS_data$l_targets,
   maxit = 1000)
 
-SA_optimise_wSSE <- calibrateModel_directed(
+SA_optimise_wSSE_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'SANN',
@@ -562,10 +572,10 @@ SA_optimise_wSSE <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
-GA_optimise_wSSE <- calibrateModel_directed(
+GA_optimise_wSSE_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'GA',
@@ -575,10 +585,10 @@ GA_optimise_wSSE <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
-NM_optimise_lLLK <- calibrateModel_directed(
+NM_optimise_LLK_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'Nelder-Mead',
@@ -586,10 +596,10 @@ NM_optimise_lLLK <- calibrateModel_directed(
   .l_targets = CRS_data$l_targets,
   maxit = 1000)
 
-GB_optimise_lLLK <- calibrateModel_directed(
+GB_optimise_LLK_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'BFGS',
@@ -597,10 +607,10 @@ GB_optimise_lLLK <- calibrateModel_directed(
   .l_targets = CRS_data$l_targets,
   maxit = 1000)
 
-SA_optimise_lLLK <- calibrateModel_directed(
+SA_optimise_LLK_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'SANN',
@@ -611,10 +621,10 @@ SA_optimise_lLLK <- calibrateModel_directed(
   tmax = 10,
   maxit = 1000)
 
-GA_optimise_lLLK <- calibrateModel_directed(
+GA_optimise_LLK_CRS_model<- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'GA',
@@ -624,44 +634,104 @@ GA_optimise_lLLK <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
-l_optim_lists_CRS_data <- list(GA_optimise_lLLK, GA_optimise_wSSE,
-                      GB_optimise_lLLK, GB_optimise_wSSE,
-                      NM_optimise_lLLK, NM_optimise_wSSE,
-                      SA_optimise_lLLK, SA_optimise_wSSE)
-
-PSA_values <- PSA_calib_values(.l_optim_lists = l_optim_lists_CRS_data)
-
 samples <- sample_prior_LHS(.n_samples = 1000,
                             .l_params = CRS_data$l_params)
 
-SIR = calibrateModel_beyesian(
+SIR_CRS_data = calibrateModel_beyesian(
   .b_method = 'SIR', .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .l_targets = CRS_data$l_targets,
   .l_params = CRS_data$l_params, .samples = samples)
 
+set.seed(1) # Function crashes on set.seed(1)
+IMIS2_CRS_data = calibrateModel_beyesian2(
+  .b_method = 'IMIS', .func = CRS_markov,
+  .args = NULL,
+  .l_targets = CRS_data$l_targets,
+  .l_params = CRS_data$l_params,
+  .n_resample = 1000)
+
 rm(likelihood, prior, sample.prior)
 set.seed(1) # Function crashes on set.seed(1)
-IMIS = calibrateModel_beyesian(
+IMIS_CRS_data = calibrateModel_beyesian(
   .b_method = 'IMIS', .func = CRS_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .l_targets = CRS_data$l_targets,
   .l_params = CRS_data$l_params,
   .n_resample = 1000)
 
-set.seed(1) # Function crashes on set.seed(1)
-IMIS2 = calibrateModel_beyesian2(
-  .b_method = 'IMIS', .func = CRS_markov,
-  .args = list(project_future = FALSE),
-  .l_targets = CRS_data$l_targets,
-  .l_params = CRS_data$l_params,
-  .n_resample = 1000)
+l_optim_lists_CRS_data <- list(
+  GA_optimise_LLK_CRS_model, GA_optimise_wSSE_CRS_model,
+  GB_optimise_LLK_CRS_model, GB_optimise_wSSE_CRS_model,
+  NM_optimise_LLK_CRS_model, NM_optimise_wSSE_CRS_model,
+  SA_optimise_LLK_CRS_model, SA_optimise_wSSE_CRS_model)
+
+l_optim_lists_CRS_data2 <- list(
+  GOF_wsse_CRS_model, GOF_llik_CRS_model)
+
+l_optim_lists_CRS_data3 <- list(
+  SIR_CRS_data, IMIS_CRS_data, IMIS2_CRS_data)
+
+PSA_values_CRS_markov <- PSA_calib_values(
+  .l_optim_lists = l_optim_lists_CRS_data,
+  .search_method = 'Directed',
+  .PSA_runs = 1000,
+  .l_params = CRS_data$l_params)
+
+PSA_values_CRS_markov2 <- PSA_calib_values(
+  .l_optim_lists = l_optim_lists_CRS_data2,
+  .search_method = 'Random',
+  .PSA_runs = 1000,
+  .l_params = CRS_data$l_params)
+
+PSA_values_CRS_markov3 <- PSA_calib_values(
+  .l_optim_lists = l_optim_lists_CRS_data3,
+  .search_method = 'Bayesian',
+  .PSA_runs = 1000,
+  .l_params = CRS_data$l_params)
+
+#Run_PSA#############################################################
+# calib_values_ <- c(PSA_values_HID_data,
+#                    PSA_values_HID_data2,
+#                    PSA_values_HID_data3)
+#
+# PSA_results <- run_PSA(
+#   .func_ = HID_markov,
+#   .args_ = NULL,
+#   .PSA_calib_values_ = c(PSA_values_HID_data,
+#                          PSA_values_HID_data2,
+#                          PSA_values_HID_data3),
+#   .PSA_unCalib_values_ = NULL)
+
+PSA_results_CRS_markov <- run_PSA(
+  .func_ = CRS_markov,
+  .args_ = NULL,
+  .PSA_calib_values_ = c(PSA_values_CRS_markov,
+                         PSA_values_CRS_markov2,
+                         PSA_values_CRS_markov3),
+  .PSA_unCalib_values_ = NULL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #HID_model#############################################################
-tst = HID_markov(.v_params = name_HID_params(rep(0.5, 9)))
-tst1 = HID_markov(.v_params = name_HID_params(rep(1, 9)))
-tst2 =  HID_markov()
-tst2 = HID_markov(.v_params = name_HID_params(rep(0.5, 9)), project_future = T)
+# tst = HID_markov(.v_params = name_HID_params(rep(0.5, 9)))
+# tst1 = HID_markov(.v_params = name_HID_params(rep(1, 9)))
+# tst2 =  HID_markov()
+# tst2 = HID_markov(.v_params = name_HID_params(rep(0.5, 9)), project_future = T)
 
 # v_targets_names <- c("Prev", "Surv", "Trt_vol")
 # v_targets_weights <- c(1, 1, 1)
@@ -708,32 +778,37 @@ tst2 = HID_markov(.v_params = name_HID_params(rep(0.5, 9)), project_future = T)
 #                  'Xargs' = extra_args)
 # rm(v_params_names, v_params_dists, v_targets_dists, v_targets_weights,
 #    v_targets_names, args)
+library(devtools)
+load_all()
 
-samples <- sample_prior_LHS(.n_samples = 1000,
-                            .l_params = HID_data$l_params)
-samples1 <- sample_prior_FGS(.n_samples = 5,
-                             .l_params = HID_data$l_params)
-samples2 <- sample_prior_RGS(.n_samples = 50,
-                             .l_params = HID_data$l_params)
+samples_HID_data <- sample_prior_LHS(.n_samples = 1000,
+                                     .l_params = HID_data$l_params)
+samples1_HID_data <- sample_prior_FGS(.n_samples = 5,
+                                      .l_params = HID_data$l_params)
+samples2_HID_data <- sample_prior_RGS(.n_samples = 50,
+                                      .l_params = HID_data$l_params)
 
-GOF_wsse2 <- wSSE_GOF(.func = HID_markov, .optim = FALSE,
-                      .args = list(project_future = FALSE),
-                      .samples = samples,
-                      .l_targets = HID_data$l_targets,
-                      .sample_method = "LHS")
-GOF_llik2 <- LLK_GOF(.func = HID_markov, .optim = FALSE,
-                     .args = list(project_future = FALSE),
-                     .samples = samples,
-                     .l_targets = HID_data$l_targets,
-                     .sample_method = "LHS")
+GOF_wsse_HID_data <- wSSE_GOF(
+  .func = HID_markov, .optim = FALSE,
+  .args = NULL,
+  .samples = samples_HID_data,
+  .l_targets = HID_data$l_targets,
+  .sample_method = "LHS")
+
+GOF_llik_HID_data <- LLK_GOF(
+  .func = HID_markov, .optim = FALSE,
+  .args = NULL,
+  .samples = samples_HID_data,
+  .l_targets = HID_data$l_targets,
+  .sample_method = "LHS")
 
 samples <- sample_prior_LHS(.n_samples = 5,
                             .l_params = HID_data$l_params)
 
-NM_optimise_wSSE <- calibrateModel_directed(
+NM_optimise_wSSE_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'Nelder-Mead',
@@ -741,10 +816,10 @@ NM_optimise_wSSE <- calibrateModel_directed(
   .l_targets = HID_data$l_targets,
   maxit = 1000)
 
-GB_optimise_wSSE <- calibrateModel_directed(
+GB_optimise_wSSE_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'BFGS',
@@ -752,10 +827,10 @@ GB_optimise_wSSE <- calibrateModel_directed(
   .l_targets = HID_data$l_targets,
   maxit = 1000)
 
-SA_optimise_wSSE <- calibrateModel_directed(
+SA_optimise_wSSE_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'SANN',
@@ -765,10 +840,10 @@ SA_optimise_wSSE <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
-GA_optimise_wSSE <- calibrateModel_directed(
+GA_optimise_wSSE_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'GA',
@@ -778,10 +853,10 @@ GA_optimise_wSSE <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
-NM_optimise_lLLK <- calibrateModel_directed(
+NM_optimise_LLK_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'Nelder-Mead',
@@ -789,10 +864,10 @@ NM_optimise_lLLK <- calibrateModel_directed(
   .l_targets = HID_data$l_targets,
   maxit = 1000)
 
-GB_optimise_lLLK <- calibrateModel_directed(
+GB_optimise_LLK_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'BFGS',
@@ -800,10 +875,10 @@ GB_optimise_lLLK <- calibrateModel_directed(
   .l_targets = HID_data$l_targets,
   maxit = 1000)
 
-SA_optimise_lLLK <- calibrateModel_directed(
+SA_optimise_LLK_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'SANN',
@@ -814,10 +889,10 @@ SA_optimise_lLLK <- calibrateModel_directed(
   tmax = 10,
   maxit = 1000)
 
-GA_optimise_lLLK <- calibrateModel_directed(
+GA_optimise_LLK_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .gof = 'log_likelihood',
   .samples = samples,
   .s_method = 'GA',
@@ -827,43 +902,333 @@ GA_optimise_lLLK <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
-l_optim_lists <- list(GA_optimise_lLLK, GA_optimise_wSSE,
-                      GB_optimise_lLLK, GB_optimise_wSSE,
-                      NM_optimise_lLLK, NM_optimise_wSSE,
-                      SA_optimise_lLLK, SA_optimise_wSSE)
-
-PSA_values <- PSA_calib_values(.l_optim_lists = l_optim_lists)
-
 samples <- sample_prior_LHS(.n_samples = 1000,
                             .l_params = HID_data$l_params)
 
-SIR = calibrateModel_beyesian(
+SIR_HID_data = calibrateModel_beyesian(
   .b_method = 'SIR', .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .l_targets = HID_data$l_targets,
   .l_params = HID_data$l_params, .samples = samples)
 
-rm(likelihood, prior, sample.prior)
 set.seed(1) # Function crashes on set.seed(1)
-IMIS = calibrateModel_beyesian(
+IMIS2_HID_data = calibrateModel_beyesian2(
   .b_method = 'IMIS', .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .l_targets = HID_data$l_targets,
   .l_params = HID_data$l_params,
   .n_resample = 1000)
 
+rm(likelihood, prior, sample.prior)
 set.seed(1) # Function crashes on set.seed(1)
-IMIS2 = calibrateModel_beyesian2(
+IMIS_HID_data = calibrateModel_beyesian(
   .b_method = 'IMIS', .func = HID_markov,
-  .args = list(project_future = FALSE),
+  .args = NULL,
   .l_targets = HID_data$l_targets,
   .l_params = HID_data$l_params,
   .n_resample = 1000)
+
+l_optim_lists_HID_data <- list(
+  GA_optimise_LLK_HID_data, GA_optimise_wSSE_HID_data,
+  GB_optimise_LLK_HID_data, GB_optimise_wSSE_HID_data,
+  NM_optimise_LLK_HID_data, NM_optimise_wSSE_HID_data,
+  SA_optimise_LLK_HID_data, SA_optimise_wSSE_HID_data)
+
+l_optim_lists_HID_data2 <- list(
+  GOF_wsse_HID_data, GOF_llik_HID_data)
+
+l_optim_lists_HID_data3 <- list(
+  SIR_HID_data, IMIS_HID_data, IMIS2_HID_data)
+
+PSA_values_HID_data <- PSA_calib_values(
+  .l_optim_lists = l_optim_lists_HID_data,
+  .search_method = 'Directed',
+  .PSA_runs = 1000,
+  .l_params = HID_data$l_params)
+
+PSA_values_HID_data2 <- PSA_calib_values(
+  .l_optim_lists = l_optim_lists_HID_data2,
+  .search_method = 'Random',
+  .PSA_runs = 1000,
+  .l_params = HID_data$l_params)
+
+PSA_values_HID_data3 <- PSA_calib_values(
+  .l_optim_lists = l_optim_lists_HID_data3,
+  .search_method = 'Bayesian',
+  .PSA_runs = 1000,
+  .l_params = HID_data$l_params)
 
 #old = options('warning.length')
 #options(warning.length=8000)
 #options(old)
 
+#Rcpp microsim##############################################
+# Arguments:
+# v_M_1:   vector of initial states for individuals
+# n.i:     number of individuals
+# n.t:     total number of cycles to run the model
+# v.n:     vector of health state names
+# d.c:     discount rate for costs
+# d.e:     discount rate for health outcome (QALYs)
+# t_p:     vector containing transition probability
+# u_vec:   utilities vectors
+# c_vec:   costs vectors
+# Trt:     are the n.i individuals receiving treatment? (scalar with a Boolean value, default is FALSE)
+# seed:    starting seed number for random number generator (default is 1)
+# Makes use of:
+# ProbsCpp: function for the estimation of transition probabilities
+# CostsRcpp2: function for the estimation of cost state values
+# EffsRcpp2: function for the estimation of state specific health outcomes (QALYs)
+
+# n.i   <- 100000                # number of simulated individuals
+# n.t   <- 30                    # time horizon, 30 cycles
+# v.n   <- c("H","S1","S2","D")  # the model states: Healthy (H), Sick (S1), Sicker (S2), Dead (D)
+# n.s   <- length(v.n)           # the number of health states
+# v.M_1 <- rep("H", n.i)         # everyone begins in the healthy state
+# d.c   <- d.e <- 0.03           # equal discounting of costs and QALYs by 3%
+# v.Trt <- c("No Treatment", "Treatment") # store the strategy names
+#
+# # Transition probabilities (per cycle)
+# p.HD    <- 0.005               # probability to die when healthy
+# p.HS1   <- 0.15          	     # probability to become sick when healthy
+# p.S1H   <- 0.5           	     # probability to become healthy when sick
+# p.S1S2  <- 0.105         	     # probability to become sicker when sick
+# rr.S1   <- 3             	     # rate ratio of death in sick vs healthy
+# rr.S2   <- 10            	     # rate ratio of death in sicker vs healthy
+# r.HD    <- -log(1 - p.HD) 	   # rate of death in healthy
+# r.S1D   <- rr.S1 * r.HD  	     # rate of death in sick
+# r.S2D   <- rr.S2 * r.HD  	     # rate of death in sicker
+# p.S1D   <- 1 - exp(- r.S1D)    # probability to die in sick
+# p.S2D   <- 1 - exp(- r.S2D)    # probability to die in sicker
+#
+# # Cost and utility inputs
+# c.H     <- 2000                # cost of remaining one cycle healthy
+# c.S1    <- 4000                # cost of remaining one cycle sick
+# c.S2    <- 15000               # cost of remaining one cycle sicker
+# c.Trt   <- 12000               # cost of treatment (per cycle)
+#
+# u.H     <- 1                   # utility when healthy
+# u.S1    <- 0.75                # utility when sick
+# u.S2    <- 0.5                 # utility when sicker
+# u.Trt   <- 0.95                # utility when being treated
+#
+# # Define starting health state, using numbers instead of characters to identify the health states:
+# v_M_1 = rep(1, n.i)
+# #v_M_1 = rep(c(1, 2, 3, 4), n.i/4)
+#
+# # Create a vector of transition probabilities:
+# t_p = c(p.HD, p.HS1, p.S1H, p.S1S2, p.S1D, p.S2D)
+# names(t_p) = c("p.HD", "p.HS1", "p.S1H", "p.S1S2", "p.S1D", "p.S2D")
+#
+# # Create a vector containing costs parameters:
+# c_vec = c(c.H, c.S1, c.S2, c.Trt)
+# names(c_vec) = c("c.H", "c.S1", "c.S2", "c.Trt")
+#
+# # Create a vector containing utilities parameters:
+# u_vec = c(u.H, u.S1, u.S2, u.Trt)
+# names(u_vec) = c("u.H", "u.S1", "u.S2", "u.Trt")
+#
+# ###
+#
+# ResV_no_trt_Cpp =
+#   MicroSimV_Cpp(v_S_t = v_M_1, t_P = t_p, v_C = c_vec, v_U = u_vec, n_I = n.i,
+#                 n_S = n.s, n_T = n.t, n_Cl = 1, d_dC = d.c, d_dE = d.e,
+#                 b_Trt = FALSE, n_Seed = 1) # run for no treatment
+# ResV_trt_Cpp =
+#   MicroSimV_Cpp(v_S_t = v_M_1, t_P = t_p, v_C = c_vec, v_U = u_vec, n_I = n.i,
+#                 n_S = n.s, n_T = n.t, n_Cl = 1, d_dC = d.c, d_dE = d.e,
+#                 b_Trt = TRUE, n_Seed = 1) # run for treatment
+#
+# ###
+#
+# Default <- SS_MicroSim(n_i = 1000000)
+SS_MicroSim(p_S1S2 = 0.155761, hr_S1 = 3.108213, hr_S2 = 6.030473)
+###
+
+library(devtools)
+load_all()
+
+samples_SS_MicroSim <- sample_prior_LHS(
+  .n_samples = 100,
+  .l_params = sickSicker_data$l_params)
+samples1_SS_MicroSim <- sample_prior_FGS(
+  .n_samples = 5,
+  .l_params = sickSicker_data$l_params)
+samples2_SS_MicroSim <- sample_prior_RGS(
+  .n_samples = 50,
+  .l_params = sickSicker_data$l_params)
+
+GOF_wsse_SS_MicroSim <- wSSE_GOF(
+  .func = SS_MicroSim, .optim = FALSE,
+  .args = NULL,
+  .samples = samples_SS_MicroSim,
+  .l_targets = sickSicker_data$l_targets,
+  .sample_method = "LHS")
+
+GOF_llik_SS_MicroSim <- LLK_GOF(
+  .func = SS_MicroSim, .optim = FALSE,
+  .args = NULL,
+  .samples = samples_SS_MicroSim,
+  .l_targets = sickSicker_data$l_targets,
+  .sample_method = "LHS")
+
+samples <- sample_prior_LHS(
+  .n_samples = 5,
+  .l_params = sickSicker_data$l_params)
+
+NM_optimise_wSSE_SS_MicroSim <- calibrateModel_directed(
+  .l_params = sickSicker_data$l_params,
+  .func = SS_MicroSim,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = sickSicker_data$l_targets,
+  maxit = 1000)
+
+GB_optimise_wSSE_SS_MicroSim <- calibrateModel_directed(
+  .l_params = sickSicker_data$l_params,
+  .func = SS_MicroSim,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = sickSicker_data$l_targets,
+  maxit = 1000)
+
+SA_optimise_wSSE_SS_MicroSim <- calibrateModel_directed(
+  .l_params = sickSicker_data$l_params,
+  .func = SS_MicroSim,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = sickSicker_data$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+GA_optimise_wSSE_SS_MicroSim <- calibrateModel_directed(
+  .l_params = sickSicker_data$l_params,
+  .func = SS_MicroSim,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'GA',
+  .maximise = TRUE,
+  .l_targets = sickSicker_data$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+NM_optimise_LLK_SS_MicroSim <- calibrateModel_directed(
+  .l_params = sickSicker_data$l_params,
+  .func = SS_MicroSim,
+  .args = NULL,
+  .gof = 'log_likelihood',
+  .samples = samples,
+  .s_method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = sickSicker_data$l_targets,
+  maxit = 1000)
+
+GB_optimise_LLK_SS_MicroSim <- calibrateModel_directed(
+  .l_params = sickSicker_data$l_params,
+  .func = SS_MicroSim,
+  .args = NULL,
+  .gof = 'log_likelihood',
+  .samples = samples,
+  .s_method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = sickSicker_data$l_targets,
+  maxit = 1000)
+
+SA_optimise_LLK_SS_MicroSim <- calibrateModel_directed(
+  .l_params = sickSicker_data$l_params,
+  .func = SS_MicroSim,
+  .args = NULL,
+  .gof = 'log_likelihood',
+  .samples = samples,
+  .s_method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = sickSicker_data$l_targets,
+  fnscale = -1,
+  temp = 10,
+  tmax = 10,
+  maxit = 1000)
+
+GA_optimise_LLK_SS_MicroSim <- calibrateModel_directed(
+  .l_params = sickSicker_data$l_params,
+  .func = SS_MicroSim,
+  .args = NULL,
+  .gof = 'log_likelihood',
+  .samples = samples,
+  .s_method = 'GA',
+  .maximise = TRUE,
+  .l_targets = sickSicker_data$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+samples <- sample_prior_LHS(
+  .n_samples = 1000,
+  .l_params = sickSicker_data$l_params)
+
+SIR_SS_MicroSim = calibrateModel_beyesian(
+  .b_method = 'SIR', .func = SS_MicroSim,
+  .args = NULL,
+  .l_targets = sickSicker_data$l_targets,
+  .l_params = sickSicker_data$l_params, .samples = samples)
+
+set.seed(1) # Function crashes on set.seed(1)
+IMIS2_SS_MicroSim = calibrateModel_beyesian2(
+  .b_method = 'IMIS', .func = SS_MicroSim,
+  .args = NULL,
+  .l_targets = sickSicker_data$l_targets,
+  .l_params = sickSicker_data$l_params,
+  .n_resample = 1000)
+
+rm(likelihood, prior, sample.prior)
+set.seed(1) # Function crashes on set.seed(1)
+IMIS_SS_MicroSim = calibrateModel_beyesian(
+  .b_method = 'IMIS', .func = SS_MicroSim,
+  .args = NULL,
+  .l_targets = sickSicker_data$l_targets,
+  .l_params = sickSicker_data$l_params,
+  .n_resample = 1000)
+
+l_optim_lists_SS_MicroSim <- list(
+  GA_optimise_LLK_SS_MicroSim, GA_optimise_wSSE_SS_MicroSim,
+  GB_optimise_LLK_SS_MicroSim, GB_optimise_wSSE_SS_MicroSim,
+  NM_optimise_LLK_SS_MicroSim, NM_optimise_wSSE_SS_MicroSim,
+  SA_optimise_LLK_SS_MicroSim, SA_optimise_wSSE_SS_MicroSim)
+
+l_optim_lists_SS_MicroSim2 <- list(
+  GOF_wsse_SS_MicroSim, GOF_llik_SS_MicroSim)
+
+l_optim_lists_SS_MicroSim3 <- list(
+  SIR_SS_MicroSim, IMIS_SS_MicroSim, IMIS2_SS_MicroSim)
+
+PSA_values_SS_MicroSim <- PSA_calib_values(
+  .l_optim_lists = l_optim_lists_SS_MicroSim,
+  .search_method = 'Directed',
+  .PSA_runs = 1000,
+  .l_params = sickSicker_data$l_params)
+
+PSA_values_SS_MicroSim2 <- PSA_calib_values(
+  .l_optim_lists = l_optim_lists_SS_MicroSim2,
+  .search_method = 'Random',
+  .PSA_runs = 1000,
+  .l_params = sickSicker_data$l_params)
+
+PSA_values_SS_MicroSim3 <- PSA_calib_values(
+  .l_optim_lists = l_optim_lists_SS_MicroSim3,
+  .search_method = 'Bayesian',
+  .PSA_runs = 1000,
+  .l_params = sickSicker_data$l_params)
 
 
 
@@ -879,3 +1244,5 @@ IMIS2 = calibrateModel_beyesian2(
 
 
 
+
+####################################################################

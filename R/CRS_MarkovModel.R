@@ -1,14 +1,19 @@
 #' Cancer Relative Survival (CRS) 3-State Markov Model
 #'
-#' @param v_params
-#' @param p_Mets
-#' @param p_DieMets
+#' @param v_params A vector of named vector with values to replace
+#' \code{p_Mets} and \code{p_DieMets} default values.
+#' @param p_Mets probability to become sicker when sick.
+#' @param p_DieMets hazard ratio of death in sick vs healthy.
+#' @param calibrate If \code{TRUE} (default), the model outputs natural
+#' history data; otherwise, discounted outcomes \code{(costs and QALYs)}
+#' are returned.
 #'
 #' @return
 #' @export
 #'
 #' @examples
-CRS_markov <- function(v_params = NULL, p_Mets = 0.10, p_DieMets = 0.05) {
+CRS_markov <- function(v_params = NULL, p_Mets = 0.10, p_DieMets = 0.05,
+                       calibrate = TRUE) {
   with(as.list(v_params), {
     ## Markov model parameters
     n_t  <- 60                        # time horizon, number of cycles
@@ -55,13 +60,18 @@ CRS_markov <- function(v_params = NULL, p_Mets = 0.10, p_DieMets = 0.05) {
       m_M[t + 1, ] <- m_M[t, ] %*% m_P  # estimate the Markov trace for cycle the next cycle (t + 1)
     }
 
-    ####### EPIDEMIOLOGICAL OUTPUT  ###########################################
-    #### Overall Survival (OS) ####
-    v_os <- 1 - m_M[, "Death"]  # calculate the overall survival (OS) probability
+    if(calibratie){
+      ## EPIDEMIOLOGICAL OUTPUT:----
+      ### Overall Survival (OS):----
+      # calculate the overall survival (OS) probability
+      v_os <- 1 - m_M[, "Death"]
 
-    ####### RETURN OUTPUT  ###########################################
-    out <- list(Surv = v_os[-c(1:2)])
+      ### Return outputs:----
+      out <- list(Surv = v_os[-c(1:2)])
 
-    return(out)
+      return(out)
+    } else {
+
+    }
   })
 }

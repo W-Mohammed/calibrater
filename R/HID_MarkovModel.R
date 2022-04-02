@@ -2,16 +2,22 @@
 #'
 #' @param .v_params a named vector of model parameters in the following
 #' order: "mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho", "b", "c".
-#' @param project_future TRUE/FALSE, whether to project future outcomes for
-#' policy comparison
-#' @param pop_size Population size default is 1 million
-#' @param mu_b Background mortality default is 0.015
+#' @param calibrate If \code{TRUE} (default), the model outputs natural
+#' history data; otherwise, discounted outcomes \code{(costs and QALYs)}
+#' are returned.
+#' @param mu_e Cause-specific mortality rate with early-stage disease
+#' @param mu_l Cause-specific mortality rate with late-stage disease
+#' @param mu_t Cause-specific mortality rate on treatment
+#' @param p Transition rate from early to late-stage disease
+#' @param r_l Rate of uptake onto treatment (r_l = late-stage disease)
+#' @param rho Effective contact rate
+#' @param b Fraction of population in at-risk group
 #'
 #' @return
 #' @export
 #'
 #' @examples
-HID_markov <- function(.v_params = NULL, project_future = FALSE,
+HID_markov <- function(.v_params = NULL, calibrate = TRUE,
                        mu_e = 0.05, mu_l = 0.25, mu_t = 0.025, p = 0.10,
                        r_l = 0.5, rho = 0.025, b = 0.20) {
   with(as.list(.v_params), {
