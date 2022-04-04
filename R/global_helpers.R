@@ -41,7 +41,7 @@ assign_extraArgs_ <- function(.default_args_, .env_, .args_) {
     })
 }
 
-#' Run the example Shiny app that quires the healthsites api.
+#' Run the example shiny app.
 #'
 #' @param example_app The example shiny app to run.
 #'
@@ -52,7 +52,7 @@ assign_extraArgs_ <- function(.default_args_, .env_, .args_) {
 #' \dontrun{
 #' run_API_demo_App()
 #' }
-run_API_demo_App <- function(example_app = "one") {
+run_demo_App <- function(example_app = "one") {
   appFolder <- switch(example_app,
                       one = "calibrationApp"#,
                       #wb_dhs = "WBandDHS"
