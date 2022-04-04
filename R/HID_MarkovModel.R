@@ -35,9 +35,9 @@ HID_markov <- function(.v_params = NULL, calibrate = TRUE,
 
     # Prepare to run model:
     # Years to simulate (30 to present, 51 for 20 year analytic horizon):
-    n_yrs    <- if(project_future) { 51 } else { 30 }
+    n_yrs    <- if(calibrate) { 51 } else { 30 }
     # Scenarios to simulate: 1 = base case, 2 = expanded treatment access:
-    sim      <- if(project_future) { 1:2 } else { 1 }
+    sim      <- if(calibrate) { 1:2 } else { 1 }
     # Vector of mortality rates:
     v_mu     <- c(0, 0, mu_e, mu_l, mu_t) + mu_b
     # Calculate birth rate for equilibrium population before epidemic:
@@ -88,8 +88,8 @@ HID_markov <- function(.v_params = NULL, calibrate = TRUE,
     }
 
     # Report results:
-    if(project_future == FALSE) {
-      # Return calibration metrics, if project_future = FALSE:
+    if(calibrate == FALSE) {
+      # Return calibration metrics:
       return(
         list(
           # Prevalence at 10, 20, 30 years:
@@ -101,7 +101,7 @@ HID_markov <- function(.v_params = NULL, calibrate = TRUE,
           Trt_vol = trace[30 * 12, 5]
         ) )
     } else {
-      # Policy projections for CE analysis, if project_future = TRUE:
+      # Policy projections for CE analysis:
       return(
         list(
           # Trace without expanded treatment access:
