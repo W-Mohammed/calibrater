@@ -41,6 +41,35 @@ assign_extraArgs_ <- function(.default_args_, .env_, .args_) {
     })
 }
 
+#' Convert logit to probability
+#'
+#' @param .logit_ The logit to be transformed
+#'
+#' @return The probability corresponding to the passed logit
+#' @export
+#'
+#' @examples
+logit_to_prob <- function(.logit_) {
+  odds_ <- exp(.logit_)
+  prob_ <- odds_ / (1 + odds_)
+
+  return(prob_)
+}
+
+#' Convert probability to logit
+#'
+#' @param .prob_ The probability to be transformed
+#'
+#' @return The logit transformation of the passed probability
+#' @export
+#'
+#' @examples
+prob_to_logit <- function(.prob_) {
+  logit_ <- car::logit(.prob_)
+
+  return(logit_)
+}
+
 #' Run the example shiny app.
 #'
 #' @param example_app The example shiny app to run.

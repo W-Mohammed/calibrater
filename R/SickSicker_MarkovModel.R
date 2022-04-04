@@ -1,8 +1,8 @@
 #' Sick-Sicker (SS) Markov model
 #'
-#' @param v_params A vector of named vector with values to replace default
-#' model parameter values (usually those that require calibration).
-#' @param calibrate If \code{TRUE} (default), the model outputs natural
+#' @param .v_params_ A vector of named vector with values to replace
+#' default model parameter values (usually those that require calibration).
+#' @param calibrate_ If \code{TRUE} (default), the model outputs natural
 #' history data; otherwise, discounted outcomes \code{(costs and QALYs)}
 #' are returned.
 #' @param p_S1S2 Probability to become sicker when sick
@@ -13,9 +13,9 @@
 #' @export
 #'
 #' @examples
-SS_markov <- function(v_params, calibrate = TRUE, p_S1S2 = 0.105,
+SS_markov <- function(.v_params_, calibrate_ = TRUE, p_S1S2 = 0.105,
                       hr_S1 = 3, hr_S2 = 10) {
-  with(as.list(v_params), {
+  with(as.list(.v_params_), {
     ## Markov model parameters
     age     <- 25                   # age at baseline
     max_age <- 55                   # maximum age of follow up
@@ -109,9 +109,9 @@ SS_markov <- function(v_params, calibrate = TRUE, p_S1S2 = 0.105,
 
 #' Sick-Sicker (SS) Micro-simulation model
 #'
-#' @param v_params A vector of named vector with values to replace default
-#' model parameter values (usually those that require calibration).
-#' @param calibrate If \code{TRUE} (default), the model outputs natural
+#' @param .v_params_ A vector of named vector with values to replace
+#' default model parameter values (usually those that require calibration).
+#' @param calibrate_ If \code{TRUE} (default), the model outputs natural
 #' history data; otherwise, discounted outcomes \code{(costs and QALYs)}
 #' are returned.
 #' @param n_i Number of individuals to simulate
@@ -123,9 +123,9 @@ SS_markov <- function(v_params, calibrate = TRUE, p_S1S2 = 0.105,
 #' @export
 #'
 #' @examples
-SS_MicroSim <- function(v_params = NULL, calibrate = TRUE, n_i = 10000,
+SS_MicroSim <- function(.v_params_ = NULL, calibrate_ = TRUE, n_i = 10000,
                         p_S1S2 = 0.105, hr_S1 = 3, hr_S2 = 10) {
-  with(as.list(v_params), {
+  with(as.list(.v_params_), {
     ## Micro-simulation model parameters:----
     #n_i <- 10000                   # number of simulated individuals
     age     <- 25                   # age at baseline
@@ -196,7 +196,7 @@ SS_MicroSim <- function(v_params = NULL, calibrate = TRUE, n_i = 10000,
     names(u_vec) = c("u.H", "u.S1", "u.S2", "u.Trt")
 
     # Calibration:----
-    if(calibrate) {
+    if(calibrate_) {
       l_results <- SickSickerMicroSim_Cpp(
         v_S_t = v_M_1, t_P = t_p, v_C = c_vec, v_U = u_vec,
         n_I = n_i, n_S = n_s, n_T = n_t, n_Cl = 1, d_dC = d_c,
