@@ -40,3 +40,29 @@ assign_extraArgs_ <- function(.default_args_, .env_, .args_) {
              }, envir = .env_)
     })
 }
+
+#' Run the example Shiny app that quires the healthsites api.
+#'
+#' @param example_app The example shiny app to run.
+#'
+#' @return Runs the example shiny app
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' run_API_demo_App()
+#' }
+run_API_demo_App <- function(example_app = "one") {
+  appFolder <- switch(example_app,
+                      one = "calibrationApp"#,
+                      #wb_dhs = "WBandDHS"
+                      )
+  appDir <- system.file("shiny-examples", appFolder,
+                        package = "calibrater")
+  if (appDir == "") {
+    stop("Could not find example directory. Try re-installing `calibrater`.",
+         call. = FALSE)
+  }
+
+  shiny::runApp(appDir, display.mode = "normal")
+}
