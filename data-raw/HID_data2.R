@@ -21,15 +21,17 @@ l_targets <-
                           'ub' = 80000),
        'v_targets_dists' = v_targets_dists,
        'v_targets_weights' = v_targets_weights)
-v_params_names <- c("mu_e", "mu_l", "mu_t", "p",     "r_l",  "rho",    "b")
-v_params_dists <- c("norm", "norm", "norm", "norm", "norm", "norm", "norm")
+v_params_names <- c("mu_e", "mu_l", "mu_t", "p",     "r_l",  "rho",
+                    "b")
+v_params_dists <- c("norm", "norm", "norm", "norm", "norm", "norm",
+                    "norm")
 args <- list(list(mean = -3.121, sd = 0.5),
              list(mean = -1.511, sd = 0.5),
              list(mean = -3.814, sd = 0.5),
              list(mean = -2.428, sd = 0.5),
              list(mean = -0.818, sd = 0.5),
              list(mean = -0.818, sd = 0.5),
-             list(mean = -1.384775, sd = -1.984447))
+             list(mean = -1.384775, sd = 1.984447))
 extra_args <- list(list(min = log(0.02), max = log(0.12)),
                    list(min = log(0.08), max = log(0.59)),
                    list(min = log(0.01), max = log(0.06)),
@@ -38,10 +40,14 @@ extra_args <- list(list(min = log(0.02), max = log(0.12)),
                    list(min = log(0.01), max = log(0.06)),
                    list(min = prob_to_logit(0.03),
                         max = prob_to_logit(0.48)))
+backTransform <- list('mu_e' = "exp", 'mu_l' = "exp", 'mu_t' = "exp",
+                      'p' = "logit_to_prob", 'r_l' = "exp", 'rho' = "exp",
+                      'b' = "logit_to_prob")
 l_params <- list('v_params_names' = v_params_names,
                  'v_params_dists' = v_params_dists,
                  'args' = args,
-                 'Xargs' = extra_args)
+                 'Xargs' = extra_args,
+                 'backTransform' = backTransform)
 
 HID_data2 <- list('l_params' = l_params,
                   'l_targets' = l_targets)

@@ -1248,76 +1248,45 @@ library(devtools)
 load_all()
 
 samples_HID2_data <- sample_prior_LHS(.n_samples = 1000,
-                                     .l_params = HID_data2$l_params)
+                                      .l_params = HID_data2$l_params)
 samples1_HID2_data <- sample_prior_FGS(.n_samples = 5,
-                                      .l_params = HID_data2$l_params)
+                                       .l_params = HID_data2$l_params)
 samples2_HID2_data <- sample_prior_RGS(.n_samples = 50,
-                                      .l_params = HID_data2$l_params)
+                                       .l_params = HID_data2$l_params)
 
 GOF_wsse_HID2_data <- wSSE_GOF(
   .func = HID_markov_2, .optim = FALSE,
   .args = NULL,
-  .samples = samples_HID_data,
+  .samples = samples_HID2_data,
   .l_targets = HID_data2$l_targets,
   .sample_method = "LHS")
 
 GOF_llik_HID2_data <- LLK_GOF(
   .func = HID_markov_2, .optim = FALSE,
   .args = NULL,
-  .samples = samples_HID_data,
+  .samples = samples_HID2_data,
   .l_targets = HID_data2$l_targets,
   .sample_method = "LHS")
 
+### Back transform the resulting parameters:
+# GOF_llik_HID2_data$mu_e <- exp(GOF_llik_HID2_data$mu_e)
+# GOF_llik_HID2_data$mu_l <- exp(GOF_llik_HID2_data$mu_l)
+# GOF_llik_HID2_data$mu_t <- exp(GOF_llik_HID2_data$mu_t)
+# GOF_llik_HID2_data$p <- logit_to_prob(GOF_llik_HID2_data$p)
+# GOF_llik_HID2_data$r_l <- exp(GOF_llik_HID2_data$r_l)
+# GOF_llik_HID2_data$rho <- exp(GOF_llik_HID2_data$rho)
+# GOF_llik_HID2_data$b <- logit_to_prob(GOF_llik_HID2_data$b)
+#
+# GOF_wsse_HID2_data$mu_e <- exp(GOF_wsse_HID2_data$mu_e)
+# GOF_wsse_HID2_data$mu_l <- exp(GOF_wsse_HID2_data$mu_l)
+# GOF_wsse_HID2_data$mu_t <- exp(GOF_wsse_HID2_data$mu_t)
+# GOF_wsse_HID2_data$p <- logit_to_prob(GOF_wsse_HID2_data$p)
+# GOF_wsse_HID2_data$r_l <- exp(GOF_wsse_HID2_data$r_l)
+# GOF_wsse_HID2_data$rho <- exp(GOF_wsse_HID2_data$rho)
+# GOF_wsse_HID2_data$b <- logit_to_prob(GOF_wsse_HID2_data$b)
+
 samples <- sample_prior_LHS(.n_samples = 5,
                             .l_params = HID_data2$l_params)
-
-NM_optimise_wSSE_HID2_data <- calibrateModel_directed(
-  .l_params = HID_data2$l_params,
-  .func = HID_markov_2,
-  .args = NULL,
-  .gof = 'wSumSquareError',
-  .samples = samples,
-  .s_method = 'Nelder-Mead',
-  .maximise = TRUE,
-  .l_targets = HID_data2$l_targets,
-  maxit = 1000)
-
-GB_optimise_wSSE_HID2_data <- calibrateModel_directed(
-  .l_params = HID_data2$l_params,
-  .func = HID_markov_2,
-  .args = NULL,
-  .gof = 'wSumSquareError',
-  .samples = samples,
-  .s_method = 'BFGS',
-  .maximise = TRUE,
-  .l_targets = HID_data2$l_targets,
-  maxit = 1000)
-
-SA_optimise_wSSE_HID2_data <- calibrateModel_directed(
-  .l_params = HID_data2$l_params,
-  .func = HID_markov_2,
-  .args = NULL,
-  .gof = 'wSumSquareError',
-  .samples = samples,
-  .s_method = 'SANN',
-  .maximise = TRUE,
-  .l_targets = HID_data2$l_targets,
-  maxit = 1000,
-  temp = 10,
-  tmax = 10)
-
-GA_optimise_wSSE_HID2_data <- calibrateModel_directed(
-  .l_params = HID_data2$l_params,
-  .func = HID_markov_2,
-  .args = NULL,
-  .gof = 'wSumSquareError',
-  .samples = samples,
-  .s_method = 'GA',
-  .maximise = TRUE,
-  .l_targets = HID_data2$l_targets,
-  maxit = 1000,
-  temp = 10,
-  tmax = 10)
 
 NM_optimise_LLK_HID2_data <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
@@ -1330,11 +1299,33 @@ NM_optimise_LLK_HID2_data <- calibrateModel_directed(
   .l_targets = HID_data2$l_targets,
   maxit = 1000)
 
+NM_optimise_wSSE_HID2_data <- calibrateModel_directed(
+  .l_params = HID_data2$l_params,
+  .func = HID_markov_2,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = HID_data2$l_targets,
+  maxit = 1000)
+
 GB_optimise_LLK_HID2_data <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
   .gof = 'log_likelihood',
+  .samples = samples,
+  .s_method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = HID_data2$l_targets,
+  maxit = 1000)
+
+GB_optimise_wSSE_HID2_data <- calibrateModel_directed(
+  .l_params = HID_data2$l_params,
+  .func = HID_markov_2,
+  .args = NULL,
+  .gof = 'wSumSquareError',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -1355,6 +1346,19 @@ SA_optimise_LLK_HID2_data <- calibrateModel_directed(
   tmax = 10,
   maxit = 1000)
 
+SA_optimise_wSSE_HID2_data <- calibrateModel_directed(
+  .l_params = HID_data2$l_params,
+  .func = HID_markov_2,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = HID_data2$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
 GA_optimise_LLK_HID2_data <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
@@ -1367,6 +1371,28 @@ GA_optimise_LLK_HID2_data <- calibrateModel_directed(
   maxit = 1000,
   temp = 10,
   tmax = 10)
+
+GA_optimise_wSSE_HID2_data <- calibrateModel_directed(
+  .l_params = HID_data2$l_params,
+  .func = HID_markov_2,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = samples,
+  .s_method = 'GA',
+  .maximise = TRUE,
+  .l_targets = HID_data2$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+# HID2_results <- list('GA_l' = GA_optimise_LLK_HID2_data,
+#                      'GA_s' = GA_optimise_wSSE_HID2_data,
+#                      'NM_l' = NM_optimise_LLK_HID2_data,
+#                      'NM_s' = NM_optimise_wSSE_HID2_data,
+#                      'SA_l' = SA_optimise_LLK_HID2_data,
+#                      'SA_s' = SA_optimise_wSSE_HID2_data,
+#                      'GB_l' = GB_optimise_LLK_HID2_data,
+#                      'GB_s' = GB_optimise_wSSE_HID2_data)
 
 samples <- sample_prior_LHS(.n_samples = 1000,
                             .l_params = HID_data2$l_params)
@@ -1393,6 +1419,12 @@ IMIS_HID2_data = calibrateModel_beyesian(
   .l_targets = HID_data2$l_targets,
   .l_params = HID_data2$l_params,
   .n_resample = 1000)
+
+# HID2_results <- c(HID2_results, list('IMIS' = IMIS_HID2_data, 'IMIS2' = IMIS2_HID2_data,
+#                  'SIR' =SIR_HID2_data))
+# HID2_results <- c(HID2_results, list('LHS_l' = GOF_llik_HID2_data,
+#                                      'LHS_s' = GOF_wsse_HID2_data))
+# usethis::use_data(HID2_results, overwrite = T)
 
 l_optim_lists_HID2_data <- list(
   GA_optimise_LLK_HID2_data, GA_optimise_wSSE_HID2_data,
@@ -1424,20 +1456,62 @@ PSA_values_HID2_data3 <- PSA_calib_values(
   .PSA_runs = 1000,
   .l_params = HID_data2$l_params)
 
+### Back transform values using a function:
+# backTransform <- function(.t_data_, .l_params_) {
+#   l_bTransform <- list(
+#     'v_params_names' = .l_params_$v_params_names,
+#     'bckTransFunc' = .l_params_$backTransform)
+#   env_ <- environment()
+#   purrr::walk(
+#     .x = .t_data_,
+#     .f = function(t_data_ = .x) {
+#       purrr::walk2(
+#         .x = l_bTransform$v_params_names,
+#         .y = l_bTransform$bckTransFunc,
+#         .f = function(name_ = .x, func_ = .y) {
+#           assign(t_data_[[name_]],
+#                  exec(.fn = func_,
+#                       t_data_[[name_]]),
+#                  envir = env_)
+#         }
+#       )
+#     }
+#   )
+# }
+# env_ <- environment()
+# backTransform(.t_data_ = HID2_results[3:length(HID2_results)], )
 
+testing = backTransform(.t_data_ = HID2_results[['IMIS']][['Results']],.l_params_ = HID_data2$l_params)
 
+PSA_values_HID_markov2 <- PSA_calib_values(
+  .l_optim_lists = HID2_results[1:8],
+  .search_method = 'Directed',
+  .PSA_runs = 10,
+  .l_params = HID_data2$l_params,
+  transform_ = TRUE)
 
+PSA_values_HID_markov2_2 <- PSA_calib_values(
+  .l_optim_lists = HID2_results[12:13],
+  .search_method = 'Random',
+  .PSA_runs = 10,
+  .l_params = HID_data2$l_params,
+  transform_ = TRUE)
 
+PSA_values_HID_markov2_3 <- PSA_calib_values(
+  .l_optim_lists = HID2_results[9:11],
+  .search_method = 'Bayesian',
+  .PSA_runs = 10,
+  .l_params = HID_data2$l_params,
+  transform_ = TRUE)
 
+PSA_test <- run_PSA(.func_ = HID_markov,
+        .PSA_calib_values_ = c(
+          PSA_values_HID_markov2, PSA_values_HID_markov2_2,
+          PSA_values_HID_markov2_3),
+        .args_ = list(calibrate_ = FALSE),
+        .PSA_unCalib_values_ = NULL)
 
-
-
-
-
-
-
-
-
+#HID_markov(calibrate_ = F) # inc_LY 51.58729 inc_cost 120689.9
 
 
 

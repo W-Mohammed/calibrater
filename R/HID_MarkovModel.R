@@ -35,9 +35,9 @@ HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE, mu_e = 0.05,
 
     # Prepare to run model:
     # Years to simulate (30 to present, 51 for 20 year analytic horizon):
-    n_yrs    <- if(calibrate_) { 51 } else { 30 }
+    n_yrs    <- if(!calibrate_) { 51 } else { 30 }
     # Scenarios to simulate: 1 = base case, 2 = expanded treatment access:
-    sim      <- if(calibrate_) { 1:2 } else { 1 }
+    sim      <- if(!calibrate_) { 1:2 } else { 1 }
     # Vector of mortality rates:
     v_mu     <- c(0, 0, mu_e, mu_l, mu_t) + mu_b
     # Calculate birth rate for equilibrium population before epidemic:
@@ -104,15 +104,15 @@ HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE, mu_e = 0.05,
       # Policy projections for CE analysis:
       return(
         list(
-          # Trace without expanded treatment access:
-          trace0 = results[[1]],
-          # Trace with expanded treatment access:
-          trace1 = results[[2]],
+          # # Trace without expanded treatment access:
+          # trace0 = results[[1]],
+          # # Trace with expanded treatment access:
+          # trace1 = results[[2]],
           # Incremental LY lived with expanded tx:
-          inc_LY = sum(results[[2]][(30 * 12 + 1):(51 * 12), -6] -
+          'inc_LY' = sum(results[[2]][(30 * 12 + 1):(51 * 12), -6] -
                          results[[1]][(30 * 12 + 1):(51 * 12), -6]) / 12,
           # Incremental costs with expanded tx:
-          inc_cost = sum(results[[2]][(30 * 12 + 1):(51 * 12), 5] -
+          'inc_cost' = sum(results[[2]][(30 * 12 + 1):(51 * 12), 5] -
                            results[[1]][(30 * 12 + 1):(51 * 12), 5]) *
             c / 12))}
   })
@@ -167,13 +167,12 @@ HID_markov_2 <- function(.v_params_ = NULL, calibrate_ = TRUE,
       r_l <- exp(r_l)
       b <- logit_to_prob(b)
     }
-    print(paste(mu_e, mu_l, mu_t, rho, p, r_l, b))
 
     # Prepare to run model:
     # Years to simulate (30 to present, 51 for 20 year analytic horizon):
-    n_yrs    <- if(calibrate_) { 51 } else { 30 }
+    n_yrs    <- if(!calibrate_) { 51 } else { 30 }
     # Scenarios to simulate: 1 = base case, 2 = expanded treatment access:
-    sim      <- if(calibrate_) { 1:2 } else { 1 }
+    sim      <- if(!calibrate_) { 1:2 } else { 1 }
     # Vector of mortality rates:
     v_mu     <- c(0, 0, mu_e, mu_l, mu_t) + mu_b
     # Calculate birth rate for equilibrium population before epidemic:
@@ -240,15 +239,15 @@ HID_markov_2 <- function(.v_params_ = NULL, calibrate_ = TRUE,
       # Policy projections for CE analysis:
       return(
         list(
-          # Trace without expanded treatment access:
-          trace0 = results[[1]],
-          # Trace with expanded treatment access:
-          trace1 = results[[2]],
+          # # Trace without expanded treatment access:
+          # trace0 = results[[1]],
+          # # Trace with expanded treatment access:
+          # trace1 = results[[2]],
           # Incremental LY lived with expanded tx:
-          inc_LY = sum(results[[2]][(30 * 12 + 1):(51 * 12), -6] -
+          'inc_LY' = sum(results[[2]][(30 * 12 + 1):(51 * 12), -6] -
                          results[[1]][(30 * 12 + 1):(51 * 12), -6]) / 12,
           # Incremental costs with expanded tx:
-          inc_cost = sum(results[[2]][(30 * 12 + 1):(51 * 12), 5] -
+          'inc_cost' = sum(results[[2]][(30 * 12 + 1):(51 * 12), 5] -
                            results[[1]][(30 * 12 + 1):(51 * 12), 5]) *
             c / 12))}
   })

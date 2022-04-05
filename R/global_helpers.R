@@ -70,6 +70,42 @@ prob_to_logit <- function(.prob_) {
   return(logit_)
 }
 
+#' Back transform parameters values
+#'
+#' @param .t_data_ A dataset with data on the transformed scale
+#' @param .l_params_ A list with required parameters' information,
+#' including; names and functions to back transform the parameters to their
+#' original/desired scale.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+backTransform <- function(.t_data_, .l_params_) {
+  # Prepare inputs list:
+  l_bTransform <- list(
+    'v_params_names' = .l_params_$v_params_names,
+    'bckTransFunc' = .l_params_$backTransform)
+
+  # Back-transform the columns of interest:
+  data_ <- purrr::map2_dfc(
+    .x = l_bTransform$v_params_names,
+    .y = l_bTransform$bckTransFunc,
+    .f = function(name_ = .x, func_ = .y) {
+      name_ = exec(.fn = func_,
+                  .t_data_ %>%
+                    select(.data[[name_]]))
+    }
+  ) %>% # Bind remaining columns:
+    bind_cols(.t_data_ %>%
+            select(- l_bTransform$v_params_names)) %>%
+    select(
+      colnames(.t_data_)[!colnames(.t_data_) %in%
+                           l_bTransform$v_params_names], everything())
+
+  return(data_)
+}
+
 #' Run the example shiny app.
 #'
 #' @param example_app The example shiny app to run.
@@ -85,7 +121,7 @@ run_demo_App <- function(example_app = "one") {
   appFolder <- switch(example_app,
                       one = "calibrationApp"#,
                       #wb_dhs = "WBandDHS"
-                      )
+  )
   appDir <- system.file("shiny-examples", appFolder,
                         package = "calibrater")
   if (appDir == "") {
