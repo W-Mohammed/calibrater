@@ -37,13 +37,31 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
   stopifnot((!is.null(.hessian) | (!is.null(.gof)) & !is.null(.func)))
   # Approximate the .hessian if not estimated by the optimisation function:
   if(is.null(.hessian)) {
-    .hessian <- numDeriv::hessian(func = .gof, x = .par, .func = .func,
+    names(.par) <- .params_name
+    .hessian <- tryCatch(
+      expr = {
+        temp <- numDeriv::hessian(func = .gof, x = .par, .func = .func,
                                   .args = .args, .l_targets = .l_targets,
                                   .maximise = .maximiser, .optim = TRUE,
                                   v_params_names = .params_name)
-    # Name columns and rows:
-    dimnames(.hessian) <- list(.params_name, .params_name)
-    names(.par) <- .params_name
+        # Name columns and rows:
+        if(!is.null(temp))
+          dimnames(temp) <- list(.params_name, .params_name)
+
+        temp
+      }, error = function(e) {
+        message(paste0("\r", e))
+
+        NULL
+      })
+  }
+
+  # If .hessian is NULL:
+  if(is.null(.hessian)) {
+    return(list(Params = .params_name, Estimate = .par, Lower = NA,
+                Upper = NA, 'GOF value' = .gof_value,
+                'Calibration method' = paste0(.s_method, "_", .gof_name),
+                'Sigma' = NA))
   }
 
   # If .func was not maximising or .hessian resulted from a minimiser:
@@ -54,13 +72,13 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
   # Estimate Fisher Information Matrix (FIM), also the covariance matrix:
   fisher_info <- tryCatch(
     # Avoid "Lapack routine dgesv: system is exactly singular: U[6,6] = 0"
-    {
+    expr = {
       solve(.hessian)
 
     }, error = function(e) {
       message(paste0("\r", e))
 
-      return(NULL)
+      NULL
     }
   )
   # Exit function early if the inverse of .hessian is unattainable:
@@ -263,36 +281,57 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
         # Grab a parameter set:
         params_set = c(...)
         # Run the optimisation function optim:
-        fit <- optim(
-          par = params_set,
-          fn = .gof,
-          method = .s_method,
-          control = list( # control parameters
-            fnscale = ifelse(.maximise, -1, # maximiser/minimiser
-                             arguments[['fnscale']]),
-            temp = arguments[['temp']], # SANN algorithm tuning
-            tmax = arguments[['tmax']], # SANN algorithm tuning
-            maxit = arguments[['maxit']]), # maximum iterations
-          hessian = TRUE, # estimate hessian matrix
-          .func = .func, # model to be optimised
-          .args = .args, # arguments to be passed to the model
-          .l_targets = .l_targets, # targets passed to .gof
-          .maximise = TRUE, # .gof should maximise
-          .optim = TRUE, # .gof reports gof value only
-          seed_no = .seed_no)
+        fit <- tryCatch(
+          # Make sure to return NULL if the algorithm fails:
+          expr = {
+            optim(
+              par = params_set,
+              fn = .gof,
+              method = .s_method,
+              control = list( # control parameters
+                fnscale = ifelse(.maximise, -1, # maximiser/minimiser
+                                 arguments[['fnscale']]),
+                temp = arguments[['temp']], # SANN algorithm tuning
+                tmax = arguments[['tmax']], # SANN algorithm tuning
+                maxit = arguments[['maxit']]), # maximum iterations
+              hessian = TRUE, # estimate hessian matrix
+              .func = .func, # model to be optimised
+              .args = .args, # arguments to be passed to the model
+              .l_targets = .l_targets, # targets passed to .gof
+              .maximise = TRUE, # .gof should maximise
+              .optim = TRUE, # .gof reports gof value only
+              seed_no = .seed_no
+            )
+          }, error = function(e) {
+            message(paste0("\r", e))
+
+            return(NULL)
+          }
+        )
         # Summarise output produced by optim():
-        fit_summary <- summ_optim(
-          .params_name = params_name,
-          .gof = .gof, # goodness-of-fit function used/to be used.
-          .gof_value = fit$value, # best goodness-of-fit value
-          .s_method = .s_method, # the name of the goodness-of-fit method
-          .par = fit$par, # best parameter set identified
-          .func = .func, # the optimised function
-          .args = .args, # arguments passed to .func
-          .hessian = fit$hessian, # hessian matrix estimated by optim()
-          .l_targets = .l_targets, # targets passed to .gof
-          .gof_name = .gof_name) # the name of the goodness-of-fit function
-      })
+        fit_summary <- tryCatch(
+          # Make sure to return NULL if the algorithm fails:
+          expr = {
+            summ_optim(
+              .params_name = params_name,
+              .gof = .gof, # goodness-of-fit function used/to be used.
+              .gof_value = fit$value, # best goodness-of-fit value
+              .s_method = .s_method, # the name of the search method
+              .par = fit$par, # best parameter set identified
+              .func = .func, # the optimised function (decision model)
+              .args = .args, # arguments passed to .func
+              .hessian = fit$hessian, # hessian matrix estimated by optim()
+              .l_targets = .l_targets, # targets passed to .gof
+              .gof_name = .gof_name # the name of the goodness-of-fit function
+            )
+          }, error = function(e) {
+            message(paste0("\r", e))
+
+            return(NULL)
+          }
+        )
+      }
+    )
   } else {
     # Collect lower and upper bounds for DEoptim():
     lb = map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$min)
@@ -302,38 +341,69 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
       .l = .samples,
       .f = function(...) {
         # Run the optimisation function DEoptim:
-        fit <- DEoptim::DEoptim(
-          fn = .gof,
-          lower = lb,
-          upper = ub,
-          control = DEoptim::DEoptim.control( # control parameters
-            trace = FALSE), # printing a trace
-          .func = .func, # model to be optimised
-          .args = .args, # arguments to be passed to the model
-          .l_targets = .l_targets, # targets passed to .gof
-          .maximise = FALSE, # .gof should minimise
-          .optim = TRUE, # .gof reports gof value only
-          seed_no = .seed_no,
-          # DEoptim() requires params names to be re-assigned in .gof:
-          v_params_names = params_name)
+        fit <- tryCatch(
+          # Make sure to return NULL if the algorithm fails:
+          expr = {
+            DEoptim::DEoptim(
+              fn = .gof,
+              lower = lb,
+              upper = ub,
+              control = DEoptim::DEoptim.control( # control parameters
+                trace = FALSE), # printing a trace
+              .func = .func, # model to be optimised
+              .args = .args, # arguments to be passed to the model
+              .l_targets = .l_targets, # targets passed to .gof
+              .maximise = FALSE, # .gof should minimise
+              .optim = TRUE, # .gof reports gof value only
+              seed_no = .seed_no,
+              # DEoptim() requires params names to be re-assigned in .gof:
+              v_params_names = params_name
+            )
+          }, error = function(e) {
+            message(paste0("\r", e))
+
+            return(NULL)
+          }
+        )
         # Summarise output produced by DEoptim():
-        fit_summary <- summ_optim(
-          .params_name = params_name,
-          .gof = .gof, # goodness-of-fit function used/to be used.
-          .gof_value = -fit$optim$bestval, # best goodness-of-fit value
-          .s_method = .s_method, # the name of the goodness-of-fit method
-          .par = fit$optim$bestmem, # best parameter set identified
-          .func = .func, # the optimised function
-          .args = .args, # arguments passed to .func
-          .maximiser = FALSE, # GA is a minimiser
-          .l_targets = .l_targets, # targets passed to .gof
-          .gof_name = .gof_name) # the name of the goodness-of-fit function
-      })
+        fit_summary <- tryCatch(
+          # Make sure to return NULL if the algorithm fails:
+          expr = {
+            summ_optim(
+              .params_name = params_name,
+              .gof = .gof, # goodness-of-fit function used/to be used.
+              .gof_value = -fit$optim$bestval, # best goodness-of-fit value
+              .s_method = .s_method, # the name of the goodness-of-fit method
+              .par = fit$optim$bestmem, # best parameter set identified
+              .func = .func, # the optimised function (decision model)
+              .args = .args, # arguments passed to .func
+              .maximiser = FALSE, # GA is a minimiser
+              .l_targets = .l_targets, # targets passed to .gof
+              .gof_name = .gof_name # the name of the goodness-of-fit function
+            )
+          }, error = function(e) {
+            message(paste0("\r", e))
+
+            return(NULL)
+          }
+        )
+      }
+    )
   }
 
   # Sort items on the list based on overall fit:
-  fits <- fits %>%
-    rlist::list.sort(-`GOF value`)
+  # tryCatch errors where `GOF value` does not exist
+  fits <- tryCatch(
+    expr = {
+      fits %>%
+        rlist::list.exclude(is.null(.)) %>%
+        rlist::list.sort(-`GOF value`)
+    }, error = function(e) {
+      message(paste0("\r", e))
+
+      return(NULL)
+    }
+  )
 
   return(fits)
 }

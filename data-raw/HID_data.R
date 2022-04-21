@@ -7,7 +7,7 @@ l_targets <-
   list('v_targets_names' = v_targets_names,
        'Prev' = tibble('value' = c(5/100, 15/100, 10/100), # %
                        'se' = c(5/1000, 15/1000, 10/1000), # 10% of value
-                       'x' = c(25, 50, 75),
+                       'x' = c(25, 75, 50),
                        'size' = 500,
                        'lb' = c(3.3, 12, 7.5),
                        'ub' = c(7.1, 18.3, 12.8)),

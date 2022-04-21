@@ -14,20 +14,7 @@
 #' @examples
 IMIS_ <- function(B=1000, B.re=3000, number_k=100, D=0,
                   sample.prior = .sample.prior_, prior = .prior_,
-                  likelihood = .likelihood_, ...){
-  # Grab additional arguments:
-  args_ <- list(...)
-  # Assign additional arguments:
-  default_args_ <- list('.l_params_' = NULL, # prior/sample.prior
-                        '.func_' = NULL, # calculate_likelihood
-                        '.args_' = NULL, # calculate_likelihood
-                        '.l_targets_' = NULL) # calculate_likelihood
-  env_ <- environment() # Get function environment to direct assignments
-  assign_extraArgs_(
-    .default_args_ = default_args_,
-    .env_ = env_,
-    .args_ = args_)
-
+                  likelihood = .likelihood_){
   # The IMIS function, from the IMIS package: ----
   B0 = B*10
   X_all = X_k = sample.prior(B0)				# Draw initial samples from the prior distribution

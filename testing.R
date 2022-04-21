@@ -728,6 +728,169 @@ PSA_results_CRS_markov <- run_PSA(
 
 
 #HID_model#############################################################
+l_prior <- function(par_vector) {
+  # par_vector: a vector (or matrix) of model parameters (omits c)
+  if(is.null(dim(par_vector))) par_vector <- t(par_vector)
+  lprior <- rep(0,nrow(par_vector))
+  lprior <- lprior+dlnorm(par_vector[,1],log(0.05 )-1/2*0.5^2,0.5,log=TRUE)    # mu_e
+  lprior <- lprior+dlnorm(par_vector[,2],log(0.25 )-1/2*0.5^2,0.5,log=TRUE)    # mu_l
+  lprior <- lprior+dlnorm(par_vector[,3],log(0.025)-1/2*0.5^2,0.5,log=TRUE)    # mu_t
+  lprior <- lprior+dlnorm(par_vector[,4],log(0.1  )-1/2*0.5^2,0.5,log=TRUE)    # p
+  lprior <- lprior+dlnorm(par_vector[,5],log(0.5  )-1/2*0.5^2,0.5,log=TRUE)    # r_l
+  lprior <- lprior+dlnorm(par_vector[,6],log(0.5  )-1/2*0.5^2,0.5,log=TRUE)    # rho
+  lprior <- lprior+dbeta( par_vector[,7],2,8,log=TRUE)                         # b
+  return(lprior)
+}
+
+tooot = samples_HID2_data[1:5,]
+tooot2 = backTransform(.t_data_ = as_tibble(samples_HID2_data[1:5,]), .l_params_ = HID_data2$l_params)
+
+log_prior(.samples = tooot2[1,], .l_params = HID_data$l_params)
+l_prior(par_vector = as.matrix(tooot2[1,]))
+log_prior(.samples = tooot[1,], .l_params = HID_data2$l_params,
+          .transform = TRUE)
+
+microbenchmark::microbenchmark(
+  log_prior_(.samples = samples_HID2_data, .l_params = HID_data2$l_params,
+             .transform = TRUE),
+  l_prior(par_vector = as.matrix(samples_HID2_data)))
+
+mod <- function(par_vector,project_future=FALSE) {
+  # par_vector: a vector of model parameters
+  # project_future: TRUE/FALSE, whether to project future outcomes for policy comparison
+  pop_size   <- 1e6             # population size hard-coded as 1 million
+  mu_b       <- 0.015           # background mortality rate hard-coded as 0.015
+  mu_e       <- par_vector[1]   # cause-specific mortality rate with early-stage disease
+  mu_l       <- par_vector[2]   # cause-specific mortality rate with late-stage disease
+  mu_t       <- par_vector[3]   # cause-specific mortality rate on treatment
+  p          <- par_vector[4]   # transtion rate from early to late-stage disease
+  r_l <- r_e <- par_vector[5]   # rate of uptake onto treatment (r_l = late-stage disease;r_e = early-stage disease)
+  rho        <- par_vector[6]   # effective contact rate
+  b          <- par_vector[7]   # fraction of population in at-risk group
+  c          <- par_vector[8]   # annual cost of treatment
+
+  ######## Prepare to run model ###################
+  n_yrs    <- if(project_future) { 51 } else { 30 }  # no. years to simulate (30 to present, 51 for 20 year analytic horizon)
+  sim      <- if(project_future) { 1:2 } else { 1 }  # which scenarios to simulate: 1 = base case, 2 = expanded treatment access
+  v_mu     <- c(0,0,mu_e,mu_l,mu_t)+mu_b             # vector of mortality rates
+  births   <- pop_size*mu_b*c(1-b,b)                 # calculate birth rate for equilibrium population before epidemic
+  init_pop <- pop_size*c(1-b,b-0.001,0.001,0,0,0)    # creates starting vector for population
+  trace    <- matrix(NA,12*n_yrs,6)                  # creates a table to store simulation trace
+  colnames(trace) <- c("N","S","E","L","T","D")
+  results  <- list()                                 # creates a list to store results
+
+  ######## Run model ###################
+  for(s in sim) {
+    P0 <- P1 <- init_pop
+    for(m in 1:(12*n_yrs)) {
+      lambda    <- rho*sum(P0[3:4])/sum(P0[2:5]) # calculates force of infection
+      P1[1:2]   <- P1[1:2]+births/12             # births
+      P1[-6]    <- P1[-6]-P0[-6]*v_mu/12         # deaths: N, S, E, L, T, to D
+      P1[6]     <- P1[6]+sum(P0[-6]*v_mu/12)     # deaths:N, S, E, L, T, to D
+      P1[2]     <- P1[2]-P0[2]*lambda/12         # infection: S to E
+      P1[3]     <- P1[3]+P0[2]*lambda/12         # infection: S to E
+      P1[3]     <- P1[3]-P0[3]*p/12              # progression: E to L
+      P1[4]     <- P1[4]+P0[3]*p/12              # progression: E to L
+      P1[4]     <- P1[4]-P0[4]*r_l/12            # treatment uptake: L to T
+      P1[5]     <- P1[5]+P0[4]*r_l/12            # treatment uptake: L to T
+      if(s==2 & m>(12*30)) {
+        P1[3]   <- P1[3]-P0[3]*r_e/12            # treatment uptake: E to T (scenario 2)
+        P1[5]   <- P1[5]+P0[3]*r_e/12            # treatment uptake: E to T (scenario 2)
+      }
+      trace[m,] <- P0 <- P1                      # fill trace, reset pop vectors
+    }
+    results[[s]] <- trace                        # save results for each scenario
+  }
+
+  ######## Report results ###################
+  if(project_future==FALSE) {
+    ## Return calibration metrics, if project_future = FALSE
+    return(list(prev = (rowSums(trace[,3:5])/rowSums(trace[,1:5]))[c(10,20,30)*12],  # Prevalence at 10,20,30 years
+                surv = 1/(v_mu[3]+p)+ p/(v_mu[3]+p)*(1/v_mu[4]),                     # HIV survival without treatment
+                tx   = trace[30*12,5]                                                # Treatment volume at 30 years
+    ) )
+  } else {
+    ## Policy projections for CE analysis, if project_future = TRUE
+    return(list(trace0   = results[[1]],     # Trace without expanded treatment access
+                trace1   = results[[2]],     # Trace with expanded treatment access
+                inc_LY   = sum(results[[2]][(30*12+1):(51*12),-6]-results[[1]][(30*12+1):(51*12),-6])/12,  # incr. LY lived with expanded tx
+                inc_cost = sum(results[[2]][(30*12+1):(51*12),5]-results[[1]][(30*12+1):(51*12),5])*c/12   # incr. cost  with expanded tx
+    ) )
+  }
+}
+
+l_likelihood <- function(par_vector) {
+  # par_vector: a vector (or matrix) of model parameters
+  if(is.null(dim(par_vector))) par_vector <- t(par_vector)
+  llik <- rep(0,nrow(par_vector))
+  for(j in 1:nrow(par_vector)) {
+    jj <- tryCatch( {
+      res_j <- mod(c(as.numeric(par_vector[j,]),1))
+      llik[j] <- llik[j]+sum(dbinom(c(25,75,50),500,res_j[["prev"]], log=TRUE)) # prevalence likelihood
+      llik[j] <- llik[j]+dnorm(10,res_j[["surv"]],2/1.96, log=TRUE)             # survival likelihood
+      llik[j] <- llik[j]+dnorm(75000,res_j[["tx"]],5000/1.96, log=TRUE)         # treatment volume likelihood
+    }, error = function(e) NA)
+    if(is.na(jj)) { llik[j] <- -Inf }
+  }
+  return(llik)
+}
+
+l_likelihood(par_vector = as.matrix(tooot2[3,]))
+log_likelihood(
+  .samples = tooot2[3,],
+  .func = HID_markov,
+  .args = NULL,
+  .l_targets = HID_data$l_targets
+)
+
+microbenchmark::microbenchmark(
+  l_likelihood(par_vector = as.matrix(tooot2[3,])),
+  log_likelihood(
+    .samples = tooot2[3,],
+    .func = HID_markov,
+    .args = NULL,
+    .l_targets = HID_data$l_targets
+  )
+)
+
+l_post <- function(par_vector) {
+  return( l_prior(par_vector) + l_likelihood(par_vector) )
+}
+calculate_posterior(
+  .samples = tooot2[3,],
+  .func = HID_markov,
+  .args = NULL,
+  .l_targets = HID_data$l_targets,
+  .l_params = HID_data$l_params)
+
+l_post(as.matrix(tooot2[3,]))
+log_posterior(
+  .samples = tooot2[3,],
+  .func = HID_markov,
+  .args = NULL,
+  .l_targets = HID_data$l_targets,
+  .l_params = HID_data$l_params)
+
+microbenchmark::microbenchmark(
+  l_post(as.matrix(tooot2[3,])),
+  log_posterior(
+    .samples = tooot2[3,],
+    .func = HID_markov,
+    .args = NULL,
+    .l_targets = HID_data$l_targets,
+    .l_params = HID_data$l_params)
+)
+
+microbenchmark::microbenchmark(
+  l_post(as.matrix(as_tibble(t(tooot)))),
+  log_posterior(
+    .samples = tooot,
+    .func = HID_markov_2,
+    .args = NULL,
+    .l_targets = HID_data2$l_targets,
+    .l_params = HID_data2$l_params)
+)
+
 # tst = HID_markov(.v_params = name_HID_params(rep(0.5, 9)))
 # tst1 = HID_markov(.v_params = name_HID_params(rep(1, 9)))
 # tst2 =  HID_markov()
@@ -1243,101 +1406,93 @@ prob_to_logit(mean(betas)); prob_to_logit(sd(betas))
 
 logit_to_prob(prob_to_logit(mean(betas))); logit_to_prob(prob_to_logit(sd(betas)))
 ####
-
+# Proper testing: #######################################################
 library(devtools)
 load_all()
 
-samples_HID2_data <- sample_prior_LHS(.n_samples = 1000,
-                                      .l_params = HID_data2$l_params)
-samples1_HID2_data <- sample_prior_FGS(.n_samples = 5,
-                                       .l_params = HID_data2$l_params)
-samples2_HID2_data <- sample_prior_RGS(.n_samples = 50,
-                                       .l_params = HID_data2$l_params)
+# Transformed version of the HID_markov:
+set.seed(1)
+HID2_results <- list()
+HID2_results$Prior_samples[['LHS']] <- sample_prior_LHS(
+  .n_samples = 10000,
+  .l_params = HID_data2$l_params)
 
-GOF_wsse_HID2_data <- wSSE_GOF(
+HID2_results$Prior_samples[['FGS']] <- sample_prior_FGS(
+  .n_samples = 10000,
+  .l_params = HID_data2$l_params)
+
+HID2_results$Prior_samples[['RGS']] <- sample_prior_RGS(
+  .n_samples = 10000,
+  .l_params = HID_data2$l_params)
+##
+HID2_results$Calib_results$Random[[1]] <- wSSE_GOF(
   .func = HID_markov_2, .optim = FALSE,
   .args = NULL,
-  .samples = samples_HID2_data,
+  .samples = HID2_results$Prior_samples$LHS,
   .l_targets = HID_data2$l_targets,
   .sample_method = "LHS")
 
-GOF_llik_HID2_data <- LLK_GOF(
+HID2_results$Calib_results$Random[[2]] <- LLK_GOF(
   .func = HID_markov_2, .optim = FALSE,
   .args = NULL,
-  .samples = samples_HID2_data,
+  .samples = HID2_results$Prior_samples$LHS,
   .l_targets = HID_data2$l_targets,
   .sample_method = "LHS")
+##
+HID2_results$Prior_samples[['LHS_Directed']] <- sample_prior_LHS(
+  .n_samples = 5,
+  .l_params = HID_data2$l_params)
 
-### Back transform the resulting parameters:
-# GOF_llik_HID2_data$mu_e <- exp(GOF_llik_HID2_data$mu_e)
-# GOF_llik_HID2_data$mu_l <- exp(GOF_llik_HID2_data$mu_l)
-# GOF_llik_HID2_data$mu_t <- exp(GOF_llik_HID2_data$mu_t)
-# GOF_llik_HID2_data$p <- logit_to_prob(GOF_llik_HID2_data$p)
-# GOF_llik_HID2_data$r_l <- exp(GOF_llik_HID2_data$r_l)
-# GOF_llik_HID2_data$rho <- exp(GOF_llik_HID2_data$rho)
-# GOF_llik_HID2_data$b <- logit_to_prob(GOF_llik_HID2_data$b)
-#
-# GOF_wsse_HID2_data$mu_e <- exp(GOF_wsse_HID2_data$mu_e)
-# GOF_wsse_HID2_data$mu_l <- exp(GOF_wsse_HID2_data$mu_l)
-# GOF_wsse_HID2_data$mu_t <- exp(GOF_wsse_HID2_data$mu_t)
-# GOF_wsse_HID2_data$p <- logit_to_prob(GOF_wsse_HID2_data$p)
-# GOF_wsse_HID2_data$r_l <- exp(GOF_wsse_HID2_data$r_l)
-# GOF_wsse_HID2_data$rho <- exp(GOF_wsse_HID2_data$rho)
-# GOF_wsse_HID2_data$b <- logit_to_prob(GOF_wsse_HID2_data$b)
-
-samples <- sample_prior_LHS(.n_samples = 5,
-                            .l_params = HID_data2$l_params)
-
-NM_optimise_LLK_HID2_data <- calibrateModel_directed(
+HID2_results$Calib_results$Directed[[1]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
   .gof = 'log_likelihood',
-  .samples = samples,
+  .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'Nelder-Mead',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
   maxit = 1000)
 
-NM_optimise_wSSE_HID2_data <- calibrateModel_directed(
+HID2_results$Calib_results$Directed[[2]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
   .gof = 'wSumSquareError',
-  .samples = samples,
+  .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'Nelder-Mead',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
   maxit = 1000)
 
-GB_optimise_LLK_HID2_data <- calibrateModel_directed(
+HID2_results$Calib_results$Directed[[3]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
   .gof = 'log_likelihood',
-  .samples = samples,
+  .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'BFGS',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
   maxit = 1000)
 
-GB_optimise_wSSE_HID2_data <- calibrateModel_directed(
+HID2_results$Calib_results$Directed[[4]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
   .gof = 'wSumSquareError',
-  .samples = samples,
+  .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'BFGS',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
   maxit = 1000)
 
-SA_optimise_LLK_HID2_data <- calibrateModel_directed(
+HID2_results$Calib_results$Directed[[5]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
   .gof = 'log_likelihood',
-  .samples = samples,
+  .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'SANN',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
@@ -1346,12 +1501,12 @@ SA_optimise_LLK_HID2_data <- calibrateModel_directed(
   tmax = 10,
   maxit = 1000)
 
-SA_optimise_wSSE_HID2_data <- calibrateModel_directed(
+HID2_results$Calib_results$Directed[[6]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
   .gof = 'wSumSquareError',
-  .samples = samples,
+  .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'SANN',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
@@ -1359,12 +1514,12 @@ SA_optimise_wSSE_HID2_data <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
-GA_optimise_LLK_HID2_data <- calibrateModel_directed(
+HID2_results$Calib_results$Directed[[7]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
   .gof = 'log_likelihood',
-  .samples = samples,
+  .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'GA',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
@@ -1372,146 +1527,277 @@ GA_optimise_LLK_HID2_data <- calibrateModel_directed(
   temp = 10,
   tmax = 10)
 
-GA_optimise_wSSE_HID2_data <- calibrateModel_directed(
+HID2_results$Calib_results$Directed[[8]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
   .gof = 'wSumSquareError',
-  .samples = samples,
+  .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'GA',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
   maxit = 1000,
   temp = 10,
   tmax = 10)
+##
+HID2_results$Prior_samples[['LHS_Bayesian']] <- sample_prior_LHS(
+  .n_samples = 10000,
+  .l_params = HID_data2$l_params)
 
-# HID2_results <- list('GA_l' = GA_optimise_LLK_HID2_data,
-#                      'GA_s' = GA_optimise_wSSE_HID2_data,
-#                      'NM_l' = NM_optimise_LLK_HID2_data,
-#                      'NM_s' = NM_optimise_wSSE_HID2_data,
-#                      'SA_l' = SA_optimise_LLK_HID2_data,
-#                      'SA_s' = SA_optimise_wSSE_HID2_data,
-#                      'GB_l' = GB_optimise_LLK_HID2_data,
-#                      'GB_s' = GB_optimise_wSSE_HID2_data)
-
-samples <- sample_prior_LHS(.n_samples = 1000,
-                            .l_params = HID_data2$l_params)
-
-SIR_HID2_data = calibrateModel_beyesian(
+HID2_results$Calib_results$Bayesian[[1]] = calibrateModel_beyesian(
   .b_method = 'SIR', .func = HID_markov_2,
   .args = NULL,
   .l_targets = HID_data2$l_targets,
-  .l_params = HID_data2$l_params, .samples = samples)
+  .n_resample = 10000,
+  .l_params = HID_data2$l_params,
+  .samples = HID2_results$Prior_samples$LHS_Bayesian)
 
 set.seed(1) # Function crashes on set.seed(1)
-IMIS2_HID2_data = calibrateModel_beyesian2(
+HID2_results$Calib_results$Bayesian[[2]] = calibrateModel_beyesian(
   .b_method = 'IMIS', .func = HID_markov_2,
   .args = NULL,
   .l_targets = HID_data2$l_targets,
   .l_params = HID_data2$l_params,
-  .n_resample = 1000)
+  .transform = TRUE,
+  .n_resample = 10000,
+  .IMIS_iterations = 400,
+  .IMIS_sample = 100)
+##
+HID2_results$PSA_samples[["Directed"]] <- PSA_calib_values(
+  .l_calib_res_lists = HID2_results$Calib_results$Directed,
+  .search_method = 'Directed',
+  .PSA_samples = 10000,
+  .transform_ = TRUE,
+  .l_params = HID_data2$l_params)
 
-rm(likelihood, prior, sample.prior)
-set.seed(1) # Function crashes on set.seed(1)
-IMIS_HID2_data = calibrateModel_beyesian(
-  .b_method = 'IMIS', .func = HID_markov_2,
+HID2_results$PSA_samples[["Random"]] <- PSA_calib_values(
+  .l_calib_res_lists = HID2_results$Calib_results$Random,
+  .search_method = 'Random',
+  .PSA_samples = 10000,
+  .transform_ = TRUE,
+  .l_params = HID_data2$l_params)
+
+HID2_results$PSA_samples[["Bayesian"]] <- PSA_calib_values(
+  .l_calib_res_lists = HID2_results$Calib_results$Bayesian,
+  .search_method = 'Bayesian',
+  .PSA_samples = 10000,
+  .transform_ = TRUE,
+  .l_params = HID_data2$l_params)
+##
+HID2_results$PSA_results <- run_PSA(
+  .func_ = HID_markov_2,
+  .PSA_calib_values_ = c(HID2_results$PSA_samples$Directed,
+                         HID2_results$PSA_samples$Random,
+                         HID2_results$PSA_samples$Bayesian),
+  .args_ = list(calibrate_ = FALSE,
+                transform_ = FALSE),
+  .PSA_unCalib_values_ = NULL)
+
+# Untransformed version of HID_markov:
+set.seed(1)
+HID_results <- list()
+HID_results$Prior_samples[['LHS']] <- sample_prior_LHS(
+  .n_samples = 10000,
+  .l_params = HID_data$l_params)
+
+HID_results$Prior_samples[['FGS']] <- sample_prior_FGS(
+  .n_samples = 10000,
+  .l_params = HID_data$l_params)
+
+HID_results$Prior_samples[['RGS']] <- sample_prior_RGS(
+  .n_samples = 10000,
+  .l_params = HID_data$l_params)
+##
+HID_results$Calib_results$Random[[1]] <- wSSE_GOF(
+  .func = HID_markov, .optim = FALSE,
   .args = NULL,
-  .l_targets = HID_data2$l_targets,
-  .l_params = HID_data2$l_params,
-  .n_resample = 1000)
+  .samples = HID_results$Prior_samples$LHS,
+  .l_targets = HID_data$l_targets,
+  .sample_method = "LHS")
 
-# HID2_results <- c(HID2_results, list('IMIS' = IMIS_HID2_data, 'IMIS2' = IMIS2_HID2_data,
-#                  'SIR' =SIR_HID2_data))
-# HID2_results <- c(HID2_results, list('LHS_l' = GOF_llik_HID2_data,
-#                                      'LHS_s' = GOF_wsse_HID2_data))
-# usethis::use_data(HID2_results, overwrite = T)
+HID_results$Calib_results$Random[[2]] <- LLK_GOF(
+  .func = HID_markov, .optim = FALSE,
+  .args = NULL,
+  .samples = HID_results$Prior_samples$LHS,
+  .l_targets = HID_data$l_targets,
+  .sample_method = "LHS")
+##
+HID_results$Prior_samples[['LHS_Directed']] <- sample_prior_LHS(
+  .n_samples = 5,
+  .l_params = HID_data$l_params)
 
-l_optim_lists_HID2_data <- list(
-  GA_optimise_LLK_HID2_data, GA_optimise_wSSE_HID2_data,
-  GB_optimise_LLK_HID2_data, GB_optimise_wSSE_HID2_data,
-  NM_optimise_LLK_HID2_data, NM_optimise_wSSE_HID2_data,
-  SA_optimise_LLK_HID2_data, SA_optimise_wSSE_HID2_data)
+HID_results$Calib_results$Directed[[1]] <- calibrateModel_directed(
+  .l_params = HID_data$l_params,
+  .func = HID_markov,
+  .args = NULL,
+  .gof = 'log_likelihood',
+  .samples = HID_results$Prior_samples$LHS_Directed,
+  .s_method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = HID_data$l_targets,
+  maxit = 1000)
 
-l_optim_lists_HID2_data2 <- list(
-  GOF_wsse_HID2_data, GOF_llik_HID2_data)
+HID_results$Calib_results$Directed[[2]] <- calibrateModel_directed(
+  .l_params = HID_data$l_params,
+  .func = HID_markov,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = HID_results$Prior_samples$LHS_Directed,
+  .s_method = 'Nelder-Mead',
+  .maximise = TRUE,
+  .l_targets = HID_data$l_targets,
+  maxit = 1000)
 
-l_optim_lists_HID_data3 <- list(
-  SIR_HID2_data, IMIS_HID2_data, IMIS2_HID2_data)
+HID_results$Calib_results$Directed[[3]] <- calibrateModel_directed(
+  .l_params = HID_data$l_params,
+  .func = HID_markov,
+  .args = NULL,
+  .gof = 'log_likelihood',
+  .samples = HID_results$Prior_samples$LHS_Directed,
+  .s_method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = HID_data$l_targets,
+  maxit = 1000)
 
-PSA_values_HID2_data <- PSA_calib_values(
-  .l_optim_lists = l_optim_lists_HID2_data,
+HID_results$Calib_results$Directed[[4]] <- calibrateModel_directed(
+  .l_params = HID_data$l_params,
+  .func = HID_markov,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = HID_results$Prior_samples$LHS_Directed,
+  .s_method = 'BFGS',
+  .maximise = TRUE,
+  .l_targets = HID_data$l_targets,
+  maxit = 1000)
+
+HID_results$Calib_results$Directed[[5]] <- calibrateModel_directed(
+  .l_params = HID_data$l_params,
+  .func = HID_markov,
+  .args = NULL,
+  .gof = 'log_likelihood',
+  .samples = HID_results$Prior_samples$LHS_Directed,
+  .s_method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = HID_data$l_targets,
+  fnscale = -1,
+  temp = 10,
+  tmax = 10,
+  maxit = 1000)
+
+HID_results$Calib_results$Directed[[6]] <- calibrateModel_directed(
+  .l_params = HID_data$l_params,
+  .func = HID_markov,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = HID_results$Prior_samples$LHS_Directed,
+  .s_method = 'SANN',
+  .maximise = TRUE,
+  .l_targets = HID_data$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+HID_results$Calib_results$Directed[[7]] <- calibrateModel_directed(
+  .l_params = HID_data$l_params,
+  .func = HID_markov,
+  .args = NULL,
+  .gof = 'log_likelihood',
+  .samples = HID_results$Prior_samples$LHS_Directed,
+  .s_method = 'GA',
+  .maximise = TRUE,
+  .l_targets = HID_data$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+
+HID_results$Calib_results$Directed[[8]] <- calibrateModel_directed(
+  .l_params = HID_data$l_params,
+  .func = HID_markov,
+  .args = NULL,
+  .gof = 'wSumSquareError',
+  .samples = HID_results$Prior_samples$LHS_Directed,
+  .s_method = 'GA',
+  .maximise = TRUE,
+  .l_targets = HID_data$l_targets,
+  maxit = 1000,
+  temp = 10,
+  tmax = 10)
+##
+HID_results$Prior_samples[['LHS_Bayesian']] <- sample_prior_LHS(
+  .n_samples = 10000,
+  .l_params = HID_data$l_params)
+
+HID_results$Calib_results$Bayesian[[1]] = calibrateModel_beyesian(
+  .b_method = 'SIR', .func = HID_markov,
+  .args = NULL,
+  .l_targets = HID_data$l_targets,
+  .n_resample = 10000,
+  .l_params = HID_data$l_params,
+  .samples = HID_results$Prior_samples$LHS_Bayesian)
+
+set.seed(1) # Function crashes on set.seed(1)
+HID_results$Calib_results$Bayesian[[2]] = calibrateModel_beyesian(
+  .b_method = 'IMIS', .func = HID_markov,
+  .args = NULL,
+  .l_targets = HID_data$l_targets,
+  .l_params = HID_data$l_params,
+  .transform = FALSE,
+  .n_resample = 10000,
+  .IMIS_iterations = 400,
+  .IMIS_sample = 100)
+##
+HID_results$PSA_samples[["Directed"]] <- PSA_calib_values(
+  .l_calib_res_lists = HID_results$Calib_results$Directed,
   .search_method = 'Directed',
-  .PSA_runs = 1000,
-  .l_params = HID_data2$l_params)
+  .PSA_samples = 10000,
+  .transform_ = FALSE,
+  .l_params = HID_data$l_params)
 
-PSA_values_HID2_data2 <- PSA_calib_values(
-  .l_optim_lists = l_optim_lists_HID2_data2,
+HID_results$PSA_samples[["Random"]] <- PSA_calib_values(
+  .l_calib_res_lists = HID_results$Calib_results$Random,
   .search_method = 'Random',
-  .PSA_runs = 1000,
-  .l_params = HID_data2$l_params)
+  .PSA_samples = 10000,
+  .transform_ = FALSE,
+  .l_params = HID_data$l_params)
 
-PSA_values_HID2_data3 <- PSA_calib_values(
-  .l_optim_lists = l_optim_lists_HID2_data3,
+HID_results$PSA_samples[["Bayesian"]] <- PSA_calib_values(
+  .l_calib_res_lists = HID_results$Calib_results$Bayesian,
   .search_method = 'Bayesian',
-  .PSA_runs = 1000,
-  .l_params = HID_data2$l_params)
+  .PSA_samples = 10000,
+  .transform_ = FALSE,
+  .l_params = HID_data$l_params)
+##
+HID_results$PSA_results <- run_PSA(
+  .func_ = HID_markov,
+  .PSA_calib_values_ = c(HID_results$PSA_samples$Directed,
+                         HID_results$PSA_samples$Random,
+                         HID_results$PSA_samples$Bayesian),
+  .args_ = list(calibrate_ = FALSE),
+  .PSA_unCalib_values_ = NULL)
 
-### Back transform values using a function:
-# backTransform <- function(.t_data_, .l_params_) {
-#   l_bTransform <- list(
-#     'v_params_names' = .l_params_$v_params_names,
-#     'bckTransFunc' = .l_params_$backTransform)
-#   env_ <- environment()
-#   purrr::walk(
-#     .x = .t_data_,
-#     .f = function(t_data_ = .x) {
-#       purrr::walk2(
-#         .x = l_bTransform$v_params_names,
-#         .y = l_bTransform$bckTransFunc,
-#         .f = function(name_ = .x, func_ = .y) {
-#           assign(t_data_[[name_]],
-#                  exec(.fn = func_,
-#                       t_data_[[name_]]),
-#                  envir = env_)
-#         }
-#       )
-#     }
-#   )
-# }
-# env_ <- environment()
-# backTransform(.t_data_ = HID2_results[3:length(HID2_results)], )
+#Pete plot ################################
+## install coda from CRAN and my MCIR package from github:
+## devtools::install_github('petedodd/MCIR')
+library(MCIR)
+library(coda)
 
-testing = backTransform(.t_data_ = HID2_results[['IMIS']][['Results']],.l_params_ = HID_data2$l_params)
+## rosebrock function log likelihood
 
-PSA_values_HID_markov2 <- PSA_calib_values(
-  .l_optim_lists = HID2_results[1:8],
-  .search_method = 'Directed',
-  .PSA_runs = 10,
-  .l_params = HID_data2$l_params,
-  transform_ = TRUE)
+## with gradient:
+rosenbrock <- function(x){
+  f <- (1-x[1])^2 + 100*(x[2] - x[1]^2)^2
+  g <- c(100*2*(x[2] - x[1]^2)*(-2)*x[1] - 2*(1-x[1]),
+         200*(x[2] - x[1]^2) )
+  return(list(logp=-f,grad=-g))
+}
 
-PSA_values_HID_markov2_2 <- PSA_calib_values(
-  .l_optim_lists = HID2_results[12:13],
-  .search_method = 'Random',
-  .PSA_runs = 10,
-  .l_params = HID_data2$l_params,
-  transform_ = TRUE)
+## w/o gradient
+rosen <- function(x) return(rosenbrock(x)$logp)
 
-PSA_values_HID_markov2_3 <- PSA_calib_values(
-  .l_optim_lists = HID2_results[9:11],
-  .search_method = 'Bayesian',
-  .PSA_runs = 10,
-  .l_params = HID_data2$l_params,
-  transform_ = TRUE)
+run <- nuts_da(rosengrad,5e3,1e3,runif(2))
+corplot(run
+)
 
-PSA_test <- run_PSA(.func_ = HID_markov,
-        .PSA_calib_values_ = c(
-          PSA_values_HID_markov2, PSA_values_HID_markov2_2,
-          PSA_values_HID_markov2_3),
-        .args_ = list(calibrate_ = FALSE),
-        .PSA_unCalib_values_ = NULL)
-
-#HID_markov(calibrate_ = F) # inc_LY 51.58729 inc_cost 120689.9
 
 
 

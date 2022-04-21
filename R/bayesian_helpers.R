@@ -55,12 +55,15 @@ sample_prior_IMIS <- function(.n_samples, .l_params = .l_params_) {
 #' @param .samples A vector/dataset containing sampled/proposed values.
 #' @param .l_params A list that contains a vector of parameter names,
 #' distributions and distributions' arguments.
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
 #'
 #' @return
 #' @export
 #'
 #' @examples
-log_prior <- function(.samples, .l_params) {
+log_prior_ <- function(.samples, .l_params, .transform) {
+
   v_params_names <- .l_params[['v_params_names']]
   names(.l_params[['v_params_names']]) <- v_params_names
   # Ensure .samples is of appropriate class and named properly:
@@ -72,14 +75,77 @@ log_prior <- function(.samples, .l_params) {
                                     repair = "unique",
                                     quiet = TRUE)) %>%
     `colnames<-`(v_params_names)
+  # Get appropriate distributions' and distributions' parameters' objects:
+  params_dists <- 'v_params_dists'
+  params_args <- 'args'
+  # Transform the sampled parameters back to their original scale:
+  if(.transform) {
+    .samples <- .samples %>%
+      backTransform(.t_data_ = ., .l_params_ = .l_params)
+    params_dists <- 'v_true_params_dists'
+    params_args <- 'true_args'
+  }
   # Define inputs list for the pmap function:
   l_lprior <- list(.l_params[['v_params_names']],
-                   paste0('d', .l_params[['v_params_dists']]),
-                   .l_params[['v_params_dists']],
-                   .l_params[['args']],
+                   paste0('d', .l_params[[params_dists]]),
+                   .l_params[[params_dists]],
+                   .l_params[[params_args]],
                    .samples)
   # Estimate the log prior:
   v_lprior <- rowSums(pmap_df(
+    .l = l_lprior,
+    .f = function(.name, .func, .dist, .arg, .param) {
+      exec(.func, .param, !!!.arg, log = TRUE)
+    }
+  ))
+
+  return(v_lprior)
+
+}
+
+#' Calculate log prior (one set of parameters at a time)
+#'
+#' @param .samples A vector/dataset containing sampled/proposed values.
+#' @param .l_params A list that contains a vector of parameter names,
+#' distributions and distributions' arguments.
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+log_prior <- function(.samples, .l_params, .transform) {
+
+  v_params_names <- .l_params[['v_params_names']]
+  names(.l_params[['v_params_names']]) <- v_params_names
+  # Ensure .samples is of appropriate class and named properly:
+  if(is.null(dim(.samples))) # If vector, change to matrix
+    .samples <- t(.samples)
+  if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
+    .samples <- .samples %>%
+    as_tibble(~ vctrs::vec_as_names(...,
+                                    repair = "unique",
+                                    quiet = TRUE)) %>%
+    `colnames<-`(v_params_names)
+  # Get appropriate distributions' and distributions' parameters' objects:
+  params_dists <- 'v_params_dists'
+  params_args <- 'args'
+  # Transform the sampled parameters back to their original scale:
+  if(.transform) {
+    .samples <- .samples %>%
+      backTransform(.t_data_ = ., .l_params_ = .l_params)
+    params_dists <- 'v_true_params_dists'
+    params_args <- 'true_args'
+  }
+  # Define inputs list for the pmap function:
+  l_lprior <- list(.l_params[['v_params_names']],
+                   paste0('d', .l_params[[params_dists]]),
+                   .l_params[[params_dists]],
+                   .l_params[[params_args]],
+                   .samples)
+  # Estimate the log prior:
+  v_lprior <- sum(pmap_dbl(
     .l = l_lprior,
     .f = function(.name, .func, .dist, .arg, .param) {
       exec(.func, .param, !!!.arg, log = TRUE)
@@ -95,14 +161,39 @@ log_prior <- function(.samples, .l_params) {
 #' @param .samples A vector/dataset containing sampled/proposed values.
 #' @param .l_params A list that contains a vector of parameter names,
 #' distributions and distributions' arguments.
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
 #'
 #' @return
 #' @export
 #'
 #' @examples
-calculate_prior <- function(.samples, .l_params = .l_params_) {
+calculate_prior_ <- function(.samples, .l_params = .l_params_,
+                             .transform = .transform_) {
 
-  v_prior <-  exp(log_prior(.samples = .samples, .l_params = .l_params))
+  v_prior <-  exp(log_prior_(.samples = .samples, .l_params = .l_params,
+                             .transform = .transform))
+
+  return(v_prior)
+}
+
+#' Calculate prior (one set of parameters at a time)
+#'
+#' @param .samples A vector/dataset containing sampled/proposed values.
+#' @param .l_params A list that contains a vector of parameter names,
+#' distributions and distributions' arguments.
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+calculate_prior <- function(.samples, .l_params = .l_params_,
+                            .transform = .transform_) {
+
+  v_prior <-  exp(log_prior(.samples = .samples, .l_params = .l_params,
+                            .transform = .transform))
 
   return(v_prior)
 }
@@ -116,7 +207,6 @@ calculate_prior <- function(.samples, .l_params = .l_params_) {
 #' of targets' weights, a vector of targets' distributions, and a table for
 #' each target that contains the values (column name 'value') and standard
 #' errors (column name 'sd') of the corresponding target.
-#' @param ... Extra arguments, e.g. seed number.
 #'
 #' @return A table with proposed parameter sets and their corresponding
 #' summed overall likelihood values sorted in descending order.
@@ -147,11 +237,7 @@ calculate_prior <- function(.samples, .l_params = .l_params_) {
 #' l_lik <- log_likelihood(.func = CRS_markov, .args = NULL,
 #'                         .samples = samples, .l_targets = l_targets)
 #'
-log_likelihood <- function(.samples, .func, .args, .l_targets, ...) {
-  # Grab and assign additional arguments:
-  dots <- list(...)
-  if(!is.null(dots[['seed_no']]))
-    set.seed(dots[['seed_no']])
+log_likelihood <- function(.samples, .func, .args, .l_targets) {
   # Ensure .samples is of appropriate class and named properly:
   if(is.null(dim(.samples))) # If vector, change to matrix
     .samples <- t(.samples)
@@ -218,7 +304,7 @@ log_likelihood <- function(.samples, .func, .args, .l_targets, ...) {
         reduce(`+`, .init = 0)
     })
 
-  # Set NaN values to -Inf to avoid subsequent functions from crashing:
+  # Set NaN values to -Inf to avoid other functions from crashing:
   overall_lliks[is.na(overall_lliks)] <- -Inf
 
   return(overall_lliks)
@@ -233,20 +319,18 @@ log_likelihood <- function(.samples, .func, .args, .l_targets, ...) {
 #' of targets' weights, a vector of targets' distributions, and a table for
 #' each target that contains the values (column name 'value') and standard
 #' errors (column name 'sd') of the corresponding target.
-#' @param ... Extra arguments, e.g. seed number.
 #'
 #' @return
 #' @export
 #'
 #' @examples
 calculate_likelihood <- function(.samples, .func = .func_, .args = .args_,
-                                 .l_targets = .l_targets_, ...) {
+                                 .l_targets = .l_targets_) {
 
   v_likelihood <-  exp(log_likelihood(.samples = .samples,
                                       .func = .func,
                                       .args = .args,
-                                      .l_targets = .l_targets,
-                                      ...))
+                                      .l_targets = .l_targets))
 
   return(v_likelihood)
 }
@@ -262,19 +346,53 @@ calculate_likelihood <- function(.samples, .func = .func_, .args = .args_,
 #' errors (column name 'sd') of the corresponding target.
 #' @param .l_params A list that contains a vector of parameter names,
 #' distributions and distributions' arguments.
-#' @param ... Extra arguments, e.g. seed number.
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+log_posterior_ <- function(.samples, .func, .args, .l_targets, .l_params,
+                           .transform) {
+  # calculate log prior:
+  l_prior <- log_prior_(.samples = .samples, .l_params = .l_params,
+                        .transform = .transform)
+  # calculate log likelihood:
+  l_lilk <- log_likelihood(.samples = .samples, .func = .func,
+                           .args = .args, .l_targets = .l_targets)
+  # calculate log posterior:
+  l_posterior <- l_prior + l_lilk
+
+  return(l_posterior)
+}
+
+#' Calculate log posterior (one set of parameters at a time)
+#'
+#' @param .samples A table or vector of sampled parameter values
+#' @param .func A function defining the model to be calibrated
+#' @param .args A list of arguments to be passed to .func
+#' @param .l_targets A list containing a vector of targets' names, a vector
+#' of targets' weights, a vector of targets' distributions, and a table for
+#' each target that contains the values (column name 'value') and standard
+#' errors (column name 'sd') of the corresponding target.
+#' @param .l_params A list that contains a vector of parameter names,
+#' distributions and distributions' arguments.
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
 #'
 #' @return
 #' @export
 #'
 #' @examples
 log_posterior <- function(.samples, .func, .args, .l_targets, .l_params,
-                          ...) {
+                          .transform) {
   # calculate log prior:
-  l_prior <- log_prior(.samples = .samples, .l_params = .l_params)
+  l_prior <- log_prior(.samples = .samples, .l_params = .l_params,
+                       .transform = .transform)
   # calculate log likelihood:
   l_lilk <- log_likelihood(.samples = .samples, .func = .func,
-                           .args = .args, .l_targets = .l_targets, ...)
+                           .args = .args, .l_targets = .l_targets)
   # calculate log posterior:
   l_posterior <- l_prior + l_lilk
 
@@ -292,32 +410,74 @@ log_posterior <- function(.samples, .func, .args, .l_targets, .l_params,
 #' errors (column name 'sd') of the corresponding target.
 #' @param .l_params A list that contains a vector of parameter names,
 #' distributions and distributions' arguments.
-#' @param ... Extra arguments, e.g. seed number.
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
+#' @return
+#' @export
 #'
+#' @examples
+calculate_posterior_ <- function(.samples, .func = .func_, .args = .args_,
+                                 .l_targets = .l_targets_,
+                                 .l_params = .l_params_,
+                                 .transform = FALSE) {
+  # calculate the posterior:
+  posterior <- exp(log_posterior_(.samples = .samples, .func = .func,
+                                  .args = .args, .l_targets = .l_targets,
+                                  .l_params = .l_params,
+                                  .transform = .transform))
+
+  return(posterior)
+}
+
+#' Calculate posterior (one set of parameters at a time)
+#'
+#' @param .samples A table or vector of sampled parameter values
+#' @param .func A function defining the model to be calibrated
+#' @param .args A list of arguments to be passed to .func
+#' @param .l_targets A list containing a vector of targets' names, a vector
+#' of targets' weights, a vector of targets' distributions, and a table for
+#' each target that contains the values (column name 'value') and standard
+#' errors (column name 'sd') of the corresponding target.
+#' @param .l_params A list that contains a vector of parameter names,
+#' distributions and distributions' arguments.
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
 #' @return
 #' @export
 #'
 #' @examples
 calculate_posterior <- function(.samples, .func = .func_, .args = .args_,
                                 .l_targets = .l_targets_,
-                                .l_params = .l_params_, ...) {
+                                .l_params = .l_params_,
+                                .transform = FALSE) {
   # calculate the posterior:
   posterior <- exp(log_posterior(.samples = .samples, .func = .func,
                                  .args = .args, .l_targets = .l_targets,
-                                 .l_params = .l_params, ...))
+                                 .l_params = .l_params,
+                                 .transform = .transform))
 
   return(posterior)
 }
 
 #' Calibrate models using Bayesian methods - employing local IMIS_()
 #'
-#' @param .b_method
-#' @param .func
-#' @param .args
-#' @param .l_targets
-#' @param .l_params
-#' @param .samples
-#' @param ...
+#' @param .b_method Character defining the Bayesian method to use in the
+#' calibration process. Currently supported methods are `SIR` and `IMIS`.
+#' @param .func A function defining the decision analytic model to be
+#' calibrated.
+#' @param .args A list of arguments passed to the model function.
+#' @param .l_targets A list containing a vector of targets' names, a vector
+#' of targets' weights, a vector of targets' distributions, and a table for
+#' each target that contains the values (column name 'value') and standard
+#' errors (column name 'sd') of the corresponding target.
+#' @param .l_params A list that contains a vector of parameter names,
+#' distributions and distributions' arguments.
+#' @param .samples A table or vector of sampled parameter values
+#' @param .n_resample the desired number of draws from the posterior
+#' @param .IMIS_sample the incremental sample size at each IMIS iteration
+#' @param .IMIS_iterations the maximum number of iterations in IMIS
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
 #'
 #' @return
 #' @export
@@ -325,22 +485,21 @@ calculate_posterior <- function(.samples, .func = .func_, .args = .args_,
 #' @examples
 calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
                                     .l_targets, .l_params, .samples,
-                                    ...) {
+                                    .n_resample = 1000,
+                                    .IMIS_sample = 1000,
+                                    .IMIS_iterations = 30,
+                                    .transform = FALSE) {
   # Ensure that .b_method is supported by the function:
   stopifnot(".b_method is supported by the function" =
               any(.b_method %in% c('SIR', 'IMIS', 'MCMC')))
 
-  # Grab additional arguments for some of the methods:
-  dots <- list(...)
-  .n_resample <- dots[['.n_resample']]
-  if(any(.b_method %in% c('SIR', 'IMIS')) & is.null(.n_resample))
-    .n_resample <- nrow(.samples)
-
-  if(.b_method == 'IMIS' & is.null(dots[['IMIS_sample']]))
-    IMIS_sample <- 1000
+  if(.b_method == 'IMIS' & is.null(.IMIS_sample))
+    .IMIS_sample <- 1000
 
   # SIR:
   if(.b_method == 'SIR') {
+    if(nrow(.samples) != .n_resample)
+      stop(paste("Please pass", .n_resample, "samples to the function."))
     ## Calculate log-likelihood for each sample value:
     llik <- log_likelihood(.samples = .samples, .func = .func,
                            .args = .args, .l_targets = .l_targets)
@@ -362,26 +521,28 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
     return(list('Results' = SIR_results, 'Method' = "SIR"))
 
   } else if(.b_method == 'IMIS') { # IMIS:
+    ## Define function inputs:
+    .l_params_ <<- .l_params # prior/sample.prior
+    .func_ <<- .func # calculate_likelihood
+    .args_ <<- .args # calculate_likelihood
+    .l_targets_ <<- .l_targets # calculate_likelihood
+    .transform_ <<- .transform # prior
     ## Run IMIS:
     fit_IMIS <- IMIS_(
-      B = IMIS_sample, # the incremental sample size at each IMIS iteration
+      B = .IMIS_sample, # the incremental sample size at each IMIS iteration
       B.re = .n_resample, # the desired posterior sample size
-      number_k = 10, # the maximum number of iterations in IMIS
-      D = 0,
+      number_k = .IMIS_iterations, # the maximum number of iterations in IMIS
+      D = 1, # use optimizer >= 1, do not use = 0.
       sample.prior = sample_prior_IMIS,
-      prior = calculate_prior,
-      likelihood = calculate_likelihood,
-      .l_params_ <- .l_params, # prior/sample.prior
-      .func_ <- .func, # calculate_likelihood
-      .args_ <- .args, # calculate_likelihood
-      .l_targets_ <- .l_targets) # calculate_likelihood
-
+      prior = calculate_prior_,
+      likelihood = calculate_likelihood
+    )
     ## Obtain draws from posterior:
     m_calib_res <- fit_IMIS$resample
     Overall_fit <- log_likelihood(
       .samples = m_calib_res, .func = .func, .args = .args,
       .l_targets = .l_targets)
-    Posterior_prob <- calculate_posterior(
+    Posterior_prob <- calculate_posterior_(
       .samples = m_calib_res, .func = .func, .args = .args,
       .l_targets = .l_targets, .l_params = .l_params)
     ## Calculate log-likelihood (overall fit) and posterior probability:
@@ -411,13 +572,23 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
 
 #' Calibrate models using Bayesian methods - employing IMIS::IMIS()
 #'
-#' @param .b_method
-#' @param .func
-#' @param .args
-#' @param .l_targets
-#' @param .l_params
-#' @param .samples
-#' @param ...
+#' @param .b_method Character defining the Bayesian method to use in the
+#' calibration process. Currently supported methods are `SIR` and `IMIS`.
+#' @param .func A function defining the decision analytic model to be
+#' calibrated.
+#' @param .args A list of arguments passed to the model function.
+#' @param .l_targets A list containing a vector of targets' names, a vector
+#' of targets' weights, a vector of targets' distributions, and a table for
+#' each target that contains the values (column name 'value') and standard
+#' errors (column name 'sd') of the corresponding target.
+#' @param .l_params A list that contains a vector of parameter names,
+#' distributions and distributions' arguments.
+#' @param .samples A table or vector of sampled parameter values
+#' @param .n_resample the desired number of draws from the posterior
+#' @param .IMIS_sample the incremental sample size at each IMIS iteration
+#' @param .IMIS_iterations the maximum number of iterations in IMIS
+#' @param .transform Logical for whether to back-transform parameters to
+#' their original scale.
 #'
 #' @return
 #' @export
@@ -425,19 +596,16 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
 #' @examples
 calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
                                      .l_targets, .l_params, .samples,
-                                     ...) {
+                                     .n_resample = 1000,
+                                     .IMIS_sample = 1000,
+                                     .IMIS_iterations = 30,
+                                     .transform = FALSE) {
   # Ensure that .b_method is supported by the function:
   stopifnot(".b_method is supported by the function" =
               any(.b_method %in% c('SIR', 'IMIS', 'MCMC')))
 
-  # Grab additional arguments for some of the methods:
-  dots <- list(...)
-  .n_resample <- dots[['.n_resample']]
-  if(any(.b_method %in% c('SIR', 'IMIS')) & is.null(.n_resample))
-    .n_resample <- nrow(.samples)
-
-  if(.b_method == 'IMIS' & is.null(dots[['IMIS_sample']]))
-    IMIS_sample <- 1000
+  if(.b_method == 'IMIS' & is.null(.IMIS_sample))
+    .IMIS_sample <- 1000
 
   # SIR:
   if(.b_method == 'SIR') {
@@ -464,7 +632,7 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
   } else if(.b_method == 'IMIS') { # IMIS:
     ## Define three functions needed by IMIS:
     ### prior(x), likelihood(x), sample.prior(n)
-    prior <<- calculate_prior
+    prior <<- calculate_prior_
     likelihood <<- calculate_likelihood
     sample.prior <<- sample_prior_IMIS
     ## Define function inputs:
@@ -472,9 +640,10 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
     .func_ <<- .func # calculate_likelihood
     .args_ <<- .args # calculate_likelihood
     .l_targets_ <<- .l_targets # calculate_likelihood
+    .transform_ <<- .transform # prior/
     ## Run IMIS:
     fit_IMIS <- IMIS::IMIS(
-      B = IMIS_sample, # the incremental sample size at each IMIS iteration
+      B = .IMIS_sample, # the incremental sample size at each IMIS iteration
       B.re = .n_resample, # the desired posterior sample size
       number_k = 10, # the maximum number of iterations in IMIS
       D = 0)
@@ -484,7 +653,7 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
     Overall_fit <- log_likelihood(
       .samples = m_calib_res, .func = .func, .args = .args,
       .l_targets = .l_targets)
-    Posterior_prob <- calculate_posterior(
+    Posterior_prob <- calculate_posterior_(
       .samples = m_calib_res, .func = .func, .args = .args,
       .l_targets = .l_targets, .l_params = .l_params)
     ## Calculate log-likelihood (overall fit) and posterior probability:
@@ -512,7 +681,28 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
   }
 }
 
+#' Estimate Effective Sample Size from Bayesian calibration outputs
+#'
+#'
+#' @param bayes_calib_output_list List of outputs from the Bayesian
+#' calibration
+#' @param .results Name of calibration PSA draws table in the list
+#' @param .post_prob_ Name of column where posterior probability are found
+#'
+#' @return
+#' @export
+#'
+#' @examples
+effective_sample_size <- function(bayes_calib_output_list,
+                                  .results = "Results",
+                                  .post_prob_ = "Posterior_prob") {
 
+
+  bayes_calib_output_list[[.results]] %>%
+    dplyr::count(.data[[.post_prob_]]) %>%
+    dplyr::summarise(sum(n)^2/sum(n^2)) %>%
+    dplyr::pull()
+}
 
 
 

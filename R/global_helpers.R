@@ -52,6 +52,8 @@ assign_extraArgs_ <- function(.default_args_, .env_, .args_) {
 logit_to_prob <- function(.logit_) {
   odds_ <- exp(.logit_)
   prob_ <- odds_ / (1 + odds_)
+  # if odds_ are Inf, set prob_ to 1 to avoid returning `NaN`:
+  prob_[odds_ == Inf] <- 1
 
   return(prob_)
 }
@@ -65,7 +67,7 @@ logit_to_prob <- function(.logit_) {
 #'
 #' @examples
 prob_to_logit <- function(.prob_) {
-  logit_ <- car::logit(.prob_)
+  logit_ <- qlogis(.prob_)
 
   return(logit_)
 }
