@@ -7,7 +7,7 @@
 name_HID_params(.v_params)
 }
 \arguments{
-\item{.v_params}{an unamed vector of model parameters in the following
+\item{.v_params}{an un-named vector of model parameters in the following
 order: "mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho", "b", "c".}
 }
 \value{

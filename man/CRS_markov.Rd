@@ -4,17 +4,22 @@
 \alias{CRS_markov}
 \title{Cancer Relative Survival (CRS) 3-State Markov Model}
 \usage{
-CRS_markov(v_params = NULL, p_Mets = 0.1, p_DieMets = 0.05, calibratie = TRUE)
+CRS_markov(
+  .v_params_ = NULL,
+  p_Mets = 0.1,
+  p_DieMets = 0.05,
+  calibrate_ = TRUE
+)
 }
 \arguments{
-\item{v_params}{A vector of named vector with values to replace
+\item{.v_params_}{A vector of named vector with values to replace
 \code{p_Mets} and \code{p_DieMets} default values.}
 
 \item{p_Mets}{probability to become sicker when sick.}
 
 \item{p_DieMets}{hazard ratio of death in sick vs healthy.}
 
-\item{calibratie}{If \code{TRUE} (default), the model outputs natural
+\item{calibrate_}{If \code{TRUE} (default), the model outputs natural
 history data; otherwise, discounted outcomes \code{(costs and QALYs)}
 are returned.}
 }

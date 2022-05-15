@@ -2,9 +2,9 @@
 % Please edit documentation in R/bayesian_helpers.R
 \name{log_posterior}
 \alias{log_posterior}
-\title{Calculate log posterior}
+\title{Calculate log posterior (one set of parameters at a time)}
 \usage{
-log_posterior(.samples, .func, .args, .l_targets, .l_params, ...)
+log_posterior(.samples, .func, .args, .l_targets, .l_params, .transform)
 }
 \arguments{
 \item{.samples}{A table or vector of sampled parameter values}
@@ -21,11 +21,12 @@ errors (column name 'sd') of the corresponding target.}
 \item{.l_params}{A list that contains a vector of parameter names,
 distributions and distributions' arguments.}
 
-\item{...}{Extra arguments, e.g. seed number.}
+\item{.transform}{Logical for whether to back-transform parameters to
+their original scale.}
 }
 \value{
 
 }
 \description{
-Calculate log posterior
+Calculate log posterior (one set of parameters at a time)
 }

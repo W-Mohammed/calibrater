@@ -4,7 +4,7 @@
 \alias{log_likelihood}
 \title{Calculate log likelihood (LLK)}
 \usage{
-log_likelihood(.samples, .func, .args, .l_targets, ...)
+log_likelihood(.samples, .func, .args, .l_targets)
 }
 \arguments{
 \item{.samples}{A table or vector of sampled parameter values}
@@ -17,8 +17,6 @@ log_likelihood(.samples, .func, .args, .l_targets, ...)
 of targets' weights, a vector of targets' distributions, and a table for
 each target that contains the values (column name 'value') and standard
 errors (column name 'sd') of the corresponding target.}
-
-\item{...}{Extra arguments, e.g. seed number.}
 }
 \value{
 A table with proposed parameter sets and their corresponding

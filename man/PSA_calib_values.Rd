@@ -5,14 +5,29 @@
 \title{Merge calibration outputs and sample PSA values}
 \usage{
 PSA_calib_values(
-  .l_optim_lists = l_optim_lists,
+  .l_calib_res_lists = l_optim_lists,
   .search_method = "Directed",
-  .PSA_runs = 1000,
-  .l_params = NULL
+  .PSA_samples = 10000,
+  .l_params = NULL,
+  .transform_ = FALSE
 )
 }
 \arguments{
-\item{.l_params}{}
+\item{.l_calib_res_lists}{A list of calibration results lists. The
+function will use the outputs of calibration to sample PSA values or
+tabulate them appropriately.}
+
+\item{.search_method}{Class of calibration method. Currently supports
+"Directed", "Random" and "Bayesian".}
+
+\item{.PSA_samples}{The number of PSA samples to sample or tabulate.}
+
+\item{.l_params}{A list that contains a vector of parameter names,
+distributions and distributions' arguments.}
+
+\item{.transform_}{Logical, if TRUE the back transformation functions
+in the .l_params list will be used to transform the parameters to their
+original scale.}
 }
 \value{
 
@@ -26,6 +41,6 @@ l_optim_lists <- list(GA_optimise_lLLK, GA_optimise_wSSE,
                       NM_optimise_lLLK, NM_optimise_wSSE,
                       SA_optimise_lLLK, SA_optimise_wSSE)
 
-calibrated_values <- extract_calib_values()
+calibrated_values <- PSA_calib_values(.l_calib_res_lists = l_optim_lists)
 
 }

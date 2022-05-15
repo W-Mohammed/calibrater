@@ -2,7 +2,7 @@
 % Please edit documentation in R/bayesian_helpers.R
 \name{calculate_posterior}
 \alias{calculate_posterior}
-\title{Calculate posterior}
+\title{Calculate posterior (one set of parameters at a time)}
 \usage{
 calculate_posterior(
   .samples,
@@ -10,7 +10,7 @@ calculate_posterior(
   .args = .args_,
   .l_targets = .l_targets_,
   .l_params = .l_params_,
-  ...
+  .transform = FALSE
 )
 }
 \arguments{
@@ -28,11 +28,12 @@ errors (column name 'sd') of the corresponding target.}
 \item{.l_params}{A list that contains a vector of parameter names,
 distributions and distributions' arguments.}
 
-\item{...}{Extra arguments, e.g. seed number.}
+\item{.transform}{Logical for whether to back-transform parameters to
+their original scale.}
 }
 \value{
 
 }
 \description{
-Calculate posterior
+Calculate posterior (one set of parameters at a time)
 }

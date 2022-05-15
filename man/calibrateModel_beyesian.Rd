@@ -11,11 +11,39 @@ calibrateModel_beyesian(
   .l_targets,
   .l_params,
   .samples,
-  ...
+  .n_resample = 1000,
+  .IMIS_sample = 1000,
+  .IMIS_iterations = 30,
+  .transform = FALSE
 )
 }
 \arguments{
-\item{...}{}
+\item{.b_method}{Character defining the Bayesian method to use in the
+calibration process. Currently supported methods are \code{SIR} and \code{IMIS}.}
+
+\item{.func}{A function defining the decision analytic model to be
+calibrated.}
+
+\item{.args}{A list of arguments passed to the model function.}
+
+\item{.l_targets}{A list containing a vector of targets' names, a vector
+of targets' weights, a vector of targets' distributions, and a table for
+each target that contains the values (column name 'value') and standard
+errors (column name 'sd') of the corresponding target.}
+
+\item{.l_params}{A list that contains a vector of parameter names,
+distributions and distributions' arguments.}
+
+\item{.samples}{A table or vector of sampled parameter values}
+
+\item{.n_resample}{the desired number of draws from the posterior}
+
+\item{.IMIS_sample}{the incremental sample size at each IMIS iteration}
+
+\item{.IMIS_iterations}{the maximum number of iterations in IMIS}
+
+\item{.transform}{Logical for whether to back-transform parameters to
+their original scale.}
 }
 \value{
 

@@ -2,19 +2,22 @@
 % Please edit documentation in R/bayesian_helpers.R
 \name{calculate_prior}
 \alias{calculate_prior}
-\title{Calculate prior}
+\title{Calculate prior (one set of parameters at a time)}
 \usage{
-calculate_prior(.samples, .l_params = .l_params_)
+calculate_prior(.samples, .l_params = .l_params_, .transform = .transform_)
 }
 \arguments{
 \item{.samples}{A vector/dataset containing sampled/proposed values.}
 
 \item{.l_params}{A list that contains a vector of parameter names,
 distributions and distributions' arguments.}
+
+\item{.transform}{Logical for whether to back-transform parameters to
+their original scale.}
 }
 \value{
 
 }
 \description{
-Calculate prior
+Calculate prior (one set of parameters at a time)
 }

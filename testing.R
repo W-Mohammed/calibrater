@@ -1795,10 +1795,12 @@ rosenbrock <- function(x){
 rosen <- function(x) return(rosenbrock(x)$logp)
 
 run <- nuts_da(rosengrad,5e3,1e3,runif(2))
-corplot(run
-)
+corplot(run)
 
+#R6: ###############################################################
 
-
-
+cccc = calibrateR_R6$new()
+cccc$sampleR(
+  .n_samples = 5,
+  .l_params = HID_data2$l_params)
 

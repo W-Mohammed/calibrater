@@ -11,8 +11,7 @@ IMIS_(
   D = 0,
   sample.prior = .sample.prior_,
   prior = .prior_,
-  likelihood = .likelihood_,
-  ...
+  likelihood = .likelihood_
 )
 }
 \arguments{
