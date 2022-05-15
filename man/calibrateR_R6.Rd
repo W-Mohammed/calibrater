@@ -16,7 +16,42 @@ and produce summary plots/tables.
 
 
 ## ------------------------------------------------
+## Method `calibrateR_R6$new`
+## ------------------------------------------------
+
+\dontrun{
+}
+
+## ------------------------------------------------
 ## Method `calibrateR_R6$sampleR`
+## ------------------------------------------------
+
+\dontrun{
+}
+
+## ------------------------------------------------
+## Method `calibrateR_R6$calibrateR`
+## ------------------------------------------------
+
+\dontrun{
+}
+
+## ------------------------------------------------
+## Method `calibrateR_R6$calibrateR_random`
+## ------------------------------------------------
+
+\dontrun{
+}
+
+## ------------------------------------------------
+## Method `calibrateR_R6$calibrateR_directed`
+## ------------------------------------------------
+
+\dontrun{
+}
+
+## ------------------------------------------------
+## Method `calibrateR_R6$calibrateR_bayesian`
 ## ------------------------------------------------
 
 \dontrun{
@@ -27,6 +62,12 @@ and produce summary plots/tables.
 \describe{
 \item{\code{calibration_model}}{a Decision-Analytic model under calibration}
 
+\item{\code{calibration_parameters}}{calibration parameters' data}
+
+\item{\code{calibration_targets}}{calibration targets' data}
+
+\item{\code{random_calibration}}{random calibration methods results}
+
 \item{\code{prior_samples}}{a Decision-Analytic model under calibration}
 }
 \if{html}{\out{</div>}}
@@ -34,34 +75,196 @@ and produce summary plots/tables.
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-new}{\code{calibrateR_R6$new()}}
 \item \href{#method-sampleR}{\code{calibrateR_R6$sampleR()}}
+\item \href{#method-calibrateR}{\code{calibrateR_R6$calibrateR()}}
+\item \href{#method-calibrateR_random}{\code{calibrateR_R6$calibrateR_random()}}
+\item \href{#method-calibrateR_directed}{\code{calibrateR_R6$calibrateR_directed()}}
+\item \href{#method-calibrateR_bayesian}{\code{calibrateR_R6$calibrateR_bayesian()}}
 \item \href{#method-clone}{\code{calibrateR_R6$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-sampleR"></a>}}
-\if{latex}{\out{\hypertarget{method-sampleR}{}}}
-\subsection{Method \code{sampleR()}}{
-Initialisation method (triggered when a new object is created).
-Summary plots and table(s) are created alongside the construction
-of the object.
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
+\subsection{Method \code{new()}}{
+Sample prior distribution(s) using one or more sampling method. This
+function currently supports: LHS, FGS and RGS.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$sampleR(.n_samples = 1, .l_params = .l_params_, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$new(.model, .params, .targets)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{.n_samples}}{}
+\item{\code{.model}}{The decision analytic model under calibration}
 
-\item{\code{.l_params}}{}
+\item{\code{.params}}{Calibration parameters}
 
-\item{\code{...}}{}
+\item{\code{.targets}}{Calibration targets}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new \code{calibrateR_R6} object.
+Object of class \code{CalibrateR_R6}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-sampleR"></a>}}
+\if{latex}{\out{\hypertarget{method-sampleR}{}}}
+\subsection{Method \code{sampleR()}}{
+Sample prior distribution(s) using one or more sampling method. This
+function currently supports: LHS, FGS and RGS.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$sampleR(.n_samples = 1, .sampling_method, .ssed_no = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.n_samples}}{An integer specifying the number of samples to be
+generated.}
+
+\item{\code{.sampling_method}}{The sampling method(s) to use. The function
+currently supports LHS, RGS, and FGS.}
+
+\item{\code{.ssed_no}}{random seed number}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Executes the required sampling method and populates the
+"prior samples" internal object.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-calibrateR"></a>}}
+\if{latex}{\out{\hypertarget{method-calibrateR}{}}}
+\subsection{Method \code{calibrateR()}}{
+Calibrate the model using one or more calibration method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Executes the required calibration method and populates
+the samples internal object.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-calibrateR_random"></a>}}
+\if{latex}{\out{\hypertarget{method-calibrateR_random}{}}}
+\subsection{Method \code{calibrateR_random()}}{
+Calibrate the model using one or more calibration method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR_random(
+  .args,
+  .optim,
+  .maximise,
+  .weighted = NULL,
+  .sample_method,
+  .calibration_method
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.args}}{A list of arguments to be passed to calibration model}
+
+\item{\code{.optim}}{Logical for whether the function is used by an
+optimisation algorithm. Default is \code{FALSE}.}
+
+\item{\code{.maximise}}{Logical for whether the output of the function is
+used in a maximising optimisation function. Default is \code{TRUE}.}
+
+\item{\code{.weighted}}{Logical for whether the SSR was to be weighted,
+default is \code{TRUE}. The weight used by function is
+\code{1/(sd^2)}.}
+
+\item{\code{.sample_method}}{The method used to sample from the prior
+distribution.}
+
+\item{\code{.calibration_method}}{The calibration process.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Executes the required calibration method and populates
+the samples internal object.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-calibrateR_directed"></a>}}
+\if{latex}{\out{\hypertarget{method-calibrateR_directed}{}}}
+\subsection{Method \code{calibrateR_directed()}}{
+Calibrate the model using one or more calibration method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR_directed(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Executes the required calibration method and populates
+the samples internal object.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-calibrateR_bayesian"></a>}}
+\if{latex}{\out{\hypertarget{method-calibrateR_bayesian}{}}}
+\subsection{Method \code{calibrateR_bayesian()}}{
+Calibrate the model using one or more calibration method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR_bayesian(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Executes the required calibration method and populates
+the samples internal object.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}

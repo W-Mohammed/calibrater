@@ -1611,14 +1611,14 @@ HID_results$Prior_samples[['RGS']] <- sample_prior_RGS(
 HID_results$Calib_results$Random[[1]] <- wSSE_GOF(
   .func = HID_markov, .optim = FALSE,
   .args = NULL,
-  .samples = HID_results$Prior_samples$LHS,
+  .samples = HID_results$Prior_samples$LHS[1:3,],
   .l_targets = HID_data$l_targets,
   .sample_method = "LHS")
 
 HID_results$Calib_results$Random[[2]] <- LLK_GOF(
   .func = HID_markov, .optim = FALSE,
   .args = NULL,
-  .samples = HID_results$Prior_samples$LHS,
+  .samples = HID_results$Prior_samples$LHS[1,],
   .l_targets = HID_data$l_targets,
   .sample_method = "LHS")
 ##
@@ -1799,8 +1799,20 @@ corplot(run)
 
 #R6: ###############################################################
 
-cccc = calibrateR_R6$new()
-cccc$sampleR(
+cal = calibrateR_R6$
+  new(
+  .model = HID_markov_2,
+  .params = HID_data2$l_params,
+  .targets = HID_data2$l_targets)
+cal$
+  sampleR(
   .n_samples = 5,
-  .l_params = HID_data2$l_params)
-
+  .sampling_method = c("LHS"))
+cal$
+  calibrateR_random(
+  .args = NULL,
+  .optim = FALSE,
+  .maximise = TRUE,
+  .weighted = TRUE,
+  .sample_method = "LHS",
+  .calibration_method = c("LLK", "SSE"))
