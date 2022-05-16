@@ -25,8 +25,8 @@ calibrateR_R6 <- R6::R6Class(
     calibration_parameters = NULL,
     #' @field calibration_targets calibration targets' data
     calibration_targets = NULL,
-    #' @field random_calibration random calibration methods results
-    random_calibration = NULL,
+    #' @field calibration_results calibration interim results
+    calibration_results = NULL,
     #' @field prior_samples a Decision-Analytic model under calibration
     prior_samples = NULL,
 
@@ -102,9 +102,9 @@ calibrateR_R6 <- R6::R6Class(
     },
 
     #' @description
-    #' Calibrate the model using one or more calibration method.
+    #' Calibrate the model using one or more random search method(s).
     #'
-    #' @param .args A list of arguments to be passed to calibration model
+    #' @param .args A list of arguments to be passed to calibration model.
     #' @param .optim Logical for whether the function is used by an
     #' optimisation algorithm. Default is \code{FALSE}.
     #' @param .maximise Logical for whether the output of the function is
@@ -124,9 +124,12 @@ calibrateR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    calibrateR_random = function(.args, .optim, .maximise,
-                                 .weighted = NULL, .sample_method,
-                                 .calibration_method) {
+    calibrateR_random = function(.args,
+                                 .optim = FALSE,
+                                 .maximise = TRUE,
+                                 .weighted = NULL,
+                                 .sample_method = 'LHS',
+                                 .calibration_method = 'LLK') {
       private$calibrateR_random_(
         .func = self$calibration_model,
         .args = .args,
@@ -134,14 +137,23 @@ calibrateR_R6 <- R6::R6Class(
         .maximise = .maximise,
         .weighted = .weighted,
         .sample_method = .sample_method,
-        .samples = self$prior_samples[[.sample_method]],
         .l_targets = self$calibration_targets,
         .calibration_method = .calibration_method
       )
     },
 
     #' @description
-    #' Calibrate the model using one or more calibration method.
+    #' Calibrate the model using one or more directed search method(s).
+    #'
+    #' @param .args A list of arguments to be passed to .func.
+    #' @param .gof A goodness-of-fit function, default is log-likelihood.
+    #' @param .n_samples Number of starting values (gausses) to use.
+    #' @param .max_iterations Maximum number of algorithm iterations.
+    #' @param temp SANN algorithm tuning parameter.
+    #' @param tmax SANN algorithm tuning parameter.
+    #' @param .calibration_method The calibration process.
+    #' @param .sample_method The method used to sample from the prior
+    #' distribution.
     #'
     #' @return Executes the required calibration method and populates
     #' the samples internal object.
@@ -151,8 +163,24 @@ calibrateR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    calibrateR_directed = function(...) {
-
+    calibrateR_directed = function(.args,
+                                   .gof = 'LLK',
+                                   .n_samples = 1,
+                                   .max_iterations = 1000,
+                                   temp = 10,
+                                   tmax = 10,
+                                   .calibration_method = 'NM',
+                                   .sample_method = 'LHS') {
+      private$calibrateR_directed_(
+        .args = .args,
+        .gof = .gof,
+        .n_samples = .n_samples,
+        .calibration_method = .calibration_method,
+        .sample_method = .sample_method,
+        .max_iterations = .max_iterations,
+        temp = temp,
+        tmax = tmax
+      )
     },
 
     #' @description
@@ -194,22 +222,486 @@ calibrateR_R6 <- R6::R6Class(
     },
     ## Calibration methods:----
     ### Random:----
-    calibrateR_random_ = function(.calibration_method, ...) {
-      #### SSE:----
-      if("SSE" %in% .calibration_method)
-        self$random_calibration["SSE"] <- list(
-          wSSE_GOF(...)
-        )
-      #### LLK:----
-      if("LLK" %in% .calibration_method)
-        self$random_calibration["LLK"] <- list(
-          LLK_GOF(...)
-        )
-
+    calibrateR_random_ = function(.calibration_method, .sample_method,
+                                  ...) {
+      if("RGS" %in% .sample_method){
+        #### SSE:----
+        if("SSE" %in% .calibration_method)
+          self$calibration_results$random["SSE_RGS"] <- list(
+            wSSE_GOF(
+              .samples = self$prior_samples[["RGS"]],
+              ...
+            )
+          )
+        #### LLK:----
+        if("LLK" %in% .calibration_method)
+          self$calibration_results$random["LLK_RGS"] <- list(
+            LLK_GOF(
+              .samples = self$prior_samples[["RGS"]],
+              ...
+            )
+          )
+      }
+      if("FGS" %in% .sample_method){
+        #### SSE:----
+        if("SSE" %in% .calibration_method)
+          self$calibration_results$random["SSE_FGS"] <- list(
+            wSSE_GOF(
+              .samples = self$prior_samples[["FGS"]],
+              ...
+            )
+          )
+        #### LLK:----
+        if("LLK" %in% .calibration_method)
+          self$calibration_results$random["LLK_FGS"] <- list(
+            LLK_GOF(
+              .samples = self$prior_samples[["FGS"]],
+              ...
+            )
+          )
+      }
+      if("LHS" %in% .sample_method){
+        #### SSE:----
+        if("SSE" %in% .calibration_method)
+          self$calibration_results$random["SSE_LHS"] <- list(
+            wSSE_GOF(
+              .samples = self$prior_samples[["LHS"]],
+              ...
+            )
+          )
+        #### LLK:----
+        if("LLK" %in% .calibration_method)
+          self$calibration_results$random["LLK_LHS"] <- list(
+            LLK_GOF(
+              .samples = self$prior_samples[["LHS"]],
+              ...
+            )
+          )
+      }
     },
     ### Directed:----
-    calibrateR_directed_ = function() {
-
+    calibrateR_directed_ = function(.gof,
+                                    .args,
+                                    .n_samples,
+                                    .calibration_method,
+                                    .sample_method,
+                                    .max_iterations,
+                                    temp,
+                                    tmax) {
+      if("RGS" %in% .sample_method) {
+        #### Nelder-Mead:----
+        if("NM" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["NM_LLK_RGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = "LLK",
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "NM",
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["NM_SSE_RGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = "SSE",
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "NM",
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+        #### BFGS:----
+        if("BFGS" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["BFGS_LLK_RGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'LLK',
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'BFGS',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["BFGS_SSE_RGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'SSE',
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'BFGS',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+        #### SANN:----
+        if("SANN" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["SANN_LLK_RGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'LLK',
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'SANN',
+                maxit = .max_iterations,
+                temp = temp,
+                tmax = tmax,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["SANN_SSE_RGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'SSE',
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'SANN',
+                maxit = .max_iterations,
+                temp = temp,
+                tmax = tmax,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+        #### GA:----
+        if("GA" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["GA_LLK_RGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'LLK',
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'GA',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["GA_SSE_RGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'SSE',
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'GA',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+      }
+      if("FGS" %in% .sample_method) {
+        #### Nelder-Mead:----
+        if("NM" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["NM_LLK_FGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = "LLK",
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "NM",
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["NM_SSE_FGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = "SSE",
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "NM",
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+        #### BFGS:----
+        if("BFGS" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["BFGS_LLK_FGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'LLK',
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'BFGS',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["BFGS_SSE_FGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'SSE',
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'BFGS',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+        #### SANN:----
+        if("SANN" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["SANN_LLK_FGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'LLK',
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'SANN',
+                maxit = .max_iterations,
+                temp = temp,
+                tmax = tmax,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["SANN_SSE_FGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'SSE',
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'SANN',
+                maxit = .max_iterations,
+                temp = temp,
+                tmax = tmax,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+        #### GA:----
+        if("GA" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["GA_LLK_FGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'LLK',
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'GA',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["GA_SSE_FGS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'SSE',
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'GA',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+      }
+      if("LHS" %in% .sample_method) {
+        #### Nelder-Mead:----
+        if("NM" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["NM_LLK_LHS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = "LLK",
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "NM",
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["NM_SSE_LHS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = "SSE",
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "NM",
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+        #### BFGS:----
+        if("BFGS" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["BFGS_LLK_LHS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'LLK',
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'BFGS',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["BFGS_SSE_LHS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'SSE',
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'BFGS',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+        #### SANN:----
+        if("SANN" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["SANN_LLK_LHS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'LLK',
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'SANN',
+                maxit = .max_iterations,
+                temp = temp,
+                tmax = tmax,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["SANN_SSE_LHS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'SSE',
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'SANN',
+                maxit = .max_iterations,
+                temp = temp,
+                tmax = tmax,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+        #### GA:----
+        if("GA" %in% .calibration_method) {
+          ##### LLK:----
+          if("LLK" %in% .gof)
+            self$calibration_results$directed[["GA_LLK_LHS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'LLK',
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'GA',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### SSE:----
+          if("SSE" %in% .gof)
+            self$calibration_results$directed[["GA_SSE_LHS"]] <-
+              calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = .args,
+                .gof = 'SSE',
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = 'GA',
+                maxit = .max_iterations,
+                .maximise = TRUE,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+        }
+      }
     },
     ### Bayesian:----
     calibrateR_bayesian_ = function() {

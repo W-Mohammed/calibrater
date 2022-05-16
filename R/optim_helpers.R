@@ -35,9 +35,10 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
   if(!is.null(dots[['.l_targets']])) .l_targets <- dots[['.l_targets']]
   # Stop if neither the .hessian matrix nor .gof & .func were supplied:
   stopifnot((!is.null(.hessian) | (!is.null(.gof)) & !is.null(.func)))
+  # Ensure .par object is named:
+  if(!is.null(.par)) names(.par) <- .params_name
   # Approximate the .hessian if not estimated by the optimisation function:
   if(is.null(.hessian)) {
-    names(.par) <- .params_name
     .hessian <- tryCatch(
       expr = {
         temp <- numDeriv::hessian(func = .gof, x = .par, .func = .func,
@@ -118,7 +119,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #' @param .args A list of arguments to be passed to .func.
 #' @param .gof A goodness-of-fit function, default is log-likelihood.
 #' @param .samples A table with sampled parameter values.
-#' @param .s_method A Character, "Nelder-Mead", "BFGS", "SANN" or "GA",
+#' @param .s_method A Character, "NM", "BFGS", "SANN" or "GA",
 #' that would identify the optimisation algorithm to be used.
 #' @param .maximise Logical for whether algorithm that created (or .func
 #' which will create) the hessian matrix maximised the goodness-of-fit
@@ -166,9 +167,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = 'wSumSquareError',
+#'   .gof = 'SSE',
 #'   .samples = samples,
-#'   .s_method = 'Nelder-Mead',
+#'   .s_method = 'NM',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
@@ -177,7 +178,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = 'wSumSquareError',
+#'   .gof = 'SSE',
 #'   .samples = samples,
 #'   .s_method = 'BFGS',
 #'   .maximise = TRUE,
@@ -188,7 +189,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = list(NULL),
-#'   .gof = 'wSumSquareError',
+#'   .gof = 'SSE',
 #'   .samples = samples,
 #'   .s_method = 'SANN',
 #'   .maximise = TRUE,
@@ -201,7 +202,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = list(NULL),
-#'   .gof = 'wSumSquareError',
+#'   .gof = 'SSE',
 #'   .samples = samples,
 #'   .s_method = 'GA',
 #'   .maximise = TRUE,
@@ -212,9 +213,9 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = 'log_likelihood',
+#'   .gof = 'LLK',
 #'   .samples = samples,
-#'   .s_method = 'Nelder-Mead',
+#'   .s_method = 'NM',
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
@@ -223,7 +224,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = 'log_likelihood',
+#'   .gof = 'LLK',
 #'   .samples = samples,
 #'   .s_method = 'BFGS',
 #'   .maximise = TRUE,
@@ -234,7 +235,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = NULL,
-#'   .gof = 'log_likelihood',
+#'   .gof = 'LLK',
 #'   .samples = samples,
 #'   .s_method = 'SANN',
 #'   .maximise = TRUE,
@@ -247,7 +248,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .l_params = l_params,
 #'   .func = CRS_markov,
 #'   .args = list(NULL),
-#'   .gof = 'log_likelihood',
+#'   .gof = 'LLK',
 #'   .samples = samples,
 #'   .s_method = 'GA',
 #'   .maximise = TRUE,
@@ -255,25 +256,25 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   maxit = 1000)
 #'
 calibrateModel_directed <- function(.l_params = l_params, .func, .args,
-                                    .gof = 'log_likelihood', .samples,
-                                    .s_method = 'Nelder-Mead',
+                                    .gof = 'LLK', .samples,
+                                    .s_method = 'NM',
                                     .maximise = TRUE,
                                     .l_targets, .seed_no = 1, ...) {
   set.seed(.seed_no)
   # Ensure that .s_method is supported by the function:
   stopifnot(".s_method is supported by the function" =
-              any(.s_method %in% c('Nelder-Mead', 'BFGS', 'SANN', 'GA')))
+              any(.s_method %in% c('NM', 'BFGS', 'SANN', 'GA')))
   # Get the .gof method:
   .gof_name <- .gof
   .gof <- switch(.gof,
-                 log_likelihood = LLK_GOF,
-                 wSumSquareError = wSSE_GOF)
+                 LLK = LLK_GOF,
+                 SSE = wSSE_GOF)
   # Get parameters' names:
   params_name <- .l_params[['v_params_names']]
   # Capture the arguments in the .dots:
   arguments <- list(...)
   # Apply appropriate method:
-  if(any(.s_method %in% c('Nelder-Mead', 'BFGS', 'SANN'))) {
+  if(any(.s_method %in% c('NM', 'BFGS', 'SANN'))) {
     # Map over sampled values:
     fits <- pmap(
       .l = .samples,
@@ -284,6 +285,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
         fit <- tryCatch(
           # Make sure to return NULL if the algorithm fails:
           expr = {
+            if(.s_method == 'NM') .s_method = "Nelder-Mead"
             optim(
               par = params_set,
               fn = .gof,

@@ -25,9 +25,9 @@ li_reg<-function(pars,data)
   sd_e<-pars[3] #error (residuals)
   if(sd_e<=0){return(NaN)}
   pred <- a + b * data[,1]
-  log_likelihood<-sum( dnorm(data[,2],pred,sd_e, log=TRUE) )
+  LLK<-sum( dnorm(data[,2],pred,sd_e, log=TRUE) )
   prior<- prior_reg(pars)
-  return(log_likelihood + prior)
+  return(LLK + prior)
 }
 ## Define the Prior distributions
 prior_reg<-function(pars)
@@ -76,7 +76,7 @@ tst3 = sample_prior_RGS(.l_params = list(v_params_names = v_params_names,
                                          v_params_dists = v_params_dists, args = args),.n_samples = 10)
 tst3
 #########################################################################
-# Number of initial starting points - Nelder-mead:
+# Number of initial starting points - NM:
 n_init <- 100
 # Number of random samples:
 n_samples <- 10
@@ -95,7 +95,7 @@ colnames(m_calib_res_llk) <- colnames(m_calib_res_sse) <-
 
 for (j in 1:n_init) {
   fit_sa <- optim(par = v_params_init[j, ],
-                  fn = log_likelihood, # GOF is log likelihood
+                  fn = LLK, # GOF is log likelihood
                   method = "SANN",
                   control = list(  fnscale = -1,
                                    temp = 10,
@@ -121,7 +121,7 @@ l_targets <- list(
   'Surv' = Surv,
   'v_targets_dists' = v_targets_dists)
 
-testing <- log_likelihood(.func = CRS_markov,
+testing <- LLK(.func = CRS_markov,
                           .samples = tst,
                           .l_targets = l_targets)
 ###########################
@@ -139,9 +139,9 @@ args <- list(list(min = 0.04, max = 0.16),
 samples <- sample_prior_LHS(
   .l_params = list(v_params_names = v_params_names,                             v_params_dists = v_params_dists, args = args), .n_samples = 10000)
 
-GOF_llik <- log_likelihood(.func = CRS_markov, .samples = samples,
+GOF_llik <- LLK(.func = CRS_markov, .samples = samples,
                            .l_targets = l_targets, .sample_method = "LHS")
-#log_likelihood##########################
+#LLK##########################
 data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv", "Surv")
@@ -162,12 +162,12 @@ l_params <- list(v_params_names = v_params_names,                             v_
 samples <- sample_prior_LHS(
   .l_params = l_params, .n_samples = 10000)
 
-GOF_llik1 <- log_likelihood(.func = CRS_markov, .samples = samples,
+GOF_llik1 <- LLK(.func = CRS_markov, .samples = samples,
                             .l_targets = l_targets,
                             .sample_method = "LHS")
-# GOF_llik2 <- log_likelihood(.func = CRS_markov, .samples = samples,
+# GOF_llik2 <- LLK(.func = CRS_markov, .samples = samples,
 #                             .l_targets = l_targets, .optim = TRUE)
-# GOF_llik4 <- log_likelihood(.func = CRS_markov, .samples = samples,
+# GOF_llik4 <- LLK(.func = CRS_markov, .samples = samples,
 #                             .l_targets = l_targets, .optim = TRUE)
 #wSSE_GOF##########################
 data("CRS_targets")
@@ -258,9 +258,9 @@ NM_optimise_wSSE <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000)
@@ -269,7 +269,7 @@ GB_optimise_wSSE <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -280,7 +280,7 @@ SA_optimise_wSSE <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -293,7 +293,7 @@ GA_optimise_wSSE <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -306,9 +306,9 @@ NM_optimise_lLLK <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000)
@@ -317,7 +317,7 @@ GB_optimise_lLLK <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -328,7 +328,7 @@ SA_optimise_lLLK <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -342,7 +342,7 @@ GA_optimise_lLLK <- calibrateModel_directed(
   .l_params = l_params,
   .func = CRS_markov,
   .args = list(NULL),
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -438,7 +438,7 @@ calc_log_lik <- function(.func = CRS_markov, .lst_targets = lst_targets,
   return(llik_overall)
 }
 
-log_likelihood(.samples = samples, .func = CRS_markov,
+LLK(.samples = samples, .func = CRS_markov,
                .args = NULL, .l_targets = l_targets)
 calc_log_lik(.v_params = v)
 calculate_likelihood(.samples = samples, .func = CRS_markov,
@@ -450,12 +450,12 @@ calc_likelihood(.v_params = v) ==
 ##### posterior:
 calc_log_post <- function(.v_params, .target = lst_targets) {
   # Call log-likelihood function:
-  log_likelihood <- calc_log_lik(.v_params = .v_params,
+  LLK <- calc_log_lik(.v_params = .v_params,
                                  .lst_targets = .target)
   # Call log-prior function:
   lprior <- calc_log_prior(.v_params = .v_params)
   # Compute log-posterior:
-  lpost <- log_likelihood + lprior
+  lpost <- LLK + lprior
 
   return(lpost)
 }
@@ -541,9 +541,9 @@ NM_optimise_wSSE_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = CRS_data$l_targets,
   maxit = 1000)
@@ -552,7 +552,7 @@ GB_optimise_wSSE_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -563,7 +563,7 @@ SA_optimise_wSSE_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -576,7 +576,7 @@ GA_optimise_wSSE_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -589,9 +589,9 @@ NM_optimise_LLK_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = CRS_data$l_targets,
   maxit = 1000)
@@ -600,7 +600,7 @@ GB_optimise_LLK_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -611,7 +611,7 @@ SA_optimise_LLK_CRS_model <- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -625,7 +625,7 @@ GA_optimise_LLK_CRS_model<- calibrateModel_directed(
   .l_params = CRS_data$l_params,
   .func = CRS_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -836,7 +836,7 @@ l_likelihood <- function(par_vector) {
 }
 
 l_likelihood(par_vector = as.matrix(tooot2[3,]))
-log_likelihood(
+LLK(
   .samples = tooot2[3,],
   .func = HID_markov,
   .args = NULL,
@@ -845,7 +845,7 @@ log_likelihood(
 
 microbenchmark::microbenchmark(
   l_likelihood(par_vector = as.matrix(tooot2[3,])),
-  log_likelihood(
+  LLK(
     .samples = tooot2[3,],
     .func = HID_markov,
     .args = NULL,
@@ -972,9 +972,9 @@ NM_optimise_wSSE_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = HID_data$l_targets,
   maxit = 1000)
@@ -983,7 +983,7 @@ GB_optimise_wSSE_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -994,7 +994,7 @@ SA_optimise_wSSE_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -1007,7 +1007,7 @@ GA_optimise_wSSE_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -1020,9 +1020,9 @@ NM_optimise_LLK_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = HID_data$l_targets,
   maxit = 1000)
@@ -1031,7 +1031,7 @@ GB_optimise_LLK_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -1042,7 +1042,7 @@ SA_optimise_LLK_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -1056,7 +1056,7 @@ GA_optimise_LLK_HID_data <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -1243,9 +1243,9 @@ NM_optimise_wSSE_SS_MicroSim <- calibrateModel_directed(
   .l_params = sickSicker_data$l_params,
   .func = SS_MicroSim,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = sickSicker_data$l_targets,
   maxit = 1000)
@@ -1254,7 +1254,7 @@ GB_optimise_wSSE_SS_MicroSim <- calibrateModel_directed(
   .l_params = sickSicker_data$l_params,
   .func = SS_MicroSim,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -1265,7 +1265,7 @@ SA_optimise_wSSE_SS_MicroSim <- calibrateModel_directed(
   .l_params = sickSicker_data$l_params,
   .func = SS_MicroSim,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -1278,7 +1278,7 @@ GA_optimise_wSSE_SS_MicroSim <- calibrateModel_directed(
   .l_params = sickSicker_data$l_params,
   .func = SS_MicroSim,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -1291,9 +1291,9 @@ NM_optimise_LLK_SS_MicroSim <- calibrateModel_directed(
   .l_params = sickSicker_data$l_params,
   .func = SS_MicroSim,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = sickSicker_data$l_targets,
   maxit = 1000)
@@ -1302,7 +1302,7 @@ GB_optimise_LLK_SS_MicroSim <- calibrateModel_directed(
   .l_params = sickSicker_data$l_params,
   .func = SS_MicroSim,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -1313,7 +1313,7 @@ SA_optimise_LLK_SS_MicroSim <- calibrateModel_directed(
   .l_params = sickSicker_data$l_params,
   .func = SS_MicroSim,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -1327,7 +1327,7 @@ GA_optimise_LLK_SS_MicroSim <- calibrateModel_directed(
   .l_params = sickSicker_data$l_params,
   .func = SS_MicroSim,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = samples,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -1440,16 +1440,16 @@ HID2_results$Calib_results$Random[[2]] <- LLK_GOF(
   .sample_method = "LHS")
 ##
 HID2_results$Prior_samples[['LHS_Directed']] <- sample_prior_LHS(
-  .n_samples = 5,
+  .n_samples = 2,
   .l_params = HID_data2$l_params)
 
 HID2_results$Calib_results$Directed[[1]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = HID2_results$Prior_samples$LHS_Directed,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
   maxit = 1000)
@@ -1458,9 +1458,9 @@ HID2_results$Calib_results$Directed[[2]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = HID2_results$Prior_samples$LHS_Directed,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = HID_data2$l_targets,
   maxit = 1000)
@@ -1469,7 +1469,7 @@ HID2_results$Calib_results$Directed[[3]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -1480,7 +1480,7 @@ HID2_results$Calib_results$Directed[[4]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -1491,7 +1491,7 @@ HID2_results$Calib_results$Directed[[5]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -1505,7 +1505,7 @@ HID2_results$Calib_results$Directed[[6]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -1518,7 +1518,7 @@ HID2_results$Calib_results$Directed[[7]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -1531,7 +1531,7 @@ HID2_results$Calib_results$Directed[[8]] <- calibrateModel_directed(
   .l_params = HID_data2$l_params,
   .func = HID_markov_2,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = HID2_results$Prior_samples$LHS_Directed,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -1630,9 +1630,9 @@ HID_results$Calib_results$Directed[[1]] <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = HID_results$Prior_samples$LHS_Directed,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = HID_data$l_targets,
   maxit = 1000)
@@ -1641,9 +1641,9 @@ HID_results$Calib_results$Directed[[2]] <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = HID_results$Prior_samples$LHS_Directed,
-  .s_method = 'Nelder-Mead',
+  .s_method = 'NM',
   .maximise = TRUE,
   .l_targets = HID_data$l_targets,
   maxit = 1000)
@@ -1652,7 +1652,7 @@ HID_results$Calib_results$Directed[[3]] <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = HID_results$Prior_samples$LHS_Directed,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -1663,7 +1663,7 @@ HID_results$Calib_results$Directed[[4]] <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = HID_results$Prior_samples$LHS_Directed,
   .s_method = 'BFGS',
   .maximise = TRUE,
@@ -1674,7 +1674,7 @@ HID_results$Calib_results$Directed[[5]] <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = HID_results$Prior_samples$LHS_Directed,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -1688,7 +1688,7 @@ HID_results$Calib_results$Directed[[6]] <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = HID_results$Prior_samples$LHS_Directed,
   .s_method = 'SANN',
   .maximise = TRUE,
@@ -1701,7 +1701,7 @@ HID_results$Calib_results$Directed[[7]] <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'log_likelihood',
+  .gof = 'LLK',
   .samples = HID_results$Prior_samples$LHS_Directed,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -1714,7 +1714,7 @@ HID_results$Calib_results$Directed[[8]] <- calibrateModel_directed(
   .l_params = HID_data$l_params,
   .func = HID_markov,
   .args = NULL,
-  .gof = 'wSumSquareError',
+  .gof = 'SSE',
   .samples = HID_results$Prior_samples$LHS_Directed,
   .s_method = 'GA',
   .maximise = TRUE,
@@ -1807,12 +1807,43 @@ cal = calibrateR_R6$
 cal$
   sampleR(
   .n_samples = 5,
-  .sampling_method = c("LHS"))
+  .sampling_method = c("LHS", "RGS", "FGS"))
 cal$
   calibrateR_random(
   .args = NULL,
   .optim = FALSE,
   .maximise = TRUE,
   .weighted = TRUE,
-  .sample_method = "LHS",
+  .sample_method = c("LHS", "RGS", "FGS"),
   .calibration_method = c("LLK", "SSE"))
+cal$
+  calibrateR_directed(
+    .gof = c('LLK', 'SSE'),
+    .args = NULL,
+    .n_samples = 5,
+    .calibration_method = c('NM'),
+    .sample_method = c("LHS", "RGS", "FGS"),
+    .max_iterations = 1000,
+    temp = 10,
+    tmax = 10)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
