@@ -62,13 +62,22 @@ and produce summary plots/tables.
 \describe{
 \item{\code{calibration_model}}{a Decision-Analytic model under calibration}
 
+\item{\code{calibration_model_args}}{arguments passed to the calibration
+model}
+
 \item{\code{calibration_parameters}}{calibration parameters' data}
 
 \item{\code{calibration_targets}}{calibration targets' data}
 
-\item{\code{random_calibration}}{random calibration methods results}
+\item{\code{calibration_results}}{calibration interim results}
+
+\item{\code{PSA_samples}}{calibration and un-calibration parameters
+samples}
 
 \item{\code{prior_samples}}{a Decision-Analytic model under calibration}
+
+\item{\code{transform_parameters}}{boolean for whether to back transform
+parameters}
 }
 \if{html}{\out{</div>}}
 }
@@ -91,7 +100,7 @@ and produce summary plots/tables.
 Sample prior distribution(s) using one or more sampling method. This
 function currently supports: LHS, FGS and RGS.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$new(.model, .params, .targets)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$new(.model, .args, .params, .targets, .transform)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -182,23 +191,20 @@ the samples internal object.
 \if{html}{\out{<a id="method-calibrateR_random"></a>}}
 \if{latex}{\out{\hypertarget{method-calibrateR_random}{}}}
 \subsection{Method \code{calibrateR_random()}}{
-Calibrate the model using one or more calibration method.
+Calibrate the model using one or more random search method(s).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR_random(
-  .args,
-  .optim,
-  .maximise,
+  .optim = FALSE,
+  .maximise = TRUE,
   .weighted = NULL,
-  .sample_method,
-  .calibration_method
+  .sample_method = "LHS",
+  .calibration_method = "LLK"
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{.args}}{A list of arguments to be passed to calibration model}
-
 \item{\code{.optim}}{Logical for whether the function is used by an
 optimisation algorithm. Default is \code{FALSE}.}
 
@@ -234,11 +240,39 @@ the samples internal object.
 \if{html}{\out{<a id="method-calibrateR_directed"></a>}}
 \if{latex}{\out{\hypertarget{method-calibrateR_directed}{}}}
 \subsection{Method \code{calibrateR_directed()}}{
-Calibrate the model using one or more calibration method.
+Calibrate the model using one or more directed search method(s).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR_directed(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR_directed(
+  .gof = "LLK",
+  .n_samples = 1,
+  .max_iterations = 1000,
+  temp = 10,
+  tmax = 10,
+  .calibration_method = "NM",
+  .sample_method = "LHS"
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.gof}}{A goodness-of-fit function, default is log-likelihood.}
+
+\item{\code{.n_samples}}{Number of starting values (gausses) to use.}
+
+\item{\code{.max_iterations}}{Maximum number of algorithm iterations.}
+
+\item{\code{temp}}{SANN algorithm tuning parameter.}
+
+\item{\code{tmax}}{SANN algorithm tuning parameter.}
+
+\item{\code{.calibration_method}}{The calibration process.}
+
+\item{\code{.sample_method}}{The method used to sample from the prior
+distribution.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 Executes the required calibration method and populates
 the samples internal object.
@@ -259,9 +293,27 @@ the samples internal object.
 \subsection{Method \code{calibrateR_bayesian()}}{
 Calibrate the model using one or more calibration method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR_bayesian(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR_bayesian(
+  .b_method = "SIR",
+  .n_resample = 1000,
+  .IMIS_iterations = 10,
+  .IMIS_sample = 100
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.b_method}}{Bayesian calibration method}
+
+\item{\code{.n_resample}}{Desired number of draws from the posterior}
+
+\item{\code{.IMIS_iterations}}{Maximum number of IMIS iterations}
+
+\item{\code{.IMIS_sample}}{IMIS sample size at each iteration}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 Executes the required calibration method and populates
 the samples internal object.

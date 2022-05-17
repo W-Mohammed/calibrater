@@ -10,12 +10,29 @@ IMIS_(
   number_k = 100,
   D = 0,
   sample.prior = .sample.prior_,
+  priors = .priors_,
   prior = .prior_,
   likelihood = .likelihood_
 )
 }
 \arguments{
-\item{prior}{}
+\item{B}{Sample size at each IMIS iteration}
+
+\item{B.re}{Desired posterior sample size}
+
+\item{number_k}{Maximum number of iterations in IMIS}
+
+\item{D}{use optimizer >= 1, do not use = 0}
+
+\item{sample.prior}{Sample from prior distribution}
+
+\item{priors}{Function that calculates prior densities (many sets of
+parameters at a time)}
+
+\item{prior}{Function that calculates prior densities (one set of
+parameters at a time)}
+
+\item{likelihood}{Function that calculates the likelihood}
 }
 \value{
 

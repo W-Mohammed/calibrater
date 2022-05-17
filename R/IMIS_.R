@@ -1,20 +1,23 @@
 #' Incremental Mixture Importance Sampling (IMIS) - amended version
 #'
-#' @param B
-#' @param B.re
-#' @param number_k
-#' @param D
-#' @param sample.prior
-#' @param likelihood
-#' @param prior
+#' @param B Sample size at each IMIS iteration
+#' @param B.re Desired posterior sample size
+#' @param number_k Maximum number of iterations in IMIS
+#' @param D use optimizer >= 1, do not use = 0
+#' @param sample.prior Sample from prior distribution
+#' @param priors Function that calculates prior densities (many sets of
+#' parameters at a time)
+#' @param prior Function that calculates prior densities (one set of
+#' parameters at a time)
+#' @param likelihood Function that calculates the likelihood
 #'
 #' @return
 #' @export
 #'
 #' @examples
-IMIS_ <- function(B=1000, B.re=3000, number_k=100, D=0,
-                  sample.prior = .sample.prior_, prior = .prior_,
-                  likelihood = .likelihood_){
+IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
+                  sample.prior = .sample.prior_, priors = .priors_,
+                  prior = .prior_, likelihood = .likelihood_) {
   # The IMIS function, from the IMIS package: ----
   B0 = B*10
   X_all = X_k = sample.prior(B0)				# Draw initial samples from the prior distribution
@@ -29,7 +32,7 @@ IMIS_ <- function(B=1000, B.re=3000, number_k=100, D=0,
   for (k in 1:number_k ){
 
     ptm.like = proc.time()
-    prior_x =  prior(X_k)	# Calculate the prior densities
+    prior_x =  priors(X_k)	# Calculate the prior densities
     prior_all = c(prior_all, prior_x)
     like_x = likelihood(X_k) # Calculate the likelihoods
     like_all = c(like_all, like_x)

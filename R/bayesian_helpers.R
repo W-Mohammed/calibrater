@@ -62,7 +62,7 @@ sample_prior_IMIS <- function(.n_samples, .l_params = .l_params_) {
 #' @export
 #'
 #' @examples
-log_prior_ <- function(.samples, .l_params, .transform) {
+log_priors <- function(.samples, .l_params, .transform) {
 
   v_params_names <- .l_params[['v_params_names']]
   names(.l_params[['v_params_names']]) <- v_params_names
@@ -156,7 +156,7 @@ log_prior <- function(.samples, .l_params, .transform) {
 
 }
 
-#' Calculate prior
+#' Calculate priors
 #'
 #' @param .samples A vector/dataset containing sampled/proposed values.
 #' @param .l_params A list that contains a vector of parameter names,
@@ -168,10 +168,10 @@ log_prior <- function(.samples, .l_params, .transform) {
 #' @export
 #'
 #' @examples
-calculate_prior_ <- function(.samples, .l_params = .l_params_,
+calculate_priors <- function(.samples, .l_params = .l_params_,
                              .transform = .transform_) {
 
-  v_prior <-  exp(log_prior_(.samples = .samples, .l_params = .l_params,
+  v_prior <-  exp(log_priors(.samples = .samples, .l_params = .l_params,
                              .transform = .transform))
 
   return(v_prior)
@@ -335,7 +335,7 @@ calculate_likelihood <- function(.samples, .func = .func_, .args = .args_,
   return(v_likelihood)
 }
 
-#' Calculate log posterior
+#' Calculate log posteriors
 #'
 #' @param .samples A table or vector of sampled parameter values
 #' @param .func A function defining the model to be calibrated
@@ -353,10 +353,10 @@ calculate_likelihood <- function(.samples, .func = .func_, .args = .args_,
 #' @export
 #'
 #' @examples
-log_posterior_ <- function(.samples, .func, .args, .l_targets, .l_params,
+log_posteriors <- function(.samples, .func, .args, .l_targets, .l_params,
                            .transform) {
   # calculate log prior:
-  l_prior <- log_prior_(.samples = .samples, .l_params = .l_params,
+  l_prior <- log_priors(.samples = .samples, .l_params = .l_params,
                         .transform = .transform)
   # calculate log likelihood:
   l_lilk <- log_likelihood(.samples = .samples, .func = .func,
@@ -399,7 +399,7 @@ log_posterior <- function(.samples, .func, .args, .l_targets, .l_params,
   return(l_posterior)
 }
 
-#' Calculate posterior
+#' Calculate posterior densities
 #'
 #' @param .samples A table or vector of sampled parameter values
 #' @param .func A function defining the model to be calibrated
@@ -416,12 +416,12 @@ log_posterior <- function(.samples, .func, .args, .l_targets, .l_params,
 #' @export
 #'
 #' @examples
-calculate_posterior_ <- function(.samples, .func = .func_, .args = .args_,
+calculate_posteriors <- function(.samples, .func = .func_, .args = .args_,
                                  .l_targets = .l_targets_,
                                  .l_params = .l_params_,
                                  .transform = FALSE) {
   # calculate the posterior:
-  posterior <- exp(log_posterior_(.samples = .samples, .func = .func,
+  posterior <- exp(log_posteriors(.samples = .samples, .func = .func,
                                   .args = .args, .l_targets = .l_targets,
                                   .l_params = .l_params,
                                   .transform = .transform))
@@ -534,7 +534,8 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
       number_k = .IMIS_iterations, # the maximum number of iterations in IMIS
       D = 1, # use optimizer >= 1, do not use = 0.
       sample.prior = sample_prior_IMIS,
-      prior = calculate_prior_,
+      prior = calculate_prior,
+      priors = calculate_priors,
       likelihood = calculate_likelihood
     )
     ## Obtain draws from posterior:
@@ -542,7 +543,7 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
     Overall_fit <- log_likelihood(
       .samples = m_calib_res, .func = .func, .args = .args,
       .l_targets = .l_targets)
-    Posterior_prob <- calculate_posterior_(
+    Posterior_prob <- calculate_posteriors(
       .samples = m_calib_res, .func = .func, .args = .args,
       .l_targets = .l_targets, .l_params = .l_params)
     ## Calculate log-likelihood (overall fit) and posterior probability:
@@ -632,7 +633,7 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
   } else if(.b_method == 'IMIS') { # IMIS:
     ## Define three functions needed by IMIS:
     ### prior(x), likelihood(x), sample.prior(n)
-    prior <<- calculate_prior_
+    prior <<- calculate_priors
     likelihood <<- calculate_likelihood
     sample.prior <<- sample_prior_IMIS
     ## Define function inputs:
@@ -653,7 +654,7 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
     Overall_fit <- log_likelihood(
       .samples = m_calib_res, .func = .func, .args = .args,
       .l_targets = .l_targets)
-    Posterior_prob <- calculate_posterior_(
+    Posterior_prob <- calculate_posteriors(
       .samples = m_calib_res, .func = .func, .args = .args,
       .l_targets = .l_targets, .l_params = .l_params)
     ## Calculate log-likelihood (overall fit) and posterior probability:

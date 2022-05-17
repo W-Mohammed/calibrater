@@ -1801,16 +1801,19 @@ corplot(run)
 
 cal = calibrateR_R6$
   new(
-  .model = HID_markov_2,
-  .params = HID_data2$l_params,
-  .targets = HID_data2$l_targets)
+    .model = HID_markov_2,
+    .params = HID_data2$l_params,
+    .targets = HID_data2$l_targets,
+    .args = NULL,
+    .transform = TRUE
+  )
 cal$
   sampleR(
-  .n_samples = 5,
-  .sampling_method = c("LHS", "RGS", "FGS"))
+    .n_samples = 5,
+    .sampling_method = c("LHS", "RGS", "FGS")
+  )
 cal$
   calibrateR_random(
-  .args = NULL,
   .optim = FALSE,
   .maximise = TRUE,
   .weighted = TRUE,
@@ -1826,7 +1829,15 @@ cal$
     .max_iterations = 1000,
     temp = 10,
     tmax = 10)
-
+cal$
+  calibrateR_bayesian(
+  .b_method = 'SIR',
+  .n_resample = 10000)
+cal$calibrateR_bayesian(
+  .b_method = 'IMIS',
+  .n_resample = 10000,
+  .IMIS_iterations = 400,
+  .IMIS_sample = 100)
 
 
 
