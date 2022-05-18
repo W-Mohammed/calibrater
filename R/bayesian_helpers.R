@@ -704,16 +704,3 @@ effective_sample_size <- function(bayes_calib_output_list,
     dplyr::summarise(sum(n)^2/sum(n^2)) %>%
     dplyr::pull()
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

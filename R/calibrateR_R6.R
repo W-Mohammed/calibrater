@@ -30,18 +30,24 @@ calibrateR_R6 <- R6::R6Class(
     calibration_targets = NULL,
     #' @field calibration_results calibration interim results
     calibration_results = NULL,
-    #' @field PSA_samples calibration and un-calibration parameters
-    #' samples
-    PSA_samples = NULL,
-    #' @field prior_samples a Decision-Analytic model under calibration
-    prior_samples = NULL,
     #' @field transform_parameters boolean for whether to back transform
     #' parameters
     transform_parameters = FALSE,
+    #' @field prior_samples a Decision-Analytic model under calibration
+    prior_samples = NULL,
+    #' @field PSA_samples calibration and un-calibration parameters
+    #' samples
+    PSA_samples = NULL,
+    #' @field PSA_results PSA results
+    PSA_results = NULL,
+    #' @field PSA_summary PSA results' summary
+    PSA_summary = NULL,
+    #' @field plots summary plots
+    plots = NULL,
 
     #' @description
-    #' Sample prior distribution(s) using one or more sampling method. This
-    #' function currently supports: LHS, FGS and RGS.
+    #' Sample prior distribution(s) using one or more sampling method.
+    #' This function currently supports: LHS, FGS and RGS.
     #'
     #' @param .model The decision analytic model under calibration
     #' @param .params Calibration parameters
@@ -192,7 +198,7 @@ calibrateR_R6 <- R6::R6Class(
     #' @description
     #' Calibrate the model using one or more calibration method.
     #'
-    #' @param .b_method Bayesian calibration method
+    #' @param .b_methods Bayesian calibration method(s)
     #' @param .n_resample Desired number of draws from the posterior
     #' @param .IMIS_iterations Maximum number of IMIS iterations
     #' @param .IMIS_sample IMIS sample size at each iteration
@@ -205,18 +211,73 @@ calibrateR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    calibrateR_bayesian = function(.b_method = 'SIR',
+    calibrateR_bayesian = function(.b_methods = 'SIR',
                                    .n_resample = 1000,
                                    .IMIS_iterations = 10,
                                    .IMIS_sample = 100) {
       private$calibrateR_bayesian_(
-        .b_method = .b_method,
+        .b_methods = .b_methods,
         .n_resample = .n_resample,
         .IMIS_iterations = .IMIS_iterations,
         .IMIS_sample = .IMIS_sample
       )
-    }
+    },
 
+    #' @description
+    #' Sample PSA values for the calibration parameters
+    #'
+    #' @param .calibration_methods Bayesian calibration method(s)
+    #' @param .PSA_samples Number of PSA sets to sample
+    #'
+    #' @return
+    #' @export
+    #'
+    #' @examples
+    sample_PSA_values = function(.calibration_methods,
+                                 .PSA_samples) {
+      private$sample_PSA_values_(
+        .calibration_methods = .calibration_methods,
+        .PSA_samples = .PSA_samples
+      )
+    },
+
+    #' @description
+    #' Run PSA
+    #'
+    #' @param .PSA_unCalib_values_ PSA values for un-calibrated parameters
+    #'
+    #' @return
+    #' @export
+    #'
+    #' @examples
+    run_PSA = function(.PSA_unCalib_values_ = NULL) {
+      private$run_PSA_(
+        .PSA_unCalib_values_ = NULL
+      )
+    },
+
+    #' @description
+    #' Summarise PSA results
+    #'
+    #' @return
+    #' @export
+    #'
+    #' @examples
+    summarise_PSA = function() {
+      private$summarise_PSA_()
+    },
+
+    #' @description
+    #' Draw plots
+    #'
+    #' @return
+    #' @export
+    #'
+    #' @examples
+    draw_plots = function() {
+      private$draw_priors_posteriors()
+      private$draw_pair_correlations()
+    }
   ),
 
   # Private elements:----
@@ -242,15 +303,17 @@ calibrateR_R6 <- R6::R6Class(
     },
     ## Calibration methods:----
     ### Random:----
-    calibrateR_random_ = function(.calibration_method,
-                                  .sample_method,
-                                  ...) {
+    calibrateR_random_ = function(
+      .calibration_method,
+      .sample_method,
+      ...) {
       if("RGS" %in% .sample_method){
         #### SSE:----
         if("SSE" %in% .calibration_method)
           self$calibration_results$random["SSE_RGS"] <- list(
             wSSE_GOF(
               .samples = self$prior_samples[["RGS"]],
+              .sample_method = "RGS",
               ...
             )
           )
@@ -259,6 +322,7 @@ calibrateR_R6 <- R6::R6Class(
           self$calibration_results$random["LLK_RGS"] <- list(
             LLK_GOF(
               .samples = self$prior_samples[["RGS"]],
+              .sample_method = "RGS",
               ...
             )
           )
@@ -269,6 +333,7 @@ calibrateR_R6 <- R6::R6Class(
           self$calibration_results$random["SSE_FGS"] <- list(
             wSSE_GOF(
               .samples = self$prior_samples[["FGS"]],
+              .sample_method = "FGS",
               ...
             )
           )
@@ -277,6 +342,7 @@ calibrateR_R6 <- R6::R6Class(
           self$calibration_results$random["LLK_FGS"] <- list(
             LLK_GOF(
               .samples = self$prior_samples[["FGS"]],
+              .sample_method = "FGS",
               ...
             )
           )
@@ -287,6 +353,7 @@ calibrateR_R6 <- R6::R6Class(
           self$calibration_results$random["SSE_LHS"] <- list(
             wSSE_GOF(
               .samples = self$prior_samples[["LHS"]],
+              .sample_method = "LHS",
               ...
             )
           )
@@ -295,19 +362,21 @@ calibrateR_R6 <- R6::R6Class(
           self$calibration_results$random["LLK_LHS"] <- list(
             LLK_GOF(
               .samples = self$prior_samples[["LHS"]],
+              .sample_method = "LHS",
               ...
             )
           )
       }
     },
     ### Directed:----
-    calibrateR_directed_ = function(.gof,
-                                    .n_samples,
-                                    .calibration_method,
-                                    .sample_method,
-                                    .max_iterations,
-                                    temp,
-                                    tmax) {
+    calibrateR_directed_ = function(
+      .gof,
+      .n_samples,
+      .calibration_method,
+      .sample_method,
+      .max_iterations,
+      temp,
+      tmax) {
       if("RGS" %in% .sample_method) {
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
@@ -724,38 +793,38 @@ calibrateR_R6 <- R6::R6Class(
       }
     },
     ### Bayesian:----
-    calibrateR_bayesian_ = function(.b_method,
+    calibrateR_bayesian_ = function(.b_methods,
                                     .n_resample,
                                     .IMIS_iterations,
                                     .IMIS_sample) {
       #### IMIS:----
-      if('IMIS' %in% .b_method) {
+      if('IMIS' %in% .b_methods) {
         self$calibration_results$bayesian[["IMIS"]] <-
           private$calibrateModel_beyesian(
-          .b_method = 'IMIS',
-          .func = self$calibration_model,
-          .args = self$calibration_model_args,
-          .transform = self$transform_parameters,
-          .n_resample = .n_resample,
-          .IMIS_iterations = .IMIS_iterations,
-          .IMIS_sample = .IMIS_sample,
-          .l_params = self$calibration_parameters,
-          .l_targets = self$calibration_targets
-        )
+            .b_method = 'IMIS',
+            .func = self$calibration_model,
+            .args = self$calibration_model_args,
+            .transform = self$transform_parameters,
+            .n_resample = .n_resample,
+            .IMIS_iterations = .IMIS_iterations,
+            .IMIS_sample = .IMIS_sample,
+            .l_params = self$calibration_parameters,
+            .l_targets = self$calibration_targets
+          )
       }
       #### SIR:----
-      if('SIR' %in% .b_method) {
+      if('SIR' %in% .b_methods) {
         samples_ = private$sample_prior_IMIS(.n_samples = .n_resample)
         self$calibration_results$bayesian[["SIR"]] <-
           private$calibrateModel_beyesian(
-          .b_method = 'SIR',
-          .func = self$calibration_model,
-          .args = self$calibration_model_args,
-          .n_resample = .n_resample,
-          .samples = samples_,
-          .l_params = self$calibration_parameters,
-          .l_targets = self$calibration_targets
-        )
+            .b_method = 'SIR',
+            .func = self$calibration_model,
+            .args = self$calibration_model_args,
+            .n_resample = .n_resample,
+            .samples = samples_,
+            .l_params = self$calibration_parameters,
+            .l_targets = self$calibration_targets
+          )
       }
     },
     ### Bayesian helper functions:----
@@ -1205,7 +1274,7 @@ calibrateR_R6 <- R6::R6Class(
 
       return(posterior)
     },
-    #### Bayesian helper function:----
+    #### Bayesian calibration function:----
     # Calibrate models using Bayesian methods - employing local IMIS_()
     #
     # @param .b_method Character defining the Bayesian method to use in
@@ -1281,12 +1350,6 @@ calibrateR_R6 <- R6::R6Class(
         return(list('Results' = SIR_results, 'Method' = "SIR"))
 
       } else if(.b_method == 'IMIS') { # IMIS:
-        ## Define function inputs:
-        # .l_params_ <<- .l_params # prior/sample.prior
-        # .func_ <<- .func # calculate_likelihood
-        # .args_ <<- .args # calculate_likelihood
-        # .l_targets_ <<- .l_targets # calculate_likelihood
-        # .transform_ <<- .transform # prior
         ## Run IMIS:
         fit_IMIS <- IMIS_(
           B = .IMIS_sample, # incremental sample size at each iteration
@@ -1333,6 +1396,207 @@ calibrateR_R6 <- R6::R6Class(
       } else {
 
       }
+    },
+    ## PSA:----
+    ### Sample PSA values for calibration parameters:----
+    # Sample PSA values for the calibration parameters
+    #
+    # @param .calibration_methods calibration methods
+    # @param .PSA_samples number of PSA samples
+    #
+    sample_PSA_values_ = function(
+      .calibration_methods,
+      .PSA_samples) {
+      # Random calibration methods:
+      if('Random' %in% .calibration_methods) {
+        self$PSA_samples$random <- PSA_calib_values(
+          .l_calib_res_lists = self$calibration_results$random,
+          .search_method = 'Random',
+          .PSA_samples = .PSA_samples,
+          .transform_ = self$transform_parameters,
+          .l_params = self$calibration_parameters
+        )
+      }
+      # Directed calibration methods:
+      if('Directed' %in% .calibration_methods) {
+        self$PSA_samples$directed <- PSA_calib_values(
+          .l_calib_res_lists = self$calibration_results$directed,
+          .search_method = 'Directed',
+          .PSA_samples = .PSA_samples,
+          .transform_ = self$transform_parameters,
+          .l_params = self$calibration_parameters
+        )
+      }
+      # Bayesian calibration methods:
+      if('Bayesian' %in% .calibration_methods) {
+        self$PSA_samples$bayesian <- PSA_calib_values(
+          .l_calib_res_lists = self$calibration_results$bayesian,
+          .search_method = 'Bayesian',
+          .PSA_samples = .PSA_samples,
+          .transform_ = self$transform_parameters,
+          .l_params = self$calibration_parameters
+        )
+      }
+    },
+    ### Run PSA:----
+    # Perform PSA analysis
+    #
+    # @param .PSA_unCalib_values_ PSA values for un-calibrated parameters
+    #
+    run_PSA_ = function(
+      .PSA_unCalib_values_) {
+      self$PSA_results <- run_PSA(
+        .func_ = self$calibration_model,
+        .PSA_calib_values_ = c(self$PSA_samples$random,
+                               self$PSA_samples$directed,
+                               self$PSA_samples$bayesian),
+        .args_ = c(self$calibration_model_args,
+                   "calibrate_" = FALSE),
+        .PSA_unCalib_values_ = .PSA_unCalib_values_
+      )
+    },
+    ### Summarise PSA:----
+    # Summarise PSA results
+    #
+    summarise_PSA_ = function() {
+      self$PSA_summary <- map_df(
+        .x = self$PSA_results,
+        .f = function(PSA) {
+          data_ <- tibble(
+            'mean_inc_Costs' = mean(PSA$inc_cost),
+            'mean_inc_LY' = mean(PSA$inc_LY),
+            'iNMB' = (mean_inc_LY * 30000) - mean_inc_Costs,
+            'calibration_method' = if(nrow(PSA) == 1) paste(PSA$Label[[1]], "_*") else PSA$Label[[1]],
+            'goodness_of_fit' = mean(PSA$Overall_fit)
+          )
+        }
+      )
+    },
+    ## Plots:----
+    ### Prior-posterior plots:----
+    draw_priors_posteriors = function(sample_method = "LHS") {
+      data_ <- c(self$PSA_samples$random,
+                 self$PSA_samples$directed,
+                 self$PSA_samples$bayesian) %>%
+        transpose() %>%
+        .[['PSA_calib_draws']] %>%
+        bind_rows() %>%
+        select(
+          !!!all_of(
+            syms(
+              self$calibration_parameters$v_params_names)), Label)
+
+      data_ <- if(self$transform_parameters) {
+        data_ %>%
+          bind_rows(
+            self$prior_samples[[sample_method]] %>%
+              mutate(Label = 'Prior') %>%
+              backTransform(
+                .t_data_ = .,
+                .l_params_ = self$calibration_parameters
+              )
+          )
+      } else {
+        data_ %>%
+          bind_rows(
+            self$prior_samples[[sample_method]] %>%
+              mutate(Label = 'Prior')
+          )
+      }
+
+      data2_ = data_ %>%
+        pivot_longer(
+          cols = self$calibration_parameters$v_params_names,
+          names_to = "Parameter",
+          values_to = "Distribution draws")
+
+      self$plots$prior_posterior <- map(
+        .x = self$calibration_parameters$v_params_names,
+        .f = function(.parameter_) {
+          data_ %>%
+            filter(!Label %in% "Prior") %>%
+            rename(Method = Label) %>%
+            ggplot(
+              aes(
+                x = .data[[.parameter_]])) +
+            geom_density(
+              fill = "cadetblue",
+              col = "blue",
+              alpha = 0.2) +
+            geom_density(data = data_ %>%
+                           filter(Label %in% "Prior") %>%
+                           rename(Prior = Label),
+                         aes(
+                           x = .data[[.parameter_]]),
+                         fill = "red",
+                         col = "red",
+                         alpha = 0.2) +
+            ylab(NULL) +
+            trelliscopejs::facet_trelliscope(
+              facets = ~Method,
+              nrow = 2,
+              ncol = 4
+              )
+        }
+      )
+      names(self$plots$prior_posterior) <-
+        self$calibration_parameters$v_params_names
+
+      self$plots$prior_posterior2 <- data2_ %>%
+        filter(!Label %in% "Prior") %>%
+        rename(Method = Label) %>%
+        ggplot(
+          aes(
+            x = `Distribution draws`)) +
+        geom_density(
+          fill = "cadetblue",
+          col = "blue",
+          alpha = 0.2) +
+        geom_density(data = data2_ %>%
+                       filter(Label %in% "Prior") %>%
+                       rename(Prior = Label),
+                     aes(
+                       x = `Distribution draws`),
+                     fill = "red",
+                     col = "red",
+                     alpha = 0.2) +
+        ylab(NULL) +
+        trelliscopejs::facet_trelliscope(
+          facets = Parameter~Method,
+          nrow = 2,
+          ncol = 5
+        )
+    },
+    ### Correlation plots:----
+    draw_pair_correlations = function() {
+      data_ <- c(self$PSA_samples$random,
+                 self$PSA_samples$directed,
+                 self$PSA_samples$bayesian) %>%
+        transpose() %>%
+        .[['PSA_calib_draws']] %>%
+        bind_rows() %>%
+        group_by(Label) %>%
+        mutate(Count = n()) %>%
+        ungroup() %>%
+        filter(Count != 1) %>%
+        select(-Count)
+
+      self$plots$correlations <- data_ %>%
+        select(-c(Overall_fit, Label)) %>%
+        psych::pairs.panels()
+
+      self$plots$correlations2 <- GGally::ggpairs(
+        data = data_,
+        columns = colnames(
+          data_ %>%
+            select(-c(Overall_fit, Label))
+        ),
+        ggplot2::aes(color = Label),
+        upper = list(continuous = wrap('cor', size = 3)),
+        lower = list(combo = wrap("facethist", bins = 30)),
+        diag = list(continuous = wrap("densityDiag", alpha = 0.5)),
+        title = "Scatterplot matrix of `mtcars` Grouped by Engine"
+      )
     }
   )
 )

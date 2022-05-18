@@ -1809,7 +1809,7 @@ cal = calibrateR_R6$
   )
 cal$
   sampleR(
-    .n_samples = 5,
+    .n_samples = 10000,
     .sampling_method = c("LHS", "RGS", "FGS")
   )
 cal$
@@ -1822,32 +1822,71 @@ cal$
 cal$
   calibrateR_directed(
     .gof = c('LLK', 'SSE'),
-    .args = NULL,
     .n_samples = 5,
-    .calibration_method = c('NM'),
+    .calibration_method = c('NM', 'BFGS', 'SANN', 'GA'),
     .sample_method = c("LHS", "RGS", "FGS"),
     .max_iterations = 1000,
     temp = 10,
     tmax = 10)
 cal$
   calibrateR_bayesian(
-  .b_method = 'SIR',
-  .n_resample = 10000)
-cal$calibrateR_bayesian(
-  .b_method = 'IMIS',
+  .b_method = c('SIR', 'IMIS'),
   .n_resample = 10000,
   .IMIS_iterations = 400,
   .IMIS_sample = 100)
+cal$calibration_results$bayesian$SIR %>%
+  effective_sample_size(bayes_calib_output_list = .)
+cal$calibration_results$bayesian$SIR$Results %>%
+  distinct() %>%
+  nrow()
+cal$calibration_results$bayesian$IMIS %>%
+  effective_sample_size(bayes_calib_output_list = .)
+cal$calibration_results$bayesian$IMIS$Results %>%
+  distinct() %>%
+  nrow()
+cal$
+  sample_PSA_values(
+  .calibration_methods = c('Random', 'Directed', 'Bayesian'),
+  .PSA_samples = 1000)
+cal$
+  run_PSA()
+saveRDS(object = cal, file = "data/calibrateR_R6.rds")
+cal <- readRDS(file = "data/calibrateR_R6.rds")
+cal$
+  calibrateR_directed(
+    .gof = c('LLK'),
+    .n_samples = 5,
+    .calibration_method = c('BFGS'),
+    .sample_method = c("RGS", "FGS"),
+    .max_iterations = 1000,
+    temp = 10,
+    tmax = 10)
 
+cal_HID_markov_2 = calibrateR_R6$
+  new(
+    .model = HID_markov_2,
+    .params = HID_data2$l_params,
+    .targets = HID_data2$l_targets,
+    .args = NULL,
+    .transform = TRUE
+  )
+cal_HID_markov_2$prior_samples = cal$prior_samples
+cal_HID_markov_2$calibration_results = cal$calibration_results
+cal_HID_markov_2$PSA_summary = cal$PSA_summary
+cal_HID_markov_2$PSA_samples = cal$PSA_samples
+cal_HID_markov_2$PSA_results = cal$PSA_results
+cal_HID_markov_2$summarise_PSA()
+cal_HID_markov_2$draw_plots()
 
-
-
-
-
-
-
-
-
+# cal$
+#   calibrateR_directed(
+#     .gof = c('LLK'),
+#     .n_samples = 1,
+#     .calibration_method = c('GA', 'NM'),
+#     .sample_method = c("LHS"),
+#     .max_iterations = 1000,
+#     temp = 10,
+#     tmax = 10)
 
 
 

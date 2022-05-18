@@ -71,13 +71,15 @@ model}
 
 \item{\code{calibration_results}}{calibration interim results}
 
-\item{\code{PSA_samples}}{calibration and un-calibration parameters
-samples}
+\item{\code{transform_parameters}}{boolean for whether to back transform
+parameters}
 
 \item{\code{prior_samples}}{a Decision-Analytic model under calibration}
 
-\item{\code{transform_parameters}}{boolean for whether to back transform
-parameters}
+\item{\code{PSA_samples}}{calibration and un-calibration parameters
+samples}
+
+\item{\code{PSA_results}}{PSA results}
 }
 \if{html}{\out{</div>}}
 }
@@ -90,6 +92,8 @@ parameters}
 \item \href{#method-calibrateR_random}{\code{calibrateR_R6$calibrateR_random()}}
 \item \href{#method-calibrateR_directed}{\code{calibrateR_R6$calibrateR_directed()}}
 \item \href{#method-calibrateR_bayesian}{\code{calibrateR_R6$calibrateR_bayesian()}}
+\item \href{#method-sample_PSA_values}{\code{calibrateR_R6$sample_PSA_values()}}
+\item \href{#method-run_PSA}{\code{calibrateR_R6$run_PSA()}}
 \item \href{#method-clone}{\code{calibrateR_R6$clone()}}
 }
 }
@@ -294,7 +298,7 @@ the samples internal object.
 Calibrate the model using one or more calibration method.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$calibrateR_bayesian(
-  .b_method = "SIR",
+  .b_methods = "SIR",
   .n_resample = 1000,
   .IMIS_iterations = 10,
   .IMIS_sample = 100
@@ -304,7 +308,7 @@ Calibrate the model using one or more calibration method.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{.b_method}}{Bayesian calibration method}
+\item{\code{.b_methods}}{Bayesian calibration method(s)}
 
 \item{\code{.n_resample}}{Desired number of draws from the posterior}
 
@@ -327,6 +331,48 @@ the samples internal object.
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-sample_PSA_values"></a>}}
+\if{latex}{\out{\hypertarget{method-sample_PSA_values}{}}}
+\subsection{Method \code{sample_PSA_values()}}{
+Sample PSA values for the calibration parameters
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$sample_PSA_values(.calibration_methods, .PSA_samples)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.calibration_methods}}{Bayesian calibration method(s)}
+
+\item{\code{.PSA_samples}}{Number of PSA sets to sample}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-run_PSA"></a>}}
+\if{latex}{\out{\hypertarget{method-run_PSA}{}}}
+\subsection{Method \code{run_PSA()}}{
+Run PSA
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibrateR_R6$run_PSA(.PSA_unCalib_values_ = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.PSA_unCalib_values_}}{PSA values for un-calibrated parameters}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-clone"></a>}}

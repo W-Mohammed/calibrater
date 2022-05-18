@@ -320,9 +320,7 @@ HID_results$Calib_results$Bayesian[[1]] = calibrateModel_beyesian(
   .l_params = HID_data$l_params,
   .samples = HID_results$Prior_samples$LHS_Bayesian)
 # IMIS:----
-time_ = Sys.time()
-set.seed(1)
-h2$Calib_results$Bayesian[[2]] = calibrateModel_beyesian(
+HID_results$Calib_results$Bayesian[[2]] = calibrateModel_beyesian(
   .b_method = 'IMIS', .func = HID_markov_2,
   .args = NULL,
   .l_targets = HID_data2$l_targets,
@@ -331,8 +329,6 @@ h2$Calib_results$Bayesian[[2]] = calibrateModel_beyesian(
   .n_resample = 1000,
   .IMIS_iterations = 10,
   .IMIS_sample = 100)
-time_ = Sys.time() - time_
-time_
 ```
 
 ### A quick look at a sample of the calibration results:

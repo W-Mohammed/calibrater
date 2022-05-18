@@ -29,7 +29,8 @@
 summ_optim <- function(.params_name = v_params_names, .gof = NULL,
                        .gof_name, .gof_value, .s_method, .par,
                        .func = NULL, .args = NULL, .hessian = NULL,
-                       .maximiser = TRUE, ...) {
+                       .maximiser = TRUE, .convergence, ...) {
+  if(.s_method == "Nelder-Mead") .s_method = 'NM'
   # Grab and assign additional arguments:
   dots <- list(...)
   if(!is.null(dots[['.l_targets']])) .l_targets <- dots[['.l_targets']]
@@ -61,7 +62,8 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
   if(is.null(.hessian)) {
     return(list(Params = .params_name, Estimate = .par, Lower = NA,
                 Upper = NA, 'GOF value' = .gof_value,
-                'Calibration method' = paste0(.s_method, "_", .gof_name),
+                'Calibration method' = paste0(.s_method, "_", .gof_name,
+                                              "_", .convergence),
                 'Sigma' = NA))
   }
 
@@ -86,7 +88,8 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
   if(is.null(fisher_info))
     return(list(Params = .params_name, Estimate = .par, Lower = NA,
                 Upper = NA, 'GOF value' = .gof_value,
-                'Calibration method' = paste0(.s_method, "_", .gof_name),
+                'Calibration method' = paste0(.s_method, "_", .gof_name,
+                                              "_", .convergence),
                 'Sigma' = NA))
 
   # Continue if .hessian could be inversed:
@@ -106,7 +109,8 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 
   return(list(Params = .params_name, Estimate = .par, Lower = lower,
               Upper = upper, 'GOF value' = .gof_value,
-              'Calibration method' = paste0(.s_method, "_", .gof_name),
+              'Calibration method' = paste0(.s_method, "_", .gof_name,
+                                            "_", .convergence),
               'Sigma' = covr_mat))
 }
 
@@ -323,6 +327,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
               .func = .func, # the optimised function (decision model)
               .args = .args, # arguments passed to .func
               .hessian = fit$hessian, # hessian matrix estimated by optim()
+              .convergence = fit$convergence, # 0 = successful
               .l_targets = .l_targets, # targets passed to .gof
               .gof_name = .gof_name # the name of the goodness-of-fit function
             )
@@ -375,13 +380,14 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
               .params_name = params_name,
               .gof = .gof, # goodness-of-fit function used/to be used.
               .gof_value = -fit$optim$bestval, # best goodness-of-fit value
-              .s_method = .s_method, # the name of the goodness-of-fit method
+              .s_method = .s_method, #  name of the goodness-of-fit method
               .par = fit$optim$bestmem, # best parameter set identified
               .func = .func, # the optimised function (decision model)
               .args = .args, # arguments passed to .func
               .maximiser = FALSE, # GA is a minimiser
+              .convergence = NULL, # 0 = successful
               .l_targets = .l_targets, # targets passed to .gof
-              .gof_name = .gof_name # the name of the goodness-of-fit function
+              .gof_name = .gof_name # name of the goodness-of-fit function
             )
           }, error = function(e) {
             message(paste0("\r", e))

@@ -35,7 +35,8 @@ Imports:
     RcppArmadillo,
     rlist,
     SimDesign,
-    tmvtnorm
+    tmvtnorm,
+    trelliscopejs
 LinkingTo: 
     Rcpp,
     RcppArmadillo
