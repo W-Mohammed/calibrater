@@ -1581,11 +1581,7 @@ calibrateR_R6 <- R6::R6Class(
         filter(Count != 1) %>%
         select(-Count)
 
-      self$plots$correlations <- data_ %>%
-        select(-c(Overall_fit, Label)) %>%
-        psych::pairs.panels()
-
-      self$plots$correlations2 <- GGally::ggpairs(
+      self$plots$correlations <- GGally::ggpairs(
         data = data_,
         columns = colnames(
           data_ %>%
@@ -1597,6 +1593,11 @@ calibrateR_R6 <- R6::R6Class(
         diag = list(continuous = wrap("densityDiag", alpha = 0.5)),
         title = "Scatterplot matrix of `mtcars` Grouped by Engine"
       )
+
+      self$plots$correlations2 <- data_ %>%
+        select(-c(Overall_fit, Label)) %>%
+        psych::pairs.panels()
+
     }
   )
 )

@@ -17,9 +17,11 @@
 #' @export
 #'
 #' @examples
-HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE, mu_e = 0.05,
-                       mu_l = 0.25, mu_t = 0.025, p = 0.10, r_l = 0.5,
-                       rho = 0.025, b = 0.20) {
+HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE,
+                       mu_e = 0.05300305, mu_l = 0.09492525,
+                       mu_t = 0.06949119, p = 0.35494867,
+                       r_l = 0.70669255, rho = 0.62436759,
+                       b = 0.27229941) {
   with(as.list(.v_params_), {
     # mu_e: 0.05 [0.02, 0.12] Cause-specific mortality rate with early-stage disease
     # mu_l: 0.25 [0.08, 0.59] Cause-specific mortality rate with late-stage disease
@@ -140,10 +142,11 @@ HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE, mu_e = 0.05,
 #'
 #' @examples
 HID_markov_2 <- function(.v_params_ = NULL, calibrate_ = TRUE,
-                         transform_ = TRUE, mu_e = log(0.05),
-                         mu_l = log(0.25), mu_t = log(0.025),
-                         p = log(0.10), r_l = log(0.5),
-                         rho = log(0.025), b = prob_to_logit(0.20)) {
+                         transform_ = TRUE, mu_e = log(0.05300305),
+                         mu_l = log(0.09492525), mu_t = log(0.06949119),
+                         p = log(0.35494867), r_l = log(0.70669255),
+                         rho = log(0.62436759),
+                         b = prob_to_logit(0.27229941)) {
   with(as.list(.v_params_), {
     # mu_e: 0.05 [0.02, 0.12] Cause-specific mortality rate with early
     # -stage disease
