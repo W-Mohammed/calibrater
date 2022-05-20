@@ -37,3 +37,7 @@ their original scale.}
 \description{
 Calculate posterior densities
 }
+\examples{
+\dontrun{
+}
+}

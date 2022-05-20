@@ -40,3 +40,7 @@ parameters at a time)}
 \description{
 Incremental Mixture Importance Sampling (IMIS) - amended version
 }
+\examples{
+\dontrun{
+}
+}

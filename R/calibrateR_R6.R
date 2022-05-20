@@ -4,19 +4,18 @@
 #' An instance of this class is expected to calibrate a user-defined model
 #' and produce summary plots/tables.
 #' @format An [R6::R6Class] object.
-#' @name calibrateR_R6
+#' @name calibR_R6
 NULL
 #'
-#' @rdname calibrateR_R6
+#' @rdname calibR_R6
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' }
-#'
-calibrateR_R6 <- R6::R6Class(
+calibR_R6 <- R6::R6Class(
   # Object name:----
-  classname = "calibrateR_R6",
+  classname = "calibR_R6",
   # Public elements:----
   public = list(
     #' @field calibration_model a Decision-Analytic model under calibration
@@ -52,6 +51,10 @@ calibrateR_R6 <- R6::R6Class(
     #' @param .model The decision analytic model under calibration
     #' @param .params Calibration parameters
     #' @param .targets Calibration targets
+    #' @param .args Calibration model arguments
+    #' @param .transform Logical for whether the model will use
+    #' transformed parameters. This allows some functions to back
+    #' transform the parameters to their original scale before using them.
     #'
     #' @return Object of class `CalibrateR_R6`
     #'
@@ -100,21 +103,6 @@ calibrateR_R6 <- R6::R6Class(
       )
 
       invisible(self)
-
-    },
-
-    #' @description
-    #' Calibrate the model using one or more calibration method.
-    #'
-    #' @return Executes the required calibration method and populates
-    #' the samples internal object.
-    #'
-    #' @export
-    #'
-    #' @examples
-    #' \dontrun{
-    #' }
-    calibrateR = function(...) {
 
     },
 
@@ -233,6 +221,8 @@ calibrateR_R6 <- R6::R6Class(
     #' @export
     #'
     #' @examples
+    #' \dontrun{
+    #' }
     sample_PSA_values = function(.calibration_methods,
                                  .PSA_samples) {
       private$sample_PSA_values_(
@@ -250,6 +240,8 @@ calibrateR_R6 <- R6::R6Class(
     #' @export
     #'
     #' @examples
+    #' \dontrun{
+    #' }
     run_PSA = function(.PSA_unCalib_values_ = NULL) {
       private$run_PSA_(
         .PSA_unCalib_values_ = NULL
@@ -263,6 +255,8 @@ calibrateR_R6 <- R6::R6Class(
     #' @export
     #'
     #' @examples
+    #' \dontrun{
+    #' }
     summarise_PSA = function() {
       private$summarise_PSA_()
     },
@@ -274,6 +268,8 @@ calibrateR_R6 <- R6::R6Class(
     #' @export
     #'
     #' @examples
+    #' \dontrun{
+    #' }
     draw_plots = function() {
       private$draw_priors_posteriors()
       private$draw_pair_correlations()
@@ -288,17 +284,17 @@ calibrateR_R6 <- R6::R6Class(
       ### FGS:----
       if("FGS" %in% .sampling_method)
         self$prior_samples["FGS"] <- list(
-          sample_prior_FGS(...)
+          calibR::sample_prior_FGS(...)
         )
       ### RGS:----
       if("RGS" %in% .sampling_method)
         self$prior_samples["RGS"] <- list(
-          sample_prior_RGS(...)
+          calibR::sample_prior_RGS(...)
         )
       ### LHS:----
       if("LHS" %in% .sampling_method)
         self$prior_samples["LHS"] <- list(
-          sample_prior_LHS(...)
+          calibR::sample_prior_LHS(...)
         )
     },
     ## Calibration methods:----
@@ -311,7 +307,7 @@ calibrateR_R6 <- R6::R6Class(
         #### SSE:----
         if("SSE" %in% .calibration_method)
           self$calibration_results$random["SSE_RGS"] <- list(
-            wSSE_GOF(
+            calibR::wSSE_GOF(
               .samples = self$prior_samples[["RGS"]],
               .sample_method = "RGS",
               ...
@@ -320,7 +316,7 @@ calibrateR_R6 <- R6::R6Class(
         #### LLK:----
         if("LLK" %in% .calibration_method)
           self$calibration_results$random["LLK_RGS"] <- list(
-            LLK_GOF(
+            calibR::LLK_GOF(
               .samples = self$prior_samples[["RGS"]],
               .sample_method = "RGS",
               ...
@@ -331,7 +327,7 @@ calibrateR_R6 <- R6::R6Class(
         #### SSE:----
         if("SSE" %in% .calibration_method)
           self$calibration_results$random["SSE_FGS"] <- list(
-            wSSE_GOF(
+            calibR::wSSE_GOF(
               .samples = self$prior_samples[["FGS"]],
               .sample_method = "FGS",
               ...
@@ -340,7 +336,7 @@ calibrateR_R6 <- R6::R6Class(
         #### LLK:----
         if("LLK" %in% .calibration_method)
           self$calibration_results$random["LLK_FGS"] <- list(
-            LLK_GOF(
+            calibR::LLK_GOF(
               .samples = self$prior_samples[["FGS"]],
               .sample_method = "FGS",
               ...
@@ -351,7 +347,7 @@ calibrateR_R6 <- R6::R6Class(
         #### SSE:----
         if("SSE" %in% .calibration_method)
           self$calibration_results$random["SSE_LHS"] <- list(
-            wSSE_GOF(
+            calibR::wSSE_GOF(
               .samples = self$prior_samples[["LHS"]],
               .sample_method = "LHS",
               ...
@@ -360,7 +356,7 @@ calibrateR_R6 <- R6::R6Class(
         #### LLK:----
         if("LLK" %in% .calibration_method)
           self$calibration_results$random["LLK_LHS"] <- list(
-            LLK_GOF(
+            calibR::LLK_GOF(
               .samples = self$prior_samples[["LHS"]],
               .sample_method = "LHS",
               ...
@@ -383,7 +379,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_RGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "LLK",
@@ -398,7 +394,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["NM_SSE_RGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "SSE",
@@ -416,7 +412,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_RGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
@@ -431,7 +427,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["BFGS_SSE_RGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
@@ -449,7 +445,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_RGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
@@ -466,7 +462,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["SANN_SSE_RGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
@@ -486,7 +482,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["GA_LLK_RGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
@@ -501,7 +497,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["GA_SSE_RGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
@@ -521,7 +517,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_FGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "LLK",
@@ -536,7 +532,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["NM_SSE_FGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "SSE",
@@ -554,7 +550,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_FGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
@@ -569,7 +565,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["BFGS_SSE_FGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
@@ -587,7 +583,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_FGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
@@ -604,7 +600,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["SANN_SSE_FGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
@@ -624,7 +620,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["GA_LLK_FGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
@@ -639,7 +635,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["GA_SSE_FGS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
@@ -659,7 +655,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_LHS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "LLK",
@@ -674,7 +670,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["NM_SSE_LHS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "SSE",
@@ -692,7 +688,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_LHS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
@@ -707,7 +703,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["BFGS_SSE_LHS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
@@ -725,7 +721,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_LHS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
@@ -742,7 +738,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["SANN_SSE_LHS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
@@ -762,7 +758,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["GA_LLK_LHS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
@@ -777,7 +773,7 @@ calibrateR_R6 <- R6::R6Class(
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["GA_SSE_LHS"]] <-
-              calibrateModel_directed(
+              calibR::calibrateModel_directed(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
@@ -843,7 +839,7 @@ calibrateR_R6 <- R6::R6Class(
       n_params <- length(.l_params[["v_params_names"]])
       # Get LHS samples:
       tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
-        as_tibble(~ vctrs::vec_as_names(...,
+        dplyr::as_tibble(~ vctrs::vec_as_names(...,
                                         repair = "unique",
                                         quiet = TRUE))
       # Define inputs list:
@@ -855,11 +851,11 @@ calibrateR_R6 <- R6::R6Class(
       # Make sure parameter names are in a named vector:
       names(l_lhs[[1]]) <- l_lhs[[1]]
       # Map over parameters to scale up LHS samples to appropriate values:
-      tbl_lhs_samp <- pmap_dfc(
+      tbl_lhs_samp <- purrr::pmap_dfc(
         .l = l_lhs,
         .f = function(.name, .func, p, .arg, .dist) {
           assign(.name,
-                 exec(.func,
+                 purrr::exec(.func,
                       p,
                       !!!.arg)
           )
@@ -888,7 +884,7 @@ calibrateR_R6 <- R6::R6Class(
         .samples <- t(.samples)
       if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
         .samples <- .samples %>%
-        as_tibble(~ vctrs::vec_as_names(...,
+        dplyr::as_tibble(~ vctrs::vec_as_names(...,
                                         repair = "unique",
                                         quiet = TRUE)) %>%
         `colnames<-`(v_params_names)
@@ -898,7 +894,7 @@ calibrateR_R6 <- R6::R6Class(
       # Transform the sampled parameters back to their original scale:
       if(.transform) {
         .samples <- .samples %>%
-          backTransform(.t_data_ = ., .l_params_ = .l_params)
+          calibR::backTransform(.t_data_ = ., .l_params_ = .l_params)
         params_dists <- 'v_true_params_dists'
         params_args <- 'true_args'
       }
@@ -909,10 +905,10 @@ calibrateR_R6 <- R6::R6Class(
                        .l_params[[params_args]],
                        .samples)
       # Estimate the log prior:
-      v_lprior <- rowSums(pmap_df(
+      v_lprior <- rowSums(purrr::pmap_df(
         .l = l_lprior,
         .f = function(.name, .func, .dist, .arg, .param) {
-          exec(.func, .param, !!!.arg, log = TRUE)
+          purrr::exec(.func, .param, !!!.arg, log = TRUE)
         }
       ))
 
@@ -939,7 +935,7 @@ calibrateR_R6 <- R6::R6Class(
         .samples <- t(.samples)
       if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
         .samples <- .samples %>%
-        as_tibble(~ vctrs::vec_as_names(...,
+        dplyr::as_tibble(~ vctrs::vec_as_names(...,
                                         repair = "unique",
                                         quiet = TRUE)) %>%
         `colnames<-`(v_params_names)
@@ -949,7 +945,7 @@ calibrateR_R6 <- R6::R6Class(
       # Transform the sampled parameters back to their original scale:
       if(.transform) {
         .samples <- .samples %>%
-          backTransform(.t_data_ = ., .l_params_ = .l_params)
+          calibR::backTransform(.t_data_ = ., .l_params_ = .l_params)
         params_dists <- 'v_true_params_dists'
         params_args <- 'true_args'
       }
@@ -960,10 +956,10 @@ calibrateR_R6 <- R6::R6Class(
                        .l_params[[params_args]],
                        .samples)
       # Estimate the log prior:
-      v_lprior <- sum(pmap_dbl(
+      v_lprior <- sum(purrr::pmap_dbl(
         .l = l_lprior,
         .f = function(.name, .func, .dist, .arg, .param) {
-          exec(.func, .param, !!!.arg, log = TRUE)
+          purrr::exec(.func, .param, !!!.arg, log = TRUE)
         }
       ))
 
@@ -1033,15 +1029,15 @@ calibrateR_R6 <- R6::R6Class(
         .samples <- t(.samples)
       if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
         .samples <- .samples %>%
-          as_tibble(~ vctrs::vec_as_names(...,
+          dplyr::as_tibble(~ vctrs::vec_as_names(...,
                                           repair = "unique",
                                           quiet = TRUE))
       # Run the model using each set of sampled parameters:
-      model_results <- pmap(
+      model_results <- purrr::pmap(
         .l = as.list(.samples),
         .f = function(...) {
           dots <- list(...)
-          exec(.func, dots, !!!.args)
+          purrr::exec(.func, dots, !!!.args)
         })
       # Define inputs list for the pmap function:
       l_llik <- list(.l_targets[['v_targets_names']],
@@ -1050,17 +1046,17 @@ calibrateR_R6 <- R6::R6Class(
                      .l_targets[['v_targets_weights']])
 
       # Estimate the overall log likelihood for each model output:
-      overall_lliks <- map_dbl(
+      overall_lliks <- purrr::map_dbl(
         .x = model_results,
         .f = function(.mod_res) {
           # Log likelihood (for each target):
-          overall_llik <- pmap(
+          overall_llik <- purrr::pmap(
             .l = l_llik,
             .f = function(.name, .func, .dist, .weight) {
               tryCatch({
                 if(.dist == 'norm') {
                   sum( # Sum all values of that one target, if many
-                    exec(.func,
+                    purrr::exec(.func,
                          .l_targets[[.name]]$value, # target's sd
                          .mod_res[[.name]], # mean value
                          .l_targets[[.name]]$se, # sd value (target's sd)
@@ -1068,7 +1064,7 @@ calibrateR_R6 <- R6::R6Class(
                   ) * .weight # target weight
                 } else if(.dist == 'binom') {
                   sum( # Sum all values of that one target, if many
-                    exec(.func,
+                    purrr::exec(.func,
                          prob = .mod_res[[.name]],
                          x = .l_targets[[.name]]$x,
                          size = .l_targets[[.name]]$size,
@@ -1076,7 +1072,7 @@ calibrateR_R6 <- R6::R6Class(
                   ) * .weight # target weight
                 } else if(.dist == 'lnorm') {
                   sum( # Sum all values of that one target, if many
-                    exec(.func,
+                    purrr::exec(.func,
                          .l_targets[[.name]]$value, # target's mean
                          log(.mod_res[[.name]]) - (1/2) *
                            .l_targets[[.name]]$se^2, # mean value
@@ -1091,7 +1087,7 @@ calibrateR_R6 <- R6::R6Class(
           )
           # Overall log likelihood (for all targets):
           overall_llik <- overall_llik %>%
-            reduce(`+`, .init = 0)
+            purrr::reduce(`+`, .init = 0)
         })
 
       # Set NaN values to -Inf to avoid other functions from crashing:
@@ -1344,14 +1340,14 @@ calibrateR_R6 <- R6::R6Class(
         SIR_results <- cbind(posterior_SIR,
                              "Overall_fit" = llik[SIR_resample],
                              "Posterior_prob" = weight[SIR_resample]) %>%
-          as_tibble() %>%
-          arrange(desc(Overall_fit))
+          dplyr::as_tibble() %>%
+          dplyr::arrange(dplyr::desc(Overall_fit))
 
         return(list('Results' = SIR_results, 'Method' = "SIR"))
 
       } else if(.b_method == 'IMIS') { # IMIS:
         ## Run IMIS:
-        fit_IMIS <- IMIS_(
+        fit_IMIS <- calibR::IMIS_(
           B = .IMIS_sample, # incremental sample size at each iteration
           B.re = .n_resample, # desired posterior sample size
           number_k = .IMIS_iterations, # maximum iterations
@@ -1373,16 +1369,16 @@ calibrateR_R6 <- R6::R6Class(
           .l_targets = .l_targets, .l_params = .l_params)
         ## Calculate log-likelihood (overall fit) and posterior probability:
         IMIS_results <- m_calib_res %>%
-          as_tibble(~ vctrs::vec_as_names(...,
+          dplyr::as_tibble(~ vctrs::vec_as_names(...,
                                           repair = "unique",
                                           quiet = TRUE)) %>%
-          mutate(
+          dplyr::mutate(
             "Overall_fit" = Overall_fit,
             "Posterior_prob" = Posterior_prob) %>%
-          arrange(desc(Overall_fit))
+          dplyr::arrange(dplyr::desc(Overall_fit))
         ## Name column names IMIS stats object:
         stats <- fit_IMIS$stat %>%
-          as_tibble(~ vctrs::vec_as_names(...,
+          dplyr::as_tibble(~ vctrs::vec_as_names(...,
                                           repair = "unique",
                                           quiet = TRUE)) %>%
           `colnames<-`(c("MargLike", "UniquePoint", "MaxWeight", "ESS",
@@ -1409,7 +1405,7 @@ calibrateR_R6 <- R6::R6Class(
       .PSA_samples) {
       # Random calibration methods:
       if('Random' %in% .calibration_methods) {
-        self$PSA_samples$random <- PSA_calib_values(
+        self$PSA_samples$random <- calibR::PSA_calib_values(
           .l_calib_res_lists = self$calibration_results$random,
           .search_method = 'Random',
           .PSA_samples = .PSA_samples,
@@ -1419,7 +1415,7 @@ calibrateR_R6 <- R6::R6Class(
       }
       # Directed calibration methods:
       if('Directed' %in% .calibration_methods) {
-        self$PSA_samples$directed <- PSA_calib_values(
+        self$PSA_samples$directed <- calibR::PSA_calib_values(
           .l_calib_res_lists = self$calibration_results$directed,
           .search_method = 'Directed',
           .PSA_samples = .PSA_samples,
@@ -1429,7 +1425,7 @@ calibrateR_R6 <- R6::R6Class(
       }
       # Bayesian calibration methods:
       if('Bayesian' %in% .calibration_methods) {
-        self$PSA_samples$bayesian <- PSA_calib_values(
+        self$PSA_samples$bayesian <- calibR::PSA_calib_values(
           .l_calib_res_lists = self$calibration_results$bayesian,
           .search_method = 'Bayesian',
           .PSA_samples = .PSA_samples,
@@ -1445,7 +1441,7 @@ calibrateR_R6 <- R6::R6Class(
     #
     run_PSA_ = function(
       .PSA_unCalib_values_) {
-      self$PSA_results <- run_PSA(
+      self$PSA_results <- calibR::run_PSA(
         .func_ = self$calibration_model,
         .PSA_calib_values_ = c(self$PSA_samples$random,
                                self$PSA_samples$directed,
@@ -1459,15 +1455,15 @@ calibrateR_R6 <- R6::R6Class(
     # Summarise PSA results
     #
     summarise_PSA_ = function() {
-      self$PSA_summary <- map_df(
+      self$PSA_summary <- purrr::map_df(
         .x = self$PSA_results,
         .f = function(PSA) {
-          data_ <- tibble(
-            'mean_inc_Costs' = mean(PSA$inc_cost),
-            'mean_inc_LY' = mean(PSA$inc_LY),
+          data_ <- dplyr::tibble(
+            'mean_inc_Costs' = mean(PSA$inc_cost, na.rm = TRUE),
+            'mean_inc_LY' = mean(PSA$inc_LY, na.rm = TRUE),
             'iNMB' = (mean_inc_LY * 30000) - mean_inc_Costs,
             'calibration_method' = if(nrow(PSA) == 1) paste(PSA$Label[[1]], "_*") else PSA$Label[[1]],
-            'goodness_of_fit' = mean(PSA$Overall_fit)
+            'goodness_of_fit' = mean(PSA$Overall_fit, na.rm = TRUE)
           )
         }
       )
@@ -1478,90 +1474,93 @@ calibrateR_R6 <- R6::R6Class(
       data_ <- c(self$PSA_samples$random,
                  self$PSA_samples$directed,
                  self$PSA_samples$bayesian) %>%
-        transpose() %>%
+        purrr::transpose() %>%
         .[['PSA_calib_draws']] %>%
-        bind_rows() %>%
-        select(
-          !!!all_of(
-            syms(
+        dplyr::bind_rows() %>%
+        dplyr::select(
+          !!!dplyr::all_of(
+            dplyr::syms(
               self$calibration_parameters$v_params_names)), Label)
 
       data_ <- if(self$transform_parameters) {
         data_ %>%
-          bind_rows(
+          dplyr::bind_rows(
             self$prior_samples[[sample_method]] %>%
-              mutate(Label = 'Prior') %>%
-              backTransform(
+              dplyr::mutate(Label = 'Prior') %>%
+              calibR::backTransform(
                 .t_data_ = .,
                 .l_params_ = self$calibration_parameters
               )
           )
       } else {
         data_ %>%
-          bind_rows(
+          dplyr::bind_rows(
             self$prior_samples[[sample_method]] %>%
-              mutate(Label = 'Prior')
+              dplyr::mutate(Label = 'Prior')
           )
       }
 
       data2_ = data_ %>%
-        pivot_longer(
+        tidyr::pivot_longer(
           cols = self$calibration_parameters$v_params_names,
           names_to = "Parameter",
           values_to = "Distribution draws")
 
-      self$plots$prior_posterior <- map(
+      self$plots$prior_posterior <- purrr::map(
         .x = self$calibration_parameters$v_params_names,
         .f = function(.parameter_) {
           data_ %>%
-            filter(!Label %in% "Prior") %>%
-            rename(Method = Label) %>%
-            ggplot(
-              aes(
+            dplyr::filter(!Label %in% "Prior") %>%
+            dplyr::rename(Method = Label) %>%
+            ggplot2::ggplot(
+              ggplot2::aes(
                 x = .data[[.parameter_]])) +
-            geom_density(
+            ggplot2::geom_density(
               fill = "cadetblue",
               col = "blue",
               alpha = 0.2) +
-            geom_density(data = data_ %>%
-                           filter(Label %in% "Prior") %>%
-                           rename(Prior = Label),
-                         aes(
+            ggplot2::geom_density(data = data_ %>%
+                           dplyr::filter(Label %in% "Prior") %>%
+                           dplyr::rename(Prior = Label),
+                         ggplot2::aes(
                            x = .data[[.parameter_]]),
                          fill = "red",
                          col = "red",
                          alpha = 0.2) +
-            ylab(NULL) +
+            ggplot2::ylab(NULL) +
+            ggplot2::coord_cartesian(xlim = c(0, 4)) +
             trelliscopejs::facet_trelliscope(
               facets = ~Method,
               nrow = 2,
               ncol = 4
-              )
+            )
         }
       )
       names(self$plots$prior_posterior) <-
         self$calibration_parameters$v_params_names
 
       self$plots$prior_posterior2 <- data2_ %>%
-        filter(!Label %in% "Prior") %>%
-        rename(Method = Label) %>%
-        ggplot(
-          aes(
+        dplyr::filter(!Label %in% "Prior") %>%
+        dplyr::rename(Method = Label) %>%
+        ggplot2::ggplot(
+          ggplot2::aes(
             x = `Distribution draws`)) +
-        geom_density(
+        ggplot2::geom_density(
           fill = "cadetblue",
           col = "blue",
           alpha = 0.2) +
-        geom_density(data = data2_ %>%
-                       filter(Label %in% "Prior") %>%
-                       rename(Prior = Label),
-                     aes(
+        ggplot2::geom_density(data = data2_ %>%
+                       dplyr::filter(Label %in% "Prior") %>%
+                       dplyr::rename(Prior = Label),
+                     ggplot2::aes(
                        x = `Distribution draws`),
                      fill = "red",
                      col = "red",
                      alpha = 0.2) +
-        ylab(NULL) +
+        ggplot2::ylab(NULL) +
+        ggplot2::coord_cartesian(xlim = c(0, 4)) +
         trelliscopejs::facet_trelliscope(
+          self_contained = TRUE,
           facets = Parameter~Method,
           nrow = 2,
           ncol = 5
@@ -1572,30 +1571,33 @@ calibrateR_R6 <- R6::R6Class(
       data_ <- c(self$PSA_samples$random,
                  self$PSA_samples$directed,
                  self$PSA_samples$bayesian) %>%
-        transpose() %>%
+        purrr::transpose() %>%
         .[['PSA_calib_draws']] %>%
-        bind_rows() %>%
-        group_by(Label) %>%
-        mutate(Count = n()) %>%
-        ungroup() %>%
-        filter(Count != 1) %>%
-        select(-Count)
+        dplyr::bind_rows() %>%
+        dplyr::group_by(Label) %>%
+        dplyr::mutate(Count = dplyr::n()) %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(Count != 1) %>%
+        dplyr::select(-Count)
 
       self$plots$correlations <- GGally::ggpairs(
         data = data_,
         columns = colnames(
           data_ %>%
-            select(-c(Overall_fit, Label))
+            dplyr::select(-c(Overall_fit, Label))
         ),
         ggplot2::aes(color = Label),
-        upper = list(continuous = wrap('cor', size = 3)),
-        lower = list(combo = wrap("facethist", bins = 30)),
-        diag = list(continuous = wrap("densityDiag", alpha = 0.5)),
-        title = "Scatterplot matrix of `mtcars` Grouped by Engine"
+        upper = list(continuous = GGally::wrap('cor',
+                                               size = 3)),
+        lower = list(combo = GGally::wrap("facethist",
+                                          bins = 30)),
+        diag = list(continuous = GGally::wrap("densityDiag",
+                                              alpha = 0.5)),
+        title = "Scatterplot matrix of calibration parameters grouped by calibration method"
       )
 
       self$plots$correlations2 <- data_ %>%
-        select(-c(Overall_fit, Label)) %>%
+        dplyr::select(-c(Overall_fit, Label)) %>%
         psych::pairs.panels()
 
     }

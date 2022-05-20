@@ -24,3 +24,7 @@ calibration}
 \description{
 Estimate Effective Sample Size from Bayesian calibration outputs
 }
+\examples{
+\dontrun{
+}
+}

@@ -26,3 +26,7 @@ are returned.}
 \description{
 Sick-Sicker (SS) Markov model
 }
+\examples{
+\dontrun{
+}
+}

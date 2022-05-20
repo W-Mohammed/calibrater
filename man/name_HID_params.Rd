@@ -16,3 +16,7 @@ order: "mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho", "b", "c".}
 \description{
 Helper function to set the hypothetical infectious disease (HID) model
 }
+\examples{
+\dontrun{
+}
+}

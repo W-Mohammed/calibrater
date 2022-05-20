@@ -37,3 +37,7 @@ their original scale.}
 \description{
 Calculate posterior (one set of parameters at a time)
 }
+\examples{
+\dontrun{
+}
+}

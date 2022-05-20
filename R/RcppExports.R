@@ -2,26 +2,26 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 ProbsV_Cpp <- function(v_S_t, n_I, n_S, t_P) {
-    .Call(`_calibrater_ProbsV_Cpp`, v_S_t, n_I, n_S, t_P)
+    .Call(`_calibR_ProbsV_Cpp`, v_S_t, n_I, n_S, t_P)
 }
 
 SampleV_Cpp <- function(m_P_t, n_I, n_S, m = 1L) {
-    .Call(`_calibrater_SampleV_Cpp`, m_P_t, n_I, n_S, m)
+    .Call(`_calibR_SampleV_Cpp`, m_P_t, n_I, n_S, m)
 }
 
 CostsV_Cpp <- function(v_S_t, n_I, n_S, v_Costs, b_Trt = FALSE) {
-    .Call(`_calibrater_CostsV_Cpp`, v_S_t, n_I, n_S, v_Costs, b_Trt)
+    .Call(`_calibR_CostsV_Cpp`, v_S_t, n_I, n_S, v_Costs, b_Trt)
 }
 
 EffsV_Cpp <- function(v_S_t, n_I, n_S, v_Utilities, b_Trt = FALSE, cl = 1L) {
-    .Call(`_calibrater_EffsV_Cpp`, v_S_t, n_I, n_S, v_Utilities, b_Trt, cl)
+    .Call(`_calibR_EffsV_Cpp`, v_S_t, n_I, n_S, v_Utilities, b_Trt, cl)
 }
 
 MicroSimV_Cpp <- function(v_S_t, t_P, v_C, v_U, n_I, n_S = 4L, n_T = 30L, n_Cl = 1L, d_dC = 0.03, d_dE = 0.03, b_Trt = FALSE, n_Seed = 1L) {
-    .Call(`_calibrater_MicroSimV_Cpp`, v_S_t, t_P, v_C, v_U, n_I, n_S, n_T, n_Cl, d_dC, d_dE, b_Trt, n_Seed)
+    .Call(`_calibR_MicroSimV_Cpp`, v_S_t, t_P, v_C, v_U, n_I, n_S, n_T, n_Cl, d_dC, d_dE, b_Trt, n_Seed)
 }
 
 SickSickerMicroSim_Cpp <- function(v_S_t, t_P, v_C, v_U, n_I, n_S = 4L, n_T = 30L, n_Cl = 1L, d_dC = 0.03, d_dE = 0.03, n_Seed = 1L, b_Trt = FALSE) {
-    .Call(`_calibrater_SickSickerMicroSim_Cpp`, v_S_t, t_P, v_C, v_U, n_I, n_S, n_T, n_Cl, d_dC, d_dE, n_Seed, b_Trt)
+    .Call(`_calibR_SickSickerMicroSim_Cpp`, v_S_t, t_P, v_C, v_U, n_I, n_S, n_T, n_Cl, d_dC, d_dE, n_Seed, b_Trt)
 }
 

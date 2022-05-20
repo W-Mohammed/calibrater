@@ -15,14 +15,16 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                   sample.prior = .sample.prior_, priors = .priors_,
                   prior = .prior_, likelihood = .likelihood_) {
   # The IMIS function, from the IMIS package: ----
   B0 = B*10
   X_all = X_k = sample.prior(B0)				# Draw initial samples from the prior distribution
-  if (is.vector(X_all))	Sig2_global = var(X_all)	# the prior covariance
-  if (is.matrix(X_all))	Sig2_global = cov(X_all)	# the prior covariance
+  if (is.vector(X_all))	Sig2_global = stats::var(X_all)	# the prior covariance
+  if (is.matrix(X_all))	Sig2_global = stats::cov(X_all)	# the prior covariance
   stat_all = matrix(NA, 6, number_k)				# 6 diagnostic statistics at each iteration
   center_all = prior_all = like_all = NULL			# centers of Gaussian components, prior densities, and likelihoods
   sigma_all = list()						# covariance matrices of Gaussian components
@@ -54,14 +56,14 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
     stat_all[4,k] = 1/sum(Weights^2)			# the effictive sample size
     stat_all[5,k] = -sum(Weights*log(Weights), na.rm = TRUE) /
       log(length(Weights))	# the entropy relative to uniform
-    stat_all[6,k] = var(Weights/mean(Weights))	# the variance of scaled weights
+    stat_all[6,k] = stats::var(Weights/mean(Weights))	# the variance of scaled weights
     if (k==1)
       print("Stage   MargLike   UniquePoint   MaxWeight   ESS")
     print(c(k, round(stat_all[1:4,k], 3)))
 
     if (k==1 & option.opt==1){
       if (is.matrix(X_all))
-        Sig2_global = cov(X_all[which(like_all>min(like_all)),])
+        Sig2_global = stats::cov(X_all[which(like_all>min(like_all)),])
       X_k = which_exclude = NULL # exclude the neighborhood of the local optima
       label_weight = sort(Weights, decreasing = TRUE, index=TRUE)
       which_remain = which(Weights>label_weight$x[B0]) 	# the candidate inputs for the starting points
@@ -87,7 +89,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
         if (is.vector(X_all)){
           if (length(important)==0)
             X_imp = center_all[1]
-          optimizer = optim(
+          optimizer = stats::optim(
             X_imp,
             posterior,
             method = "BFGS",
@@ -118,7 +120,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
           if (length(important)==0)
             X_imp = center_all[1,]
           ptm.opt = proc.time()
-          optimizer = optim(
+          optimizer = stats::optim(
             X_imp,
             posterior,
             method = "Nelder-Mead",
@@ -129,7 +131,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
           theta.NM = optimizer$par
 
           # The more efficient optimizer uses the BFGS algorithm
-          optimizer = optim(
+          optimizer = stats::optim(
             theta.NM,
             posterior,
             method = "BFGS",
@@ -166,7 +168,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
             X_k,
             SimDesign::rmvnorm(B, optimizer$par, sigma_all[[i]])
           ) # Draw new samples
-          distance_remain = mahalanobis(
+          distance_remain = stats::mahalanobis(
             X_all[which_remain,], optimizer$par, diag(diag(Sig2_global)))
         }
 
@@ -203,7 +205,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
       label_nr = sort(distance_all, decreasing = FALSE, index=TRUE) # Sort the distances
       which_var = label_nr$ix[1:B] # Pick B inputs for covariance calculation
       if (is.matrix(X_all))
-        Sig2 = cov.wt(X_all[which_var,],
+        Sig2 = stats::cov.wt(X_all[which_var,],
                       wt = Weights[which_var]+1/length(Weights),
                       cor = FALSE,
                       center = X_imp, method = "unbias")$cov

@@ -8,15 +8,12 @@ assign_extraArgs_(.default_args_, .env_, .args_)
 }
 \arguments{
 \item{.default_args_}{A list containing default arguments names and
-
 their values.}
 
 \item{.env_}{Environment object grabbed from the parent function's
-
 environment to correctly assign arguments to that function.}
 
 \item{.args_}{A list containing supplied/additional arguments names
-
 and their values. Arguments in .default_args_ but existing in .args_
 will be assigned values from .args_ and vice versa.}
 }
@@ -26,4 +23,8 @@ environment, hence it returns nothing.
 }
 \description{
 Assign extra arguments/parameters in parent function
+}
+\examples{
+\dontrun{
+}
 }

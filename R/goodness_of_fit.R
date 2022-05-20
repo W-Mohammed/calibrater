@@ -19,7 +19,8 @@
 #' @export
 #'
 #' @examples
-#' library(calibrater)
+#' \dontrun{
+#' library(calibR)
 #' data("CRS_targets")
 #' Surv <- CRS_targets$Surv
 #' v_targets_names <- c("Surv")
@@ -42,7 +43,7 @@
 #'
 #' GOF_llik <- LLK_GOF(.func = CRS_markov, .samples = samples,
 #'                            .l_targets = l_targets)
-#'
+#' }
 LLK_GOF <- function(.samples, .func, .args = list(NULL),
                     .l_targets, .maximise = TRUE, .optim = FALSE,
                     ...) {
@@ -53,11 +54,11 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
   if(!is.null(dots[['v_params_names']]))
     names(.samples) <- dots[['v_params_names']]
   # Run the model using each set of sampled parameters:
-  model_results <- pmap(
+  model_results <- purrr::pmap(
     .l = as.list(.samples),
     .f = function(...) {
       dots <- list(...)
-      exec(.func, dots, !!!.args)
+      purrr::exec(.func, dots, !!!.args)
     })
   # Define inputs list for the pmap function:
   l_llik <- list(.l_targets[['v_targets_names']],
@@ -65,16 +66,16 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
                  .l_targets[['v_targets_dists']],
                  .l_targets[['v_targets_weights']])
   # Estimate the overall log likelihood for each model output:
-  overall_lliks <- map_dbl(
+  overall_lliks <- purrr::map_dbl(
     .x = model_results,
     .f = function(.mod_res) {
       # Log likelihood (for each target):
-      overall_llik <- pmap(
+      overall_llik <- purrr::pmap(
         .l = l_llik,
         .f = function(.name, .func, .dist, .weight) {
           if(.dist == 'norm') {
             sum( # Sum all values of that one target, if many
-              exec(.func,
+              purrr::exec(.func,
                    .l_targets[[.name]]$value, # target's sd
                    .mod_res[[.name]], # mean value
                    .l_targets[[.name]]$se, # sd value (target's sd)
@@ -82,7 +83,7 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
             ) * .weight # target weight
           } else if(.dist == 'binom') {
             sum( # Sum all values of that one target, if many
-              exec(.func,
+              purrr::exec(.func,
                    prob = .mod_res[[.name]],
                    x = .l_targets[[.name]]$x,
                    size = .l_targets[[.name]]$size,
@@ -90,7 +91,7 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
             ) * .weight # target weight
           } else if(.dist == 'lnorm') {
             sum( # Sum all values of that one target, if many
-              exec(.func,
+              purrr::exec(.func,
                    .l_targets[[.name]]$value, # target's mean
                    log(.mod_res[[.name]]) - (1/2) *
                      .l_targets[[.name]]$se^2, # mean value (model output)
@@ -101,7 +102,7 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
         })
       # Overall log likelihood (for all targets):
       overall_llik <- overall_llik %>%
-        reduce(`+`, .init = 0)
+        purrr::reduce(`+`, .init = 0)
     })
 
   # Amend output if optimisation function was a minimiser (flip signs):
@@ -114,14 +115,14 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
 
   # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
-    as_tibble(.name_repair = "unique") %>% # when .samples is a vector
-    mutate('Overall_fit' = overall_lliks) %>%
-    arrange(desc(Overall_fit))
+    dplyr::as_tibble(.name_repair = "unique") %>% # when .samples is a vector
+    dplyr::mutate('Overall_fit' = overall_lliks) %>%
+    dplyr::arrange(dplyr::desc(Overall_fit))
 
   # If the sampling procedure was provided as an argument to the function:
   if(!is.null(.sample_method))
     output <- output %>%
-    mutate('Label' = paste0("log_likelihood", "_", .sample_method))
+    dplyr::mutate('Label' = paste0("log_likelihood", "_", .sample_method))
 
   return(output)
 }
@@ -150,7 +151,8 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
 #' @export
 #'
 #' @examples
-#' library(calibrater)
+#' \dontrun{
+#' library(calibR)
 #' data("CRS_targets")
 #' Surv <- CRS_targets$Surv
 #' v_targets_names <- c("Surv")
@@ -173,7 +175,7 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
 #'
 #' GOF_wsse <- wSSE_GOF(.func = CRS_markov, .samples = samples,
 #'                      .l_targets = l_targets)
-#'
+#' }
 wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
                      .l_targets, .maximise = TRUE, .optim = FALSE, ...) {
   # Grab and assign additional arguments:
@@ -183,21 +185,21 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
   if(!is.null(dots[['v_params_names']]))
     names(.samples) <- dots[['v_params_names']]
   # Run the model using each set of sampled parameters:
-  model_results <- pmap(
+  model_results <- purrr::pmap(
     .l = as.list(.samples),
     .f = function(...) {
       dots <- list(...)
-      exec(.func, dots, !!!.args)
+      purrr::exec(.func, dots, !!!.args)
     })
   # Define inputs list for the pmap function:
   l_wsse <- list(.l_targets[['v_targets_names']],
                  .l_targets[['v_targets_weights']])
   # Estimate the weighted sum of squared errors for each model output:
-  overall_wsses <- map_dbl(
+  overall_wsses <- purrr::map_dbl(
     .x = model_results,
     .f = function(.mod_res) {
       # Overall weighted sum of squares errors (for each targets):
-      overall_wsse <- pmap(
+      overall_wsse <- purrr::pmap(
         .l = l_wsse,
         .f = function(.name, .weight) {
           if(.weighted) {
@@ -212,7 +214,7 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
         })
       # Overall weighted sum of squares errors (for all targets):
       overall_wsse <- overall_wsse %>%
-        reduce(`+`, .init = 0)
+        purrr::reduce(`+`, .init = 0)
     })
 
   # Amend output if optimisation function was a minimiser (flip signs):
@@ -225,14 +227,14 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
 
   # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
-    as_tibble(.name_repair = "unique") %>% # when .samples is a vector
-    mutate('Overall_fit' = overall_wsses) %>%
-    arrange(desc(Overall_fit))
+    dplyr::as_tibble(.name_repair = "unique") %>% # when .samples is a vector
+    dplyr::mutate('Overall_fit' = overall_wsses) %>%
+    dplyr::arrange(dplyr::desc(Overall_fit))
 
   # If the sampling procedure was provided as an argument to the function:
   if(!is.null(.sample_method))
     output <- output %>%
-    mutate('Label' = paste0("wSumSquareError", "_", .sample_method))
+    dplyr::mutate('Label' = paste0("wSumSquareError", "_", .sample_method))
 
   return(output)
 }

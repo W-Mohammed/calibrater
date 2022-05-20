@@ -26,3 +26,7 @@ parameter(s).}
 Run Probabilistic Sensitivity Analysis (PSA) for a Decision Analytic
 Models (DAM) using both calibrated and un-calibrated parameters.
 }
+\examples{
+\dontrun{
+}
+}

@@ -43,7 +43,8 @@ summed overall likelihood values sorted in descending order.
 A function to estimate log likelihood (LLK) goodness-of-fit
 }
 \examples{
-library(calibrater)
+\dontrun{
+library(calibR)
 data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv")
@@ -66,5 +67,5 @@ samples <- sample_prior_LHS(.l_params = l_params,
 
 GOF_llik <- LLK_GOF(.func = CRS_markov, .samples = samples,
                            .l_targets = l_targets)
-
+}
 }

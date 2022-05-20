@@ -13,7 +13,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // ProbsV_Cpp
 arma::mat ProbsV_Cpp(arma::rowvec v_S_t, int& n_I, int& n_S, NumericVector& t_P);
-RcppExport SEXP _calibrater_ProbsV_Cpp(SEXP v_S_tSEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP t_PSEXP) {
+RcppExport SEXP _calibR_ProbsV_Cpp(SEXP v_S_tSEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP t_PSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -27,7 +27,7 @@ END_RCPP
 }
 // SampleV_Cpp
 arma::mat SampleV_Cpp(arma::mat m_P_t, int& n_I, int& n_S, int m);
-RcppExport SEXP _calibrater_SampleV_Cpp(SEXP m_P_tSEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP mSEXP) {
+RcppExport SEXP _calibR_SampleV_Cpp(SEXP m_P_tSEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP mSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -41,7 +41,7 @@ END_RCPP
 }
 // CostsV_Cpp
 arma::colvec CostsV_Cpp(arma::colvec v_S_t, int& n_I, int& n_S, NumericVector& v_Costs, bool b_Trt);
-RcppExport SEXP _calibrater_CostsV_Cpp(SEXP v_S_tSEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP v_CostsSEXP, SEXP b_TrtSEXP) {
+RcppExport SEXP _calibR_CostsV_Cpp(SEXP v_S_tSEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP v_CostsSEXP, SEXP b_TrtSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -56,7 +56,7 @@ END_RCPP
 }
 // EffsV_Cpp
 arma::colvec EffsV_Cpp(arma::colvec v_S_t, int& n_I, int& n_S, NumericVector& v_Utilities, bool b_Trt, int cl);
-RcppExport SEXP _calibrater_EffsV_Cpp(SEXP v_S_tSEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP v_UtilitiesSEXP, SEXP b_TrtSEXP, SEXP clSEXP) {
+RcppExport SEXP _calibR_EffsV_Cpp(SEXP v_S_tSEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP v_UtilitiesSEXP, SEXP b_TrtSEXP, SEXP clSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -72,7 +72,7 @@ END_RCPP
 }
 // MicroSimV_Cpp
 List MicroSimV_Cpp(arma::colvec& v_S_t, NumericVector t_P, NumericVector v_C, NumericVector v_U, int n_I, int n_S, int n_T, int n_Cl, double d_dC, double d_dE, bool b_Trt, int n_Seed);
-RcppExport SEXP _calibrater_MicroSimV_Cpp(SEXP v_S_tSEXP, SEXP t_PSEXP, SEXP v_CSEXP, SEXP v_USEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP n_TSEXP, SEXP n_ClSEXP, SEXP d_dCSEXP, SEXP d_dESEXP, SEXP b_TrtSEXP, SEXP n_SeedSEXP) {
+RcppExport SEXP _calibR_MicroSimV_Cpp(SEXP v_S_tSEXP, SEXP t_PSEXP, SEXP v_CSEXP, SEXP v_USEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP n_TSEXP, SEXP n_ClSEXP, SEXP d_dCSEXP, SEXP d_dESEXP, SEXP b_TrtSEXP, SEXP n_SeedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -94,7 +94,7 @@ END_RCPP
 }
 // SickSickerMicroSim_Cpp
 List SickSickerMicroSim_Cpp(arma::colvec& v_S_t, NumericVector t_P, NumericVector v_C, NumericVector v_U, int n_I, int n_S, int n_T, int n_Cl, double d_dC, double d_dE, int n_Seed, bool b_Trt);
-RcppExport SEXP _calibrater_SickSickerMicroSim_Cpp(SEXP v_S_tSEXP, SEXP t_PSEXP, SEXP v_CSEXP, SEXP v_USEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP n_TSEXP, SEXP n_ClSEXP, SEXP d_dCSEXP, SEXP d_dESEXP, SEXP n_SeedSEXP, SEXP b_TrtSEXP) {
+RcppExport SEXP _calibR_SickSickerMicroSim_Cpp(SEXP v_S_tSEXP, SEXP t_PSEXP, SEXP v_CSEXP, SEXP v_USEXP, SEXP n_ISEXP, SEXP n_SSEXP, SEXP n_TSEXP, SEXP n_ClSEXP, SEXP d_dCSEXP, SEXP d_dESEXP, SEXP n_SeedSEXP, SEXP b_TrtSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -116,16 +116,16 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_calibrater_ProbsV_Cpp", (DL_FUNC) &_calibrater_ProbsV_Cpp, 4},
-    {"_calibrater_SampleV_Cpp", (DL_FUNC) &_calibrater_SampleV_Cpp, 4},
-    {"_calibrater_CostsV_Cpp", (DL_FUNC) &_calibrater_CostsV_Cpp, 5},
-    {"_calibrater_EffsV_Cpp", (DL_FUNC) &_calibrater_EffsV_Cpp, 6},
-    {"_calibrater_MicroSimV_Cpp", (DL_FUNC) &_calibrater_MicroSimV_Cpp, 12},
-    {"_calibrater_SickSickerMicroSim_Cpp", (DL_FUNC) &_calibrater_SickSickerMicroSim_Cpp, 12},
+    {"_calibR_ProbsV_Cpp", (DL_FUNC) &_calibR_ProbsV_Cpp, 4},
+    {"_calibR_SampleV_Cpp", (DL_FUNC) &_calibR_SampleV_Cpp, 4},
+    {"_calibR_CostsV_Cpp", (DL_FUNC) &_calibR_CostsV_Cpp, 5},
+    {"_calibR_EffsV_Cpp", (DL_FUNC) &_calibR_EffsV_Cpp, 6},
+    {"_calibR_MicroSimV_Cpp", (DL_FUNC) &_calibR_MicroSimV_Cpp, 12},
+    {"_calibR_SickSickerMicroSim_Cpp", (DL_FUNC) &_calibR_SickSickerMicroSim_Cpp, 12},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_calibrater(DllInfo *dll) {
+RcppExport void R_init_calibR(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

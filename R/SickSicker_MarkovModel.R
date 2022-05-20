@@ -13,6 +13,8 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 SS_markov <- function(.v_params_, calibrate_ = TRUE, p_S1S2 = 0.105,
                       hr_S1 = 3, hr_S2 = 10) {
   with(as.list(.v_params_), {
@@ -123,6 +125,8 @@ SS_markov <- function(.v_params_, calibrate_ = TRUE, p_S1S2 = 0.105,
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 SS_MicroSim <- function(.v_params_ = NULL, calibrate_ = TRUE, n_i = 10000,
                         p_S1S2 = 0.105, hr_S1 = 3, hr_S2 = 10) {
   with(as.list(.v_params_), {

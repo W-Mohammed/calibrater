@@ -15,3 +15,7 @@ The logit transformation of the passed probability
 \description{
 Convert probability to logit
 }
+\examples{
+\dontrun{
+}
+}

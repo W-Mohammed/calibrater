@@ -1,0 +1,611 @@
+---
+title: "Bayesian_calibration"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Bayesian_calibration}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+#library(calibR)
+```
+
+This code was created by the DARTH workgroup (www.darthworkgroup.com). When using or modifying this code, please do so with attribution and cite our publications:
+
+Alarid-Escudero F, Maclehose RF, Peralta Y, Kuntz KM, Enns EA. Non-identifiability in model calibration and implications for medical decision making. Med Decis Making. 2018; 38(7):810-821.
+
+Jalal H, Pechlivanoglou P, Krijkamp E, Alarid-Escudero F, Enns E, Hunink MG. An Overview of R in Health Decision Sciences. Med Decis Making. 2017; 37(3): 735-746.
+
+A walkthrough of the code could be found in the follwing link:
+- https://darth-git.github.io/calibSMDM2018-materials/
+
+# Calibration Specifications  
+
+Model: 3-State Cancer Relative Survival (CRS) Markov Model
+Inputs to be calibrated: `p_Mets, p_DieMets`
+Targets: `Surv`
+
+# Posterior sampling methods: 
+
+Dependant sampling methods:
+- Markov chain Monte Carlo (MCMC)
+- Sampling Importance Resampling (SIR)
+- Incremental Mixture Importance Sampling (IMIS)
+
+# Load packages and function files:
+
+```{r, echo=FALSE}
+# General purposes:
+pacman::p_load(devtools, testthat, usethis, tidyverse)
+devtools::load_all()
+# Calibration:
+pacman::p_load(lhs) # Sampling
+pacman::p_load(IMIS) # Incremental Mixture Importance Sampling
+pacman::p_load(MHadaptive) # MCMC - Metropolis-Hastings algorithm
+# IMIS is currently archived, to install:
+# devtools::install_version("IMIS",
+#                           version = "0.1", 
+#                           repos = "http://cran.us.r-project.org")
+# Summarising data:
+pacman::p_load(matrixStats)
+# Visualisation:
+pacman::p_load(plotrix, psych)
+```
+
+# Load target data:
+
+```{r, echo=FALSE}
+load(file.path(here::here(), "data", "CRS_targets.rda"))
+lst_targets <- CRS_targets
+```
+
+# Visualise target data:
+
+```{r Visualise the target}
+# Plotting target data - survival ("Surv"):
+targets_pt = ggplot(data = lst_targets$Surv,
+                    aes(x = time,
+                        y = value)) +
+  geom_errorbar(aes(ymin = lb, ymax = ub)) +
+  geom_point() +
+  theme(
+    panel.border = element_rect(fill = NA, color = 'black')
+  ) + 
+  labs(title = "Calibration target",
+       x = "Time",
+       y = "Proportion survived")
+targets_pt
+targets_pt2 = ggplot(data = lst_targets$Surv,
+                     aes(x = time,
+                         y = value)) +
+  geom_line() +
+  geom_line(aes(x = time, y = lb), linetype = 'dashed', color = 'red',
+            show.legend = TRUE) +
+  geom_line(aes(x = time, y = ub), linetype = 'dashed', color = 'red',
+            show.legend = TRUE) +
+  scale_color_manual(values = c('black', 'red', 'red'),
+                     breaks = c('value', 'lb', 'ub'),
+                     labels = c('Survival', '95% CI', '95% CI')) +
+  theme(
+    panel.border = element_rect(fill = NA, color = 'black')
+  ) + 
+  labs(title = "Calibration target",
+       x = "Time",
+       y = "Proportion survived")
+targets_pt2
+```
+
+# The model is defined as a function, testing that it works:
+
+- inputs are proposed parameters to be estimated through calibration
+- outputs correspond to the target data
+
+```{r Test the model:}
+# Check that the model works:
+v_params_test <- c(p_Mets = 0.10, p_DieMets = 0.05) # true values
+# Check that inputs are handled correctly, by using true values:
+compare(CRS_markov(v_params = v_params_test), CRS_markov())
+
+# Compare outputs of default values to the targets:
+targets_pt +
+  geom_line(data = as_tibble(CRS_markov()) %>%
+              mutate(time = cbind(lst_targets$Surv$time)), 
+            aes(x = time, y = Surv),
+            color = 'red') +
+  scale_color_manual(values = c('Surv' = "red"))
+```
+
+# Specify calibration parameters:
+
+```{r Specify parameters:}
+# Specify seed (for reproducible sequence of random numbers)
+set.seed(1)
+
+# Number of random samples
+n_resamples <- 1000
+
+# Names and number of input parameters to be calibrated
+v_params_names <- c("p_Mets", "p_DieMets")
+n_params <- length(v_params_names)
+
+# Range on input search space
+lb <- c(p_Mets = 0.04, p_DieMets = 0.04) # lower bound
+ub <- c(p_Mets = 0.16, p_DieMets = 0.16) # upper bound
+
+# Number of calibration targets
+v_target_names <- c("Surv")
+n_target <- length(v_target_names)
+```
+
+# Calibrate:
+
+## Calibration functions:
+
+```{r Write prior and likelihood functions:}
+## Prior functions: to sample from prior and evaluate log-prior and prior:
+###  Write function to sample from prior:
+sample_prior <- function(.n_samp, .n_param = n_params, 
+                         .v_params_names = v_params_names) {
+  m_lhs_unit   <- randomLHS(n = .n_samp, k = .n_param)
+  m_param_samp <- matrix(nrow = .n_samp, ncol = .n_param)
+  colnames(m_param_samp) <- .v_params_names
+  for (i in 1:.n_param){
+    m_param_samp[, i] <- qunif(m_lhs_unit[,i],
+                               min = lb[i],
+                               max = ub[i])
+    # ALTERNATIVE prior using beta (or other) distributions
+    # m_param_samp[, i] <- qbeta(m_lhs_unit[,i],
+    #                            shape1 = 1,
+    #                            shape2 = 1)
+  }
+  return(m_param_samp)
+}
+
+### View resulting parameter set samples:
+pairs.panels(sample_prior(1000))
+
+### Function to calculate the log-prior:
+calc_log_prior <- function(.n_param = n_params, .v_params,
+                           .v_params_names = v_params_names) {
+  if(is.null(dim(.v_params))) { # If vector, change to matrix
+    .v_params <- t(.v_params)
+  }
+  n_samp <- nrow(.v_params)
+  colnames(.v_params) <- .v_params_names
+  lprior <- rep(0, n_samp)
+  for (i in 1:.n_param){
+    lprior <- lprior + dunif(.v_params[, i],
+                             min = lb[i],
+                             max = ub[i],
+                             log = TRUE)
+    # ALTERNATIVE prior using beta distributions
+    # lprior <- lprior + dbeta(v_params[, i],
+    #                          shape1 = 1,
+    #                          shape2 = 1,
+    #                          log = T)
+  }
+  return(lprior)
+}
+### Function to calculate the log-prior:
+calc_log_prior2 <- function(.n_param = n_params, .v_params,
+                            .v_params_names = v_params_names) {
+  if(is.null(dim(.v_params))) { # If vector, change to matrix
+    .v_params <- t(.v_params)
+  }
+  n_samp <- nrow(.v_params)
+  colnames(.v_params) <- .v_params_names
+  lprior <- rep(0, n_samp)
+  for (i in 1:.n_param){
+    lprior <- lprior + dunif(.v_params[, i],
+                             min = 0,
+                             max = 1,
+                             log = TRUE)
+    # ALTERNATIVE prior using beta distributions
+    # lprior <- lprior + dbeta(v_params[, i],
+    #                          shape1 = 1,
+    #                          shape2 = 1,
+    #                          log = T)
+  }
+  return(lprior)
+}
+calc_log_prior(.v_params = v_params_test)
+calc_log_prior(.v_params = sample_prior(10))
+calc_log_prior2(.v_params = v_params_test)
+
+### Function to calculates the (non-log) prior:
+calc_prior <- function(.v_params) {
+  exp(calc_log_prior(.v_params = .v_params))
+}
+calc_prior(.v_params = v_params_test)
+calc_prior(.v_params = sample_prior(10))
+
+## Likelihood functions: to evaluate log-likelihood and likelihood
+### Function to calculate the log-likelihood:
+calc_log_lik <- function(.func = CRS_markov, .lst_targets = lst_targets, 
+                         .v_params, .n_target = n_target){
+  if(is.null(dim(.v_params))) { # If vector, change to matrix
+    .v_params <- t(.v_params)
+  }
+  n_samp <- nrow(.v_params)
+  v_llik <- matrix(0, nrow = n_samp, ncol = .n_target)
+  llik_overall <- numeric(n_samp)
+  for(j in 1:n_samp) { # j=1
+    jj <- tryCatch( {
+      ### Run model for a given parameter set:
+      model_res <- exec(.fn = .func, .v_params[j, ])
+      
+      ###  Calculate log-likelihood of model outputs to targets  ###
+      # TARGET 1: Survival ("Surv")
+      # log likelihood
+      v_llik[j, 1] <- sum(dnorm(x = .lst_targets$Surv$value,
+                                mean = model_res$Surv,
+                                sd = .lst_targets$Surv$se,
+                                log = TRUE))
+      
+      # TARGET 2: (if you had more...)
+      # log likelihood
+      # v_llik[j, 2] <- sum(dnorm(x = lst_targets$Target2$value,
+      #                        mean = model_res$Target2,
+      #                        sd = lst_targets$Target2$se,
+      #                        log = T))
+      
+      # OVERALL
+      llik_overall[j] <- sum(v_llik[j, ])
+    }, error = function(e) NA)
+    if(is.na(jj)) { llik_overall <- -Inf }
+  } # End loop over sampled parameter sets
+  # return LLIK
+  return(llik_overall)
+}
+calc_log_lik2 <- function(.func = CRS_markov, .lst_targets = lst_targets, 
+                          .v_params, .n_target = n_target){
+  if(is.null(dim(.v_params))) { # If vector, change to matrix
+    .v_params <- t(.v_params)
+  }
+  n_samp <- nrow(.v_params)
+  v_llik <- matrix(0, nrow = n_samp, ncol = .n_target)
+  llik_overall <- numeric(n_samp)
+  for(j in 1:n_samp) { # j=1
+    jj <- tryCatch( {
+      ### Run model for a given parameter set:
+      model_res <- exec(.fn = .func, .v_params[j, ])
+      
+      ###  Calculate log-likelihood of model outputs to targets  ###
+      # TARGET 1: Survival ("Surv")
+      # log likelihood
+      v_llik[j, 1] <- sum(dnorm(x = .lst_targets$Surv$value[-c(1:10)],
+                                mean = model_res$Surv[-c(1:10)],
+                                sd = .lst_targets$Surv$se[-c(1:10)],
+                                log = TRUE))
+      
+      # TARGET 2: (if you had more...)
+      # log likelihood
+      # v_llik[j, 2] <- sum(dnorm(x = lst_targets$Target2$value,
+      #                        mean = model_res$Target2,
+      #                        sd = lst_targets$Target2$se,
+      #                        log = T))
+      
+      # OVERALL
+      llik_overall[j] <- sum(v_llik[j, ])
+    }, error = function(e) NA)
+    if(is.na(jj)) { llik_overall <- -Inf }
+  } # End loop over sampled parameter sets
+  # return LLIK
+  return(llik_overall)
+}
+
+calc_log_lik(.v_params = v_params_test)
+calc_log_lik(.v_params = sample_prior(10))
+calc_log_lik2(.v_params = v_params_test)
+
+# Function to calculate the (non-log) likelihood:
+calc_likelihood <- function(.v_params){
+  exp(calc_log_lik(.v_params = .v_params))
+}
+calc_likelihood(.v_params = v_params_test)
+calc_likelihood(.v_params = sample_prior(10))
+
+## Posterior functions: functions to evaluate log-posterior and posterior:
+### Function to calculates the log-posterior:
+calc_log_post <- function(.v_params, .target = lst_targets) {
+  # Call log-likelihood function:
+  log_likelihood <- calc_log_lik(.v_params = .v_params, 
+                                 .lst_targets = .target)
+  # Call log-prior function:
+  lprior <- calc_log_prior(.v_params = .v_params)
+  # Compute log-posterior:
+  lpost <- log_likelihood + lprior
+  
+  return(lpost)
+}
+calc_log_post(.v_params = v_params_test, .target = lst_targets)
+calc_log_post(.v_params = sample_prior(10), .target = lst_targets)
+
+calc_log_post2 <- function(.v_params, .target = lst_targets) {
+  # Call log-likelihood function:
+  log_likelihood <- calc_log_lik2(.v_params = .v_params, 
+                                  .lst_targets = .target)
+  # Call log-prior function:
+  lprior <- calc_log_prior2(.v_params = .v_params)
+  # Compute log-posterior:
+  lpost <- log_likelihood + lprior
+  
+  return(lpost)
+}
+calc_log_post2(.v_params = v_params_test, .target = lst_targets)
+
+### Function to calculates the (non-log) posterior:
+calc_post <- function(.v_params, .target = lst_targets) {
+  exp(calc_log_post(.v_params = .v_params, .target = .target))
+}
+calc_post(.v_params = v_params_test, .target = lst_targets)
+calc_post(.v_params = sample_prior(10), .target = lst_targets)
+```
+
+## Bayesian calibration:
+
+### Using MCMC:
+
+```{r Calibrate model using MCMC:}
+### Record start time of calibration:
+t_init <- Sys.time()
+guess <- sample_prior(1)
+
+# Run Metropolis-Hastings:
+fit_mcmc <- Metro_Hastings(
+  li_func = calc_log_post2,
+  pars = guess,
+  par_names = v_params_names,
+  .target = lst_targets,
+  iterations = 5e4L,
+  burn_in = 5e4L)
+
+# Calculate computation time
+comp_time <- Sys.time() - t_init
+comp_time
+```
+
+### Exploring best-fitting input sets - MCMC:
+
+```{r Find best-fitting input sets - MCMC}
+## Compute posterior statistics:
+post.mcmc.est <- BCI(fit_mcmc, interval = c(0.025, 0.5, 0.975))
+
+## Tabulate the results:
+colnames(post.mcmc.est)[4] <- "Mean"
+post.mcmc.est
+
+# ## Plot the 1000 draws from the posterior
+# v_post_color <- scales::rescale(m_calib_res[,"Posterior_prob"])
+# tbl_calib_res <- m_calib_res %>%   
+#   as_tibble() %>% 
+#   arrange(desc(Overall_fit)) %>% 
+#   unique()
+# 
+# ## Plot results:
+# ggplot() +
+#   geom_point(data = tbl_calib_res,
+#              aes(x = p_Mets,
+#                  y = p_DieMets,
+#                  color = v_post_color)) +
+#   geom_point(data = fit_imis$center %>% 
+#                as_tibble(),
+#              aes(x = p_Mets,
+#                  y = p_DieMets),
+#              color = 'red') +
+#   theme(
+#     panel.border = element_rect(fill = NA, colour = 'black')
+#   ) +
+#   labs(title = "IMIS - draws from the posterior")
+# 
+# # Pairwise comparison of top 100 sets:
+# pairs.panels(m_calib_res[, v_params_names])
+# 
+# # Compute posterior mean:
+# v_calib_post_mean <- colMeans(m_calib_res[, v_params_names])
+# v_calib_post_mean
+# 
+# # Compute posterior median and 95% credible interval:
+# m_calib_res_95cr <- colQuantiles(m_calib_res[, v_params_names], 
+#                                  probs = c(0.025, 0.5, 0.975))
+# m_calib_res_95cr
+# 
+# # Compute maximum-a-posteriori (MAP) parameter set:
+# v_calib_map <- m_calib_res[which.max(m_calib_res[, "Posterior_prob"]), ]
+# v_calib_map
+# 
+# # Plot model-predicted output at mode vs targets:
+# v_out_best <- CRS_markov(v_calib_map[v_params_names])
+# 
+# targets_pt +
+#   geom_point(data = tibble('Survival' = v_out_best$Surv) %>%
+#                mutate('Time' = cbind(lst_targets$Surv$time)),
+#              aes(x = Time, y = Survival), color = 'red',
+#              alpha = 0.5)
+```
+
+### Using SIR:
+
+```{r Calibrate model using SIR:}
+### Record start time of calibration:
+t_init <- Sys.time()
+
+### Generate samples from prior:
+samples <- sample_prior(n_samples)
+
+### Calculate log-likelihood for each sample value:
+l_lik <- calc_log_lik(.v_params = samples)
+
+### Calculate weights for re-sample (i.e. exponentiate the log-likelihood)
+# Note: subtracting off the maximum log-likelihood before exponentiating 
+# helps avoid numerical under/overflow, which would result in weights of Inf or 0.
+wt <- exp(l_lik - max(l_lik)) / sum(exp(l_lik - max(l_lik)))
+
+### Re-sample from samples with wt as sampling weights:
+set.seed(1)
+sir_id  <- sample.int(n_samples, replace = TRUE, prob = wt)
+posterior_SIR <- samples[sir_id,]
+
+### Combine log-likelihood (overall fit) and posterior probability of each sample:
+m_calib_res_SIR <- cbind(samples[sir_id,],
+                         "Overall_fit" = l_lik[sir_id],
+                         "Posterior_prob" = wt[sir_id])
+
+### Normalize posterior probability:
+# m_calib_res[, "Posterior_prob"] <- 
+#   m_calib_res[, "Posterior_prob"]/sum(m_calib_res[, "Posterior_prob"])
+
+### Calculate computation time
+comp_time <- Sys.time() - t_init
+comp_time
+```
+
+### Exploring best-fitting input sets - SIR:
+
+```{r Find best-fitting input sets - SIR}
+## Plot the 1000 draws from the posterior
+tbl_calib_res_SIR <- m_calib_res_SIR %>%   
+  as_tibble() %>% 
+  arrange(desc(Overall_fit)) %>% 
+  unique()
+v_post_color_SIR <- scales::rescale(tbl_calib_res_SIR$Posterior_prob)
+
+## Plot results:
+pt <- ggplot() +
+  geom_point(data = tbl_calib_res_SIR,
+             aes(x = p_Mets,
+                 y = p_DieMets,
+                 #color = v_post_color_SIR,
+                 alpha = v_post_color_SIR)) +
+  geom_point(inherit.aes = FALSE,
+             data = tbl_calib_res_SIR %>%
+               filter(Overall_fit == max(Overall_fit)),
+             aes(x = p_Mets,
+                 y = p_DieMets),
+             color = 'red') +
+  theme(
+    panel.border = element_rect(fill = NA, colour = 'black')
+  ) +
+  labs(title = "SIR - draws from the posterior")
+pt
+
+# Pairwise comparison of top sets:
+pairs.panels(m_calib_res_SIR[, v_params_names])
+
+# Compute posterior mean:
+v_calib_post_mean <- colMeans(m_calib_res_SIR[, v_params_names])
+v_calib_post_mean
+
+# Compute posterior median and 95% credible interval:
+m_calib_res_95cr <- colQuantiles(m_calib_res_SIR[, v_params_names], 
+                                 probs = c(0.025, 0.5, 0.975))
+m_calib_res_95cr
+
+# Compute maximum-a-posteriori (MAP) parameter set:
+v_calib_map <- m_calib_res[which.max(m_calib_res_SIR[, "Posterior_prob"]), ]
+v_calib_map
+
+# Plot model-predicted output at mode vs targets:
+v_out_best <- CRS_markov(v_calib_map[v_params_names])
+
+targets_pt +
+  geom_point(data = tibble('Survival' = v_out_best$Surv) %>%
+               mutate('Time' = cbind(lst_targets$Surv$time)),
+             aes(x = Time, y = Survival), color = 'red',
+             alpha = 0.5)
+```
+
+### Using IMIS:
+
+```{r Calibrate model using IMIS:}
+### Record start time of calibration:
+t_init <- Sys.time()
+
+### Define three functions needed by IMIS: prior(x), likelihood(x), sample.prior(n)
+prior <- calc_prior
+likelihood <- calc_likelihood
+sample.prior <- sample_prior
+
+# Run IMIS:
+fit_imis <- IMIS(
+  B = 1000, # the incremental sample size at each iteration of IMIS
+  B.re = n_resamples, # the desired posterior sample size
+  number_k = 10, # the maximum number of iterations in IMIS
+  D = 0)
+
+# Obtain draws from posterior:
+m_calib_res <- fit_imis$resample
+
+# Calculate log-likelihood (overall fit) and posterior probability of each sample:
+m_calib_res <- cbind(m_calib_res,
+                     "Overall_fit" = calc_log_lik(.v_params = m_calib_res[, v_params_names]),
+                     "Posterior_prob" = calc_post(.v_params = m_calib_res[, v_params_names]))
+
+# Normalize posterior probability:
+m_calib_res[, "Posterior_prob"] <- 
+  m_calib_res[, "Posterior_prob"]/sum(m_calib_res[, "Posterior_prob"])
+
+# Calculate computation time
+comp_time <- Sys.time() - t_init
+comp_time
+```
+
+### Exploring best-fitting input sets - IMIS:
+
+```{r Find best-fitting input sets - IMIS}
+## Plot the 1000 draws from the posterior
+tbl_calib_res <- m_calib_res %>%   
+  as_tibble() %>% 
+  arrange(desc(Overall_fit)) %>% 
+  unique()
+v_post_color <- scales::rescale(tbl_calib_res$Posterior_prob)
+
+## Plot results:
+ggplot() +
+  geom_point(data = tbl_calib_res,
+             aes(x = p_Mets,
+                 y = p_DieMets,
+                 color = v_post_color)) +
+  geom_point(data = fit_imis$center %>% 
+               as_tibble(),
+             aes(x = p_Mets,
+                 y = p_DieMets),
+             color = 'red') +
+  theme(
+    panel.border = element_rect(fill = NA, colour = 'black')
+  ) +
+  labs(title = "IMIS - draws from the posterior")
+
+# Pairwise comparison of top 100 sets:
+pairs.panels(m_calib_res[, v_params_names])
+
+# Compute posterior mean:
+v_calib_post_mean <- colMeans(m_calib_res[, v_params_names])
+v_calib_post_mean
+
+# Compute posterior median and 95% credible interval:
+m_calib_res_95cr <- colQuantiles(m_calib_res[, v_params_names], 
+                                 probs = c(0.025, 0.5, 0.975))
+m_calib_res_95cr
+
+# Compute maximum-a-posteriori (MAP) parameter set:
+v_calib_map <- m_calib_res[which.max(m_calib_res[, "Posterior_prob"]), ]
+v_calib_map
+
+# Plot model-predicted output at mode vs targets:
+v_out_best <- CRS_markov(v_calib_map[v_params_names])
+
+targets_pt +
+  geom_point(data = tibble('Survival' = v_out_best$Surv) %>%
+               mutate('Time' = cbind(lst_targets$Surv$time)),
+             aes(x = Time, y = Survival), color = 'red',
+             alpha = 0.5)
+```

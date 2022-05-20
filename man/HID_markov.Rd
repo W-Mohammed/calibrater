@@ -7,13 +7,13 @@
 HID_markov(
   .v_params_ = NULL,
   calibrate_ = TRUE,
-  mu_e = 0.05,
-  mu_l = 0.25,
-  mu_t = 0.025,
-  p = 0.1,
-  r_l = 0.5,
-  rho = 0.025,
-  b = 0.2
+  mu_e = 0.05300305,
+  mu_l = 0.09492525,
+  mu_t = 0.06949119,
+  p = 0.35494867,
+  r_l = 0.70669255,
+  rho = 0.62436759,
+  b = 0.27229941
 )
 }
 \arguments{
@@ -43,4 +43,8 @@ are returned.}
 }
 \description{
 Hypothetical Infectious Disease (HID) Markov Model
+}
+\examples{
+\dontrun{
+}
 }

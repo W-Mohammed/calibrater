@@ -1,18 +1,19 @@
 #' Assign extra arguments/parameters in parent function
 #'
-#' @param .default_args_ # A list containing default arguments names and
+#' @param .default_args_ A list containing default arguments names and
 #' their values.
-#' @param .env_ # Environment object grabbed from the parent function's
+#' @param .env_ Environment object grabbed from the parent function's
 #' environment to correctly assign arguments to that function.
-#' @param .args_ # A list containing supplied/additional arguments names
+#' @param .args_ A list containing supplied/additional arguments names
 #' and their values. Arguments in .default_args_ but existing in .args_
 #' will be assigned values from .args_ and vice versa.
 #'
 #' @return This function assigns variables/objects in the parent's function
 #' environment, hence it returns nothing.
-#' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 assign_extraArgs_ <- function(.default_args_, .env_, .args_) {
   # Grab default arguments' names:
   if(is.null(names(.default_args_)))
@@ -49,6 +50,8 @@ assign_extraArgs_ <- function(.default_args_, .env_, .args_) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 logit_to_prob <- function(.logit_) {
   odds_ <- exp(.logit_)
   prob_ <- odds_ / (1 + odds_)
@@ -66,8 +69,10 @@ logit_to_prob <- function(.logit_) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 prob_to_logit <- function(.prob_) {
-  logit_ <- qlogis(.prob_)
+  logit_ <- stats::qlogis(.prob_)
 
   return(logit_)
 }
@@ -83,6 +88,8 @@ prob_to_logit <- function(.prob_) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 backTransform <- function(.t_data_, .l_params_) {
   # Prepare inputs list:
   l_bTransform <- list(
@@ -94,16 +101,16 @@ backTransform <- function(.t_data_, .l_params_) {
     .x = l_bTransform$v_params_names,
     .y = l_bTransform$bckTransFunc,
     .f = function(name_ = .x, func_ = .y) {
-      name_ = exec(.fn = func_,
+      name_ = purrr::exec(.fn = func_,
                   .t_data_ %>%
-                    select(.data[[name_]]))
+                    dplyr::select(.data[[name_]]))
     }
   ) %>% # Bind remaining columns:
-    bind_cols(.t_data_ %>%
-            select(- l_bTransform$v_params_names)) %>%
-    select(
+    dplyr::bind_cols(.t_data_ %>%
+            dplyr::select(- l_bTransform$v_params_names)) %>%
+    dplyr::select(
       colnames(.t_data_)[!colnames(.t_data_) %in%
-                           l_bTransform$v_params_names], everything())
+                           l_bTransform$v_params_names], dplyr::everything())
 
   return(data_)
 }
@@ -125,9 +132,9 @@ run_demo_App <- function(example_app = "one") {
                       #wb_dhs = "WBandDHS"
   )
   appDir <- system.file("shiny-examples", appFolder,
-                        package = "calibrater")
+                        package = "calibR")
   if (appDir == "") {
-    stop("Could not find example directory. Try re-installing `calibrater`.",
+    stop("Could not find example directory. Try re-installing `calibR`.",
          call. = FALSE)
   }
 

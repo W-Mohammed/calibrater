@@ -56,7 +56,8 @@ Calibrate model using Directed search algorithms (optimisation
 functions)
 }
 \examples{
-library(calibrater)
+\dontrun{
+library(calibR)
 data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv", "Surv")
@@ -173,5 +174,5 @@ GA_optimise_lLLK <- calibrateModel_directed(
   .maximise = TRUE,
   .l_targets = l_targets,
   maxit = 1000)
-
+}
 }

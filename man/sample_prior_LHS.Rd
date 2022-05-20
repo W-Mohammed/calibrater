@@ -23,6 +23,7 @@ A table with each parameter LHS samples in a separate column
 Use Latin Hypercube Sampling (LHS) to sample from prior distribution
 }
 \examples{
+\dontrun{
 v_params_names <- c("p_Mets", "p_DieMets")
 v_params_dists <- c("unif", "unif")
 args <- list(list(min = 0.04, max = 0.16),
@@ -33,5 +34,5 @@ l_params <- list('v_params_names' = v_params_names,
 
 sample_prior_LHS(.l_params = l_params,
                  .n_samples = 10)
-
+}
 }

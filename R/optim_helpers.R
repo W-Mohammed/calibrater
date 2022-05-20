@@ -19,13 +19,15 @@
 #' @param .maximiser Logical for whether algorithm that created (or .func
 #' which will create) the hessian matrix maximised the goodness-of-fit
 #' function. Default is \code{TRUE}.
+#' @param .convergence Convergence label; 0 successful convergence
 #' @param ... Extra arguments to be passed to .gof.
 #'
 #' @return A tibble with the best identified parameters, their 95%
 #' confidence intervals and corresponding goodness-of-fit values.
-#' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 summ_optim <- function(.params_name = v_params_names, .gof = NULL,
                        .gof_name, .gof_value, .s_method, .par,
                        .func = NULL, .args = NULL, .hessian = NULL,
@@ -141,7 +143,8 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #' @export
 #'
 #' @examples
-#' library(calibrater)
+#' \dontrun{
+#' library(calibR)
 #' data("CRS_targets")
 #' Surv <- CRS_targets$Surv
 #' v_targets_names <- c("Surv", "Surv")
@@ -258,7 +261,7 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   .maximise = TRUE,
 #'   .l_targets = l_targets,
 #'   maxit = 1000)
-#'
+#' }
 calibrateModel_directed <- function(.l_params = l_params, .func, .args,
                                     .gof = 'LLK', .samples,
                                     .s_method = 'NM',
@@ -271,8 +274,8 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
   # Get the .gof method:
   .gof_name <- .gof
   .gof <- switch(.gof,
-                 LLK = LLK_GOF,
-                 SSE = wSSE_GOF)
+                 LLK = calibR::LLK_GOF,
+                 SSE = calibR::wSSE_GOF)
   # Get parameters' names:
   params_name <- .l_params[['v_params_names']]
   # Capture the arguments in the .dots:
@@ -280,7 +283,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
   # Apply appropriate method:
   if(any(.s_method %in% c('NM', 'BFGS', 'SANN'))) {
     # Map over sampled values:
-    fits <- pmap(
+    fits <- purrr::pmap(
       .l = .samples,
       .f = function(...) {
         # Grab a parameter set:
@@ -290,7 +293,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
           # Make sure to return NULL if the algorithm fails:
           expr = {
             if(.s_method == 'NM') .s_method = "Nelder-Mead"
-            optim(
+            stats::optim(
               par = params_set,
               fn = .gof,
               method = .s_method,
@@ -311,7 +314,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
           }, error = function(e) {
             message(paste0("\r", e))
 
-            return(NULL)
+            NULL
           }
         )
         # Summarise output produced by optim():
@@ -329,22 +332,22 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
               .hessian = fit$hessian, # hessian matrix estimated by optim()
               .convergence = fit$convergence, # 0 = successful
               .l_targets = .l_targets, # targets passed to .gof
-              .gof_name = .gof_name # the name of the goodness-of-fit function
+              .gof_name = .gof_name # name of the goodness-of-fit function
             )
           }, error = function(e) {
             message(paste0("\r", e))
 
-            return(NULL)
+            NULL
           }
         )
       }
     )
   } else {
     # Collect lower and upper bounds for DEoptim():
-    lb = map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$min)
-    ub = map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$max)
+    lb = purrr::map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$min)
+    ub = purrr::map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$max)
     # Map over sampled values:
-    fits <- pmap(
+    fits <- purrr::pmap(
       .l = .samples,
       .f = function(...) {
         # Run the optimisation function DEoptim:
@@ -369,7 +372,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
           }, error = function(e) {
             message(paste0("\r", e))
 
-            return(NULL)
+            NULL
           }
         )
         # Summarise output produced by DEoptim():
@@ -392,7 +395,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
           }, error = function(e) {
             message(paste0("\r", e))
 
-            return(NULL)
+            NULL
           }
         )
       }
@@ -405,11 +408,13 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
     expr = {
       fits %>%
         rlist::list.exclude(is.null(.)) %>%
+        rlist::list.exclude(is.null(`GOF value`)) %>%
+        rlist::list.exclude(is.na(`GOF value`)) %>%
         rlist::list.sort(-`GOF value`)
     }, error = function(e) {
       message(paste0("\r", e))
 
-      return(NULL)
+      NULL
     }
   )
 

@@ -17,6 +17,8 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE,
                        mu_e = 0.05300305, mu_l = 0.09492525,
                        mu_t = 0.06949119, p = 0.35494867,
@@ -141,12 +143,14 @@ HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE,
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 HID_markov_2 <- function(.v_params_ = NULL, calibrate_ = TRUE,
                          transform_ = TRUE, mu_e = log(0.05300305),
                          mu_l = log(0.09492525), mu_t = log(0.06949119),
                          p = log(0.35494867), r_l = log(0.70669255),
                          rho = log(0.62436759),
-                         b = prob_to_logit(0.27229941)) {
+                         b = calibR::prob_to_logit(0.27229941)) {
   with(as.list(.v_params_), {
     # mu_e: 0.05 [0.02, 0.12] Cause-specific mortality rate with early
     # -stage disease
@@ -171,7 +175,7 @@ HID_markov_2 <- function(.v_params_ = NULL, calibrate_ = TRUE,
       rho <- exp(rho)
       p <- exp(p)
       r_l <- exp(r_l)
-      b <- logit_to_prob(b)
+      b <- calibR::logit_to_prob(b)
     }
 
     r_e <- r_l
@@ -270,6 +274,8 @@ HID_markov_2 <- function(.v_params_ = NULL, calibrate_ = TRUE,
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 name_HID_params <- function(.v_params) {
   names(.v_params) <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho",
                         "b", "c")

@@ -30,3 +30,7 @@ their original scale.}
 \description{
 Calculate log posterior (one set of parameters at a time)
 }
+\examples{
+\dontrun{
+}
+}

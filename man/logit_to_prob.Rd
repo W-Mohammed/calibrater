@@ -15,3 +15,7 @@ The probability corresponding to the passed logit
 \description{
 Convert logit to probability
 }
+\examples{
+\dontrun{
+}
+}

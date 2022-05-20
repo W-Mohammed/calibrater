@@ -11,6 +11,7 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' v_params_names <- c("p_Mets", "p_DieMets")
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
@@ -21,7 +22,7 @@
 #'
 #' sample_prior_LHS(.l_params = l_params,
 #'                  .n_samples = 10)
-#'
+#' }
 sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
                              ...) {
   # Grab additional arguments:
@@ -32,7 +33,7 @@ sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
   n_params <- length(.l_params[["v_params_names"]])
   # Get LHS samples:
   tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
-    as_tibble()
+    dplyr::as_tibble()
   # Define inputs list:
   l_lhs <- list(.l_params[['v_params_names']],
                 paste0('q', .l_params[['v_params_dists']]),
@@ -42,11 +43,11 @@ sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
   # Make sure parameter names are in a named vector:
   names(l_lhs[[1]]) <- l_lhs[[1]]
   # Map over parameters to scale up LHS samples to appropriate values:
-  tbl_lhs_samp <- pmap_dfc(
+  tbl_lhs_samp <- purrr::pmap_dfc(
     .l = l_lhs,
     .f = function(.name, .func, p, .arg, .dist) {
       assign(.name,
-             exec(.func,
+             purrr::exec(.func,
                   p,
                   !!!.arg)
       )
@@ -69,6 +70,7 @@ sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' v_params_names <- c("p_Mets", "p_DieMets")
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
@@ -79,7 +81,7 @@ sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
 #'
 #' sample_prior_FGS(.l_params = l_params,
 #'                  .n_samples = 10)
-#'
+#' }
 sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
                              ...) {
   # Grab additional arguments:
@@ -97,7 +99,7 @@ sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
   # Make sure parameter names are in a named vector:
   names(l_fgs[[1]]) <- l_fgs[[1]]
   # Get grid points for each variable:
-  tbl_grid_points <- pmap_dfc(
+  tbl_grid_points <- purrr::pmap_dfc(
     .l = l_fgs,
     .f = function(.name, .dist, .xarg) {
       assign(.name,
@@ -128,6 +130,7 @@ sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' v_params_names <- c("p_Mets", "p_DieMets")
 #' v_params_dists <- c("unif", "unif")
 #' args <- list(list(min = 0.04, max = 0.16),
@@ -138,7 +141,7 @@ sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
 #'
 #' sample_prior_RGS(.l_params = l_params,
 #'                  .n_samples = 10)
-#'
+#' }
 sample_prior_RGS <- function(.n_samples = 1, .l_params = .l_params_,
                              ...) {
   # Grab additional arguments:
@@ -153,11 +156,11 @@ sample_prior_RGS <- function(.n_samples = 1, .l_params = .l_params_,
   # Make sure parameter names are in a named vector:
   names(l_rgs[[1]]) <- l_rgs[[1]]
   # Map over parameters and sample values accordingly:
-  tbl_rgs_samp <- pmap_dfc(
+  tbl_rgs_samp <- purrr::pmap_dfc(
     .l = l_rgs,
     .f = function(.name, .func, .arg, .dist) {
       assign(.name,
-             exec(.func,
+             purrr::exec(.func,
                   .n_samples,
                   !!!.arg)
       )

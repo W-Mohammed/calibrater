@@ -21,3 +21,7 @@ their original scale.}
 \description{
 Calculate log prior
 }
+\examples{
+\dontrun{
+}
+}

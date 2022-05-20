@@ -15,6 +15,7 @@ summ_optim(
   .args = NULL,
   .hessian = NULL,
   .maximiser = TRUE,
+  .convergence,
   ...
 )
 }
@@ -48,6 +49,8 @@ interval} and/or passed to .func to generate the .hessian matrix.}
 which will create) the hessian matrix maximised the goodness-of-fit
 function. Default is \code{TRUE}.}
 
+\item{.convergence}{Convergence label; 0 successful convergence}
+
 \item{...}{Extra arguments to be passed to .gof.}
 }
 \value{
@@ -56,4 +59,8 @@ confidence intervals and corresponding goodness-of-fit values.
 }
 \description{
 Summarise and/or create uncertainty estimates from the hessian matrix
+}
+\examples{
+\dontrun{
+}
 }

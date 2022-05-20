@@ -12,6 +12,8 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' }
 CRS_markov <- function(.v_params_ = NULL, p_Mets = 0.10, p_DieMets = 0.05,
                        calibrate_ = TRUE) {
   with(as.list(.v_params_), {

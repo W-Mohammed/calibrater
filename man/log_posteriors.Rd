@@ -30,3 +30,7 @@ their original scale.}
 \description{
 Calculate log posteriors
 }
+\examples{
+\dontrun{
+}
+}

@@ -1,3 +1,7 @@
-^calibrater\.Rproj$
+^calibR\.Rproj$
 ^\.Rproj\.user$
 ^data-raw$
+^misc$
+^images$
+testing.R
+^LICENSE\.md$

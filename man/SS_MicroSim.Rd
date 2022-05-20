@@ -35,3 +35,7 @@ are returned.}
 \description{
 Sick-Sicker (SS) Micro-simulation model
 }
+\examples{
+\dontrun{
+}
+}

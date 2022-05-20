@@ -51,3 +51,7 @@ their original scale.}
 \description{
 Calibrate models using Bayesian methods - employing local IMIS_()
 }
+\examples{
+\dontrun{
+}
+}

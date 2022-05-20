@@ -29,3 +29,7 @@ errors (column name 'sd') of the corresponding target.}
 \description{
 Calculate likelihood
 }
+\examples{
+\dontrun{
+}
+}

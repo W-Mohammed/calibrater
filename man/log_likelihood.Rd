@@ -26,7 +26,8 @@ summed overall likelihood values sorted in descending order.
 Calculate log likelihood (LLK)
 }
 \examples{
-library(calibrater)
+\dontrun{
+library(calibR)
 data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv")
@@ -49,5 +50,5 @@ samples <- sample_prior_LHS(.l_params = l_params,
 
 l_lik <- log_likelihood(.func = CRS_markov, .args = NULL,
                         .samples = samples, .l_targets = l_targets)
-
+}
 }

@@ -36,11 +36,12 @@ original scale.}
 Merge calibration outputs and sample PSA values
 }
 \examples{
+\dontrun{
 l_optim_lists <- list(GA_optimise_lLLK, GA_optimise_wSSE,
                       GB_optimise_lLLK, GB_optimise_wSSE,
                       NM_optimise_lLLK, NM_optimise_wSSE,
                       SA_optimise_lLLK, SA_optimise_wSSE)
 
 calibrated_values <- PSA_calib_values(.l_calib_res_lists = l_optim_lists)
-
+}
 }

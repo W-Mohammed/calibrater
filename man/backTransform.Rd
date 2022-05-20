@@ -19,3 +19,7 @@ original/desired scale.}
 \description{
 Back transform parameters values
 }
+\examples{
+\dontrun{
+}
+}

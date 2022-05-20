@@ -8,13 +8,13 @@ HID_markov_2(
   .v_params_ = NULL,
   calibrate_ = TRUE,
   transform_ = TRUE,
-  mu_e = log(0.05),
-  mu_l = log(0.25),
-  mu_t = log(0.025),
-  p = log(0.1),
-  r_l = log(0.5),
-  rho = log(0.025),
-  b = prob_to_logit(0.2)
+  mu_e = log(0.05300305),
+  mu_l = log(0.09492525),
+  mu_t = log(0.06949119),
+  p = log(0.35494867),
+  r_l = log(0.70669255),
+  rho = log(0.62436759),
+  b = calibR::prob_to_logit(0.27229941)
 )
 }
 \arguments{
@@ -47,4 +47,8 @@ back-transform them before they go into the model}
 }
 \description{
 Hypothetical Infectious Disease (HID) Markov Model with transformations
+}
+\examples{
+\dontrun{
+}
 }

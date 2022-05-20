@@ -49,7 +49,8 @@ A function to estimate weighted sum of squared errors (WSSE)
 goodness-of-fit
 }
 \examples{
-library(calibrater)
+\dontrun{
+library(calibR)
 data("CRS_targets")
 Surv <- CRS_targets$Surv
 v_targets_names <- c("Surv")
@@ -72,5 +73,5 @@ samples <- sample_prior_LHS(.l_params = l_params,
 
 GOF_wsse <- wSSE_GOF(.func = CRS_markov, .samples = samples,
                      .l_targets = l_targets)
-
+}
 }

@@ -21,3 +21,7 @@ their original scale.}
 \description{
 Calculate priors
 }
+\examples{
+\dontrun{
+}
+}

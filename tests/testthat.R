@@ -1,4 +1,4 @@
 library(testthat)
-library(calibrater)
+library(calibR)
 
-test_check("calibrater")
+test_check("calibR")

@@ -29,3 +29,7 @@ are returned.}
 \description{
 Cancer Relative Survival (CRS) 3-State Markov Model
 }
+\examples{
+\dontrun{
+}
+}
