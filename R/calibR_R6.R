@@ -1,4 +1,4 @@
-#' R6 Class representing a calibrateR_R6 calibration machine.
+#' R6 Class representing a calibR_R6 calibration machine.
 #'
 #' @description
 #' An instance of this class is expected to calibrate a user-defined model
