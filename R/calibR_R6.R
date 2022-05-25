@@ -32,6 +32,8 @@ calibR_R6 <- R6::R6Class(
     #' @field transform_parameters boolean for whether to back transform
     #' parameters
     transform_parameters = FALSE,
+    #' @field model_predictions simulated outputs
+    model_predictions = NULL,
     #' @field prior_samples a Decision-Analytic model under calibration
     prior_samples = NULL,
     #' @field PSA_samples calibration and un-calibration parameters
@@ -70,6 +72,10 @@ calibR_R6 <- R6::R6Class(
       self$calibration_parameters <- .params
       self$calibration_targets <- .targets
       self$transform_parameters <- .transform
+      self$model_predictions$truth <- self$calibration_model(
+        .v_params_ = self$calibration_parameters$v_params_true_values,
+        transform_ = FALSE
+      )
 
       invisible(self)
 
@@ -264,15 +270,24 @@ calibR_R6 <- R6::R6Class(
     #' @description
     #' Draw plots
     #'
+    #' @param prior_sample_method Sampling method used to generate prior
+    #' samples.
+    #' @param print_pair_correlations Print pair-wise correlations to
+    #' console.
+    #'
     #' @return
     #' @export
     #'
     #' @examples
     #' \dontrun{
     #' }
-    draw_plots = function() {
-      private$draw_priors_posteriors()
+    draw_plots = function(prior_sample_method = "LHS",
+                          print_pair_correlations = FALSE) {
+      private$draw_priors_posteriors(
+        prior_sample_method = prior_sample_method)
       private$draw_pair_correlations()
+      if(isTRUE(print_pair_correlations))
+        private$print_pair_correlations()
     }
   ),
 
@@ -840,8 +855,8 @@ calibR_R6 <- R6::R6Class(
       # Get LHS samples:
       tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
         dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                        repair = "unique",
-                                        quiet = TRUE))
+                                               repair = "unique",
+                                               quiet = TRUE))
       # Define inputs list:
       l_lhs <- list(.l_params[['v_params_names']],
                     paste0('q', .l_params[['v_params_dists']]),
@@ -856,8 +871,8 @@ calibR_R6 <- R6::R6Class(
         .f = function(.name, .func, p, .arg, .dist) {
           assign(.name,
                  purrr::exec(.func,
-                      p,
-                      !!!.arg)
+                             p,
+                             !!!.arg)
           )
         })
 
@@ -885,8 +900,8 @@ calibR_R6 <- R6::R6Class(
       if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
         .samples <- .samples %>%
         dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                        repair = "unique",
-                                        quiet = TRUE)) %>%
+                                               repair = "unique",
+                                               quiet = TRUE)) %>%
         `colnames<-`(v_params_names)
       # Get appropriate distributions' and distributions' parameters' objects:
       params_dists <- 'v_params_dists'
@@ -936,8 +951,8 @@ calibR_R6 <- R6::R6Class(
       if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
         .samples <- .samples %>%
         dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                        repair = "unique",
-                                        quiet = TRUE)) %>%
+                                               repair = "unique",
+                                               quiet = TRUE)) %>%
         `colnames<-`(v_params_names)
       # Get appropriate distributions' and distributions' parameters' objects:
       params_dists <- 'v_params_dists'
@@ -1030,8 +1045,8 @@ calibR_R6 <- R6::R6Class(
       if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
         .samples <- .samples %>%
           dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                          repair = "unique",
-                                          quiet = TRUE))
+                                                 repair = "unique",
+                                                 quiet = TRUE))
       # Run the model using each set of sampled parameters:
       model_results <- purrr::pmap(
         .l = as.list(.samples),
@@ -1057,27 +1072,27 @@ calibR_R6 <- R6::R6Class(
                 if(.dist == 'norm') {
                   sum( # Sum all values of that one target, if many
                     purrr::exec(.func,
-                         .l_targets[[.name]]$value, # target's sd
-                         .mod_res[[.name]], # mean value
-                         .l_targets[[.name]]$se, # sd value (target's sd)
-                         log = TRUE)
+                                .l_targets[[.name]]$value, # target's sd
+                                .mod_res[[.name]], # mean value
+                                .l_targets[[.name]]$se, # sd value (target's sd)
+                                log = TRUE)
                   ) * .weight # target weight
                 } else if(.dist == 'binom') {
                   sum( # Sum all values of that one target, if many
                     purrr::exec(.func,
-                         prob = .mod_res[[.name]],
-                         x = .l_targets[[.name]]$x,
-                         size = .l_targets[[.name]]$size,
-                         log = TRUE)
+                                prob = .mod_res[[.name]],
+                                x = .l_targets[[.name]]$x,
+                                size = .l_targets[[.name]]$size,
+                                log = TRUE)
                   ) * .weight # target weight
                 } else if(.dist == 'lnorm') {
                   sum( # Sum all values of that one target, if many
                     purrr::exec(.func,
-                         .l_targets[[.name]]$value, # target's mean
-                         log(.mod_res[[.name]]) - (1/2) *
-                           .l_targets[[.name]]$se^2, # mean value
-                         .l_targets[[.name]]$se, # sd value (target's sd)
-                         log = TRUE)
+                                .l_targets[[.name]]$value, # target's mean
+                                log(.mod_res[[.name]]) - (1/2) *
+                                  .l_targets[[.name]]$se^2, # mean value
+                                .l_targets[[.name]]$se, # sd value (target's sd)
+                                log = TRUE)
                   ) * .weight # target weight
                 }
               },
@@ -1370,8 +1385,8 @@ calibR_R6 <- R6::R6Class(
         ## Calculate log-likelihood (overall fit) and posterior probability:
         IMIS_results <- m_calib_res %>%
           dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                          repair = "unique",
-                                          quiet = TRUE)) %>%
+                                                 repair = "unique",
+                                                 quiet = TRUE)) %>%
           dplyr::mutate(
             "Overall_fit" = Overall_fit,
             "Posterior_prob" = Posterior_prob) %>%
@@ -1379,8 +1394,8 @@ calibR_R6 <- R6::R6Class(
         ## Name column names IMIS stats object:
         stats <- fit_IMIS$stat %>%
           dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                          repair = "unique",
-                                          quiet = TRUE)) %>%
+                                                 repair = "unique",
+                                                 quiet = TRUE)) %>%
           `colnames<-`(c("MargLike", "UniquePoint", "MaxWeight", "ESS",
                          "ImpWt", "ImpWtVar"))
 
@@ -1469,8 +1484,154 @@ calibR_R6 <- R6::R6Class(
       )
     },
     ## Plots:----
+    ### Target plots:----
+    # Draw true and predicted  targets
+    #
+    draw_targets = function() {
+
+    },
     ### Prior-posterior plots:----
-    draw_priors_posteriors = function(sample_method = "LHS") {
+    # Create combined prior and posterior line plots
+    #
+    # @param data_ Data set containing prior and posterior data
+    # @param ggplot_ Boolean, \code{TRUE} to generate ggplot2 otherwise
+    # trelliscopejs
+    # @param plots_row Number of rows in faceted plot or faceted plot page
+    # @param plots_col Number of columns in faceted plot or faceted plot
+    # page
+    #
+    draw_priors_posteriors_line_plots = function(data_,
+                                                 ggplot_,
+                                                 plots_row,
+                                                 plots_col) {
+      plots_ <- purrr::map(
+        .x = self$calibration_parameters$v_params_names,
+        .f = function(.parameter_) {
+          plot_ <- data_ %>%
+            dplyr::filter(!Label %in% "Prior") %>%
+            dplyr::rename(Method = Label) %>%
+            ggplot2::ggplot() +
+            ggplot2::geom_density(
+              ggplot2::aes(
+                x = .data[[.parameter_]],
+                y = ..scaled..),
+              fill = "cadetblue",
+              col = "blue",
+              alpha = 0.4) +
+            ggplot2::geom_density(
+              data = data_ %>%
+                dplyr::filter(Label %in% "Prior") %>%
+                dplyr::rename(Prior = Label),
+              ggplot2::aes(
+                x = .data[[.parameter_]],
+                y = ..scaled..),
+              fill = "red",
+              col = "red",
+              alpha = 0.2) +
+            ggplot2::scale_x_log10() +
+            ggplot2::theme(
+              axis.ticks.y = ggplot2::element_blank(),
+              axis.text.y = ggplot2::element_blank(),
+              axis.title.y = ggplot2::element_blank())
+          # If true values are known
+          if(!is.null(self$calibration_parameters$
+                      v_params_true_values[[.parameter_]])) {
+            plot_ <- plot_ +
+              ggplot2::geom_vline(
+                xintercept = self$calibration_parameters$
+                  v_params_true_values[[.parameter_]])
+          }
+          # ggplot2 or trelliscopejs
+          if(ggplot_) {
+            plot_ <- plot_ +
+              ggplot2::facet_wrap(
+                facets = ~ Method,
+                nrow = plots_row,
+                ncol = plots_col,
+                scales = "free")
+          } else {
+            plot_ <- plot_ +
+              trelliscopejs::facet_trelliscope(
+                facets = ~ Method,
+                nrow = 2,
+                ncol = 3,
+                self_contained = TRUE)
+          }
+        }
+      )
+
+      return(plots_)
+    },
+    # Create combined prior and posterior box plots
+    #
+    # @param data_ Data set containing prior and posterior data
+    # @param ggplot_ Boolean, \code{TRUE} to generate ggplot2 otherwise
+    # trelliscopejs
+    # @param plots_row Number of rows in faceted plot or faceted plot page
+    # @param plots_col Number of columns in faceted plot or faceted plot
+    # page
+    #
+    draw_priors_posteriors_box_plots = function(data_,
+                                                ggplot_,
+                                                plots_row,
+                                                plots_col) {
+      plots_ <- purrr::map(
+        .x = self$calibration_parameters$v_params_names,
+        .f = function(.parameter_) {
+          plot_ <- data_ %>%
+            dplyr::rename(Method = Label) %>%
+            dplyr::mutate(
+              Method = reorder(
+                Method,
+                .data[[.parameter_]],
+                FUN = function(x) {
+                  diff(range(x))
+                }
+              )) %>%
+            ggplot2::ggplot() +
+            ggplot2::geom_boxplot(
+              ggplot2::aes(
+                x = .data[[.parameter_]],
+                y = Method,
+                group = Method,
+                fill = Method,
+                col = Method),
+              alpha = 0.4,
+              show.legend = FALSE) +
+            ggplot2::scale_x_log10() +
+            ggplot2::theme(
+              axis.title.y = ggplot2::element_blank())
+          # If true values are known
+          if(!is.null(self$calibration_parameters$
+                      v_params_true_values[[.parameter_]])) {
+            plot_ <- plot_ +
+              ggplot2::geom_vline(
+                xintercept = self$calibration_parameters$
+                  v_params_true_values[[.parameter_]])
+          }
+          # ggplot2 or trelliscopejs
+          if(ggplot_) {
+            plot_
+          } else {
+            plot_ <- plot_ +
+              trelliscopejs::facet_trelliscope(
+                facets = ~ Method,
+                nrow = 2,
+                ncol = 3,
+                self_contained = TRUE)
+          }
+        }
+      )
+
+      return(plots_)
+    },
+    # Draw priors and posteriors plots
+    #
+    # @param prior_sample_method
+    # @param plots_row
+    # @param plots_col
+    #
+    draw_priors_posteriors = function(prior_sample_method = "LHS") {
       data_ <- c(self$PSA_samples$random,
                  self$PSA_samples$directed,
                  self$PSA_samples$bayesian) %>%
@@ -1485,7 +1646,7 @@ calibR_R6 <- R6::R6Class(
       data_ <- if(self$transform_parameters) {
         data_ %>%
           dplyr::bind_rows(
-            self$prior_samples[[sample_method]] %>%
+            self$prior_samples[[prior_sample_method]] %>%
               dplyr::mutate(Label = 'Prior') %>%
               calibR::backTransform(
                 .t_data_ = .,
@@ -1495,7 +1656,7 @@ calibR_R6 <- R6::R6Class(
       } else {
         data_ %>%
           dplyr::bind_rows(
-            self$prior_samples[[sample_method]] %>%
+            self$prior_samples[[prior_sample_method]] %>%
               dplyr::mutate(Label = 'Prior')
           )
       }
@@ -1505,69 +1666,179 @@ calibR_R6 <- R6::R6Class(
           cols = self$calibration_parameters$v_params_names,
           names_to = "Parameter",
           values_to = "Distribution draws")
-
-      self$plots$prior_posterior <- purrr::map(
-        .x = self$calibration_parameters$v_params_names,
-        .f = function(.parameter_) {
-          data_ %>%
-            dplyr::filter(!Label %in% "Prior") %>%
-            dplyr::rename(Method = Label) %>%
-            ggplot2::ggplot(
-              ggplot2::aes(
-                x = .data[[.parameter_]])) +
-            ggplot2::geom_density(
-              fill = "cadetblue",
-              col = "blue",
-              alpha = 0.2) +
-            ggplot2::geom_density(data = data_ %>%
-                           dplyr::filter(Label %in% "Prior") %>%
-                           dplyr::rename(Prior = Label),
-                         ggplot2::aes(
-                           x = .data[[.parameter_]]),
-                         fill = "red",
-                         col = "red",
-                         alpha = 0.2) +
-            ggplot2::ylab(NULL) +
-            ggplot2::coord_cartesian(xlim = c(0, 4)) +
-            trelliscopejs::facet_trelliscope(
-              facets = ~Method,
-              nrow = 2,
-              ncol = 4
-            )
-        }
+      # If true values are known
+      if(!is.null(self$calibration_parameters$v_params_true_values)) {
+        data2_ = data2_ %>%
+          dplyr::bind_rows(
+            self$calibration_parameters$
+              v_params_true_values %>%
+              dplyr::as_tibble(rownames = "Parameter") %>%
+              dplyr::rename(`Distribution draws` = value) %>%
+              dplyr::mutate(Label = "True"))
+      }
+      # Make a quick effort to get the best faceted plot:
+      tot_plots <- length(
+        c(self$PSA_samples$random,
+          self$PSA_samples$directed,
+          self$PSA_samples$bayesian) %>%
+          purrr::transpose() %>%
+          .[['PSA_calib_draws']]
       )
-      names(self$plots$prior_posterior) <-
+      if(tot_plots > ceiling(sqrt(tot_plots))^2 -
+         ceiling(sqrt(tot_plots))) {
+        p_row <- p_col <- ceiling(sqrt(tot_plots))
+      } else {
+        p_row <- ceiling(sqrt(tot_plots))
+        p_col <- ceiling(sqrt(tot_plots)) - 1
+      }
+
+      # One parameter at a time:
+      ## ggplot2:
+      self$plots$prior_posterior$parameters_ggplot$line <-
+        private$draw_priors_posteriors_line_plots(
+          data_ = data_,
+          ggplot_ = TRUE,
+          plots_row = p_row,
+          plots_col = p_col
+        )
+      self$plots$prior_posterior$parameters_ggplot$box <-
+        private$draw_priors_posteriors_box_plots(
+          data_ = data_,
+          ggplot_ = TRUE,
+          plots_row = p_row,
+          plots_col = p_col
+        )
+      names(self$plots$prior_posterior$parameters_ggplot$line) <-
+        names(self$plots$prior_posterior$parameters_ggplot$box) <-
+        self$calibration_parameters$v_params_names
+      ## trelliscopejs:
+      self$plots$prior_posterior$parameters_trelli$line <-
+        private$draw_priors_posteriors_line_plots(
+          data_ = data_,
+          ggplot_ = FALSE,
+          plots_row = p_row,
+          plots_col = p_col
+        )
+      self$plots$prior_posterior$parameters_trelli$box <-
+        private$draw_priors_posteriors_box_plots(
+          data_ = data_,
+          ggplot_ = FALSE,
+          plots_row = p_row,
+          plots_col = p_col
+        )
+      names(self$plots$prior_posterior$parameters_trelli$line) <-
+        names(self$plots$prior_posterior$parameters_trelli$box) <-
         self$calibration_parameters$v_params_names
 
-      self$plots$prior_posterior2 <- data2_ %>%
-        dplyr::filter(!Label %in% "Prior") %>%
+      # All parameters at once:
+      ## ggplot2:
+      self$plots$prior_posterior$all_ggplot$line <-
+        gridExtra::marrangeGrob(
+          grobs = self$plots$prior_posterior$parameters_ggplot$line,
+          nrow = 1,
+          ncol = 1)
+      self$plots$prior_posterior$all_ggplot$box <-
+        gridExtra::marrangeGrob(
+          grobs = self$plots$prior_posterior$parameters_ggplot$box,
+          nrow = 1,
+          ncol = 1)
+      ## trelliscopejs:
+      all_plots <- data2_ %>%
+        dplyr::filter(!Label %in% c("Prior", "True")) %>%
         dplyr::rename(Method = Label) %>%
-        ggplot2::ggplot(
-          ggplot2::aes(
-            x = `Distribution draws`)) +
+        ggplot2::ggplot() +
         ggplot2::geom_density(
+          ggplot2::aes(
+            x = `Distribution draws`,
+            y = ..scaled..),
           fill = "cadetblue",
           col = "blue",
+          alpha = 0.4) +
+        ggplot2::geom_density(
+          data = data2_ %>%
+            dplyr::filter(Label %in% "Prior") %>%
+            dplyr::rename(Prior = Label),
+          ggplot2::aes(
+            x = `Distribution draws`,
+            y = ..scaled..),
+          fill = "red",
+          col = "red",
           alpha = 0.2) +
-        ggplot2::geom_density(data = data2_ %>%
-                       dplyr::filter(Label %in% "Prior") %>%
-                       dplyr::rename(Prior = Label),
-                     ggplot2::aes(
-                       x = `Distribution draws`),
-                     fill = "red",
-                     col = "red",
-                     alpha = 0.2) +
-        ggplot2::ylab(NULL) +
-        ggplot2::coord_cartesian(xlim = c(0, 4)) +
+        ggplot2::theme(
+          axis.ticks.y = ggplot2::element_blank(),
+          axis.text.y = ggplot2::element_blank(),
+          axis.title.y = ggplot2::element_blank()) +
+        ggplot2::scale_x_log10()
+      # If true values are known
+      # if(!is.null(self$calibration_parameters$v_params_true_values)) {
+      #   all_plots <- all_plots +
+      #     ggplot2::geom_vline(
+      #       data = data2_ %>%
+      #         dplyr::filter(Label %in% "TRUE") %>%
+      #         dplyr::rename(True = Label),
+      #       ggplot2::aes(
+      #         xintercept = `Distribution draws`
+      #       )
+      #     )
+      # }
+
+
+      self$plots$prior_posterior$all_trelli <- all_plots +
         trelliscopejs::facet_trelliscope(
-          self_contained = TRUE,
-          facets = Parameter~Method,
+          facets = Parameter ~ Method,
           nrow = 2,
-          ncol = 5
-        )
+          ncol = 5,
+          self_contained = TRUE)
     },
     ### Correlation plots:----
     draw_pair_correlations = function() {
+      # pair correlations by calibration methods category:
+      for(method in c('random', 'directed', 'bayesian')) {
+        tryCatch(
+          expr = {
+            data_ <- self$PSA_samples[[method]] %>%
+              purrr::transpose() %>%
+              .[['PSA_calib_draws']] %>%
+              dplyr::bind_rows() %>%
+              dplyr::group_by(Label) %>%
+              dplyr::mutate(Count = dplyr::n()) %>%
+              dplyr::ungroup() %>%
+              dplyr::filter(Count != 1) %>%
+              dplyr::select(-Count)
+
+            self$plots$correlations[[method]] <- GGally::ggpairs(
+              data = data_,
+              columns = colnames(
+                data_ %>%
+                  dplyr::select(-c(Overall_fit, Label))
+              ),
+              ggplot2::aes(color = Label),
+              upper = list(
+                continuous = GGally::wrap(
+                  'cor',
+                  size = 3)),
+              lower = list(
+                combo = GGally::wrap(
+                  "facethist",
+                  bins = 30)),
+              diag = list(
+                continuous = GGally::wrap(
+                  "densityDiag",
+                  alpha = 0.5)),
+              title = paste(
+                "Scatterplot matrix of calibration parameters grouped by",
+                method,
+                "calibration method(s)"
+              )
+            )
+          }, error = function(e) {
+            message(paste0("\r", e))
+
+            NULL
+          }
+        )
+      }
+      # all pair correlations:
       data_ <- c(self$PSA_samples$random,
                  self$PSA_samples$directed,
                  self$PSA_samples$bayesian) %>%
@@ -1580,26 +1851,45 @@ calibR_R6 <- R6::R6Class(
         dplyr::filter(Count != 1) %>%
         dplyr::select(-Count)
 
-      self$plots$correlations <- GGally::ggpairs(
+      self$plots$correlations$all <- GGally::ggpairs(
         data = data_,
         columns = colnames(
           data_ %>%
             dplyr::select(-c(Overall_fit, Label))
         ),
         ggplot2::aes(color = Label),
-        upper = list(continuous = GGally::wrap('cor',
-                                               size = 3)),
-        lower = list(combo = GGally::wrap("facethist",
-                                          bins = 30)),
-        diag = list(continuous = GGally::wrap("densityDiag",
-                                              alpha = 0.5)),
-        title = "Scatterplot matrix of calibration parameters grouped by calibration method"
+        upper = list(
+          continuous = GGally::wrap(
+            'cor',
+            size = 3)),
+        lower = list(
+          combo = GGally::wrap(
+            "facethist",
+            bins = 30)),
+        diag = list(
+          continuous = GGally::wrap(
+            "densityDiag",
+            alpha = 0.5)),
+        title = "Scatterplot matrix of calibration parameters grouped by calibration methods"
       )
+    },
+    ### Printable corralation plot:----
+    print_pair_correlations = function() {
+      data_ <- c(self$PSA_samples$random,
+                 self$PSA_samples$directed,
+                 self$PSA_samples$bayesian) %>%
+        purrr::transpose() %>%
+        .[['PSA_calib_draws']] %>%
+        dplyr::bind_rows() %>%
+        dplyr::group_by(Label) %>%
+        dplyr::mutate(Count = dplyr::n()) %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(Count != 1) %>%
+        dplyr::select(-Count)
 
-      self$plots$correlations2 <- data_ %>%
+      data_ %>%
         dplyr::select(-c(Overall_fit, Label)) %>%
         psych::pairs.panels()
-
     }
   )
 )

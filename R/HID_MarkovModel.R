@@ -103,7 +103,8 @@ HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE,
           Surv = 1/(v_mu[3] + p) + p / (v_mu[3] + p) * (1 / v_mu[4]),
           # Treatment volume at 30 years:
           Trt_vol = trace[30 * 12, 5]
-        ) )
+        )
+      )
     } else {
       # Policy projections for CE analysis:
       return(
@@ -118,7 +119,10 @@ HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE,
           # Incremental costs with expanded tx:
           'inc_cost' = sum(results[[2]][(30 * 12 + 1):(51 * 12), 5] -
                              results[[1]][(30 * 12 + 1):(51 * 12), 5]) *
-            c / 12))}
+            c / 12
+        )
+      )
+    }
   })
 }
 
@@ -246,7 +250,8 @@ HID_markov_2 <- function(.v_params_ = NULL, calibrate_ = TRUE,
           Surv = 1/(v_mu[3] + p) + p / (v_mu[3] + p) * (1 / v_mu[4]),
           # Treatment volume at 30 years:
           Trt_vol = trace[30 * 12, 5]
-        ) )
+        )
+      )
     } else {
       # Policy projections for CE analysis:
       return(
@@ -261,7 +266,10 @@ HID_markov_2 <- function(.v_params_ = NULL, calibrate_ = TRUE,
           # Incremental costs with expanded tx:
           'inc_cost' = sum(results[[2]][(30 * 12 + 1):(51 * 12), 5] -
                              results[[1]][(30 * 12 + 1):(51 * 12), 5]) *
-            c / 12))}
+            c / 12
+        )
+      )
+    }
   })
 }
 

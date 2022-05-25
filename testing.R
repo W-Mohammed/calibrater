@@ -2135,3 +2135,40 @@ cal$
   run_PSA()
 cal$draw_plots()
 #saveRDS(object = cal, file = "data/calibrateR_R6_flat.rds")
+
+## testing prior_posterior plots:----
+# cal = readRDS(file = "inst/extdata/calibrateR_R6_flat_2p2.rds")
+# cal_HID_markov_2 = calibR_R6$
+#   new(
+#     .model = HID_markov_2,
+#     .params = HID_data2_flat_2p2$l_params,
+#     .targets = HID_data2_flat_2p2$l_targets,
+#     .args = NULL,
+#     .transform = TRUE
+#   )
+# cal_HID_markov_2$prior_samples = cal$prior_samples
+# cal_HID_markov_2$calibration_results = cal$calibration_results
+# cal_HID_markov_2$PSA_summary = cal$PSA_summary
+# cal_HID_markov_2$PSA_samples = cal$PSA_samples
+# cal_HID_markov_2$PSA_results = cal$PSA_results
+# cal_HID_markov_2$draw_plots()
+# cal_2p2 = cal_HID_markov_2
+# saveRDS(object = cal_2p2, file = "inst/extdata/calibrateR_R6_flat_2p2.rds")
+
+cal = readRDS(file = "inst/extdata/calibrateR_R6_flat.rds")
+cal_HID_markov_2 = calibR_R6$
+  new(
+    .model = HID_markov_2,
+    .params = HID_data2_flat$l_params,
+    .targets = HID_data2_flat$l_targets,
+    .args = NULL,
+    .transform = TRUE
+  )
+cal_HID_markov_2$prior_samples = cal$prior_samples
+cal_HID_markov_2$calibration_results = cal$calibration_results
+cal_HID_markov_2$PSA_summary = cal$PSA_summary
+cal_HID_markov_2$PSA_samples = cal$PSA_samples
+cal_HID_markov_2$PSA_results = cal$PSA_results
+cal_HID_markov_2$draw_plots()
+cal = cal_HID_markov_2
+# saveRDS(object = cal, file = "inst/extdata/calibrateR_R6_flat.rds")
