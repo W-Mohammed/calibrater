@@ -82,8 +82,8 @@ calibR_R6 <- R6::R6Class(
     },
 
     #' @description
-    #' Sample prior distribution(s) using one or more sampling method. This
-    #' function currently supports: LHS, FGS and RGS.
+    #' Sample prior distribution(s) using one or more sampling method.
+    #' This function currently supports: LHS, FGS and RGS.
     #'
     #' @param .n_samples An integer specifying the number of samples to be
     #' generated.
@@ -288,6 +288,40 @@ calibR_R6 <- R6::R6Class(
       private$draw_pair_correlations()
       if(isTRUE(print_pair_correlations))
         private$print_pair_correlations()
+    },
+
+    #' Print
+    #'
+    #' @return
+    #' @export
+    #'
+    #' @examples
+    print_test = function() {
+      self$plots$targets <- private$draw_targets()
+      # if(!is.null(self$calibration_results$random)) {
+      #   tmp <- purrr::map_df(
+      #     .x = c('random', 'directed', 'bayesian'),
+      #     .f = function(.category_) {
+      #       print(.category_)
+      #       private$get_MAP_values(
+      #         .l_calib_res_lists = self$calibration_results[[.category_]],
+      #         .search_method = .category_)
+      #     }
+      #   )
+      #   print(tmp)
+      # }
+      # if(!is.null(self$calibration_results$directed)) {
+      #   tmp <- private$get_MAP_values(
+      #     .l_calib_res_lists = self$calibration_results$directed,
+      #     .search_method = "directed")
+      #   print(tmp)
+      # }
+      # if(!is.null(self$calibration_results$bayesian)) {
+      #   tmp <- private$get_MAP_values(
+      #     .l_calib_res_lists = self$calibration_results$bayesian,
+      #     .search_method = "bayesian")
+      #   print(tmp)
+      # }
     }
   ),
 
@@ -1487,8 +1521,113 @@ calibR_R6 <- R6::R6Class(
     ### Target plots:----
     # Draw true and predicted  targets
     #
-    draw_targets = function() {
+    # @param error_ percentage difference between mean target value and
+    # upper/lower values.
+    #
+    draw_targets = function(error_ = 0.1) {
+      # Get MAP values:
+      MAP_values <- purrr::map_df(
+        .x = c('random', 'directed', 'bayesian'),
+        .f = function(.category_) {
+          private$get_MAP_values(
+            .l_calib_res_lists = self$calibration_results[[.category_]],
+            .search_method = .category_)
+        }
+      )
+      # Run model using MAP values
+      MAP_results <- purrr::pmap(
+        .l = MAP_values,
+        .f = function(...) {
+          params = list(...)
+          self$calibration_model(params)
+        }
+      )
+      # set names:
+      names(MAP_results) <- MAP_values$Label
+      # Combine MAP results for same calibration targets
+      MAP_targets <- purrr::map(
+        .x = self$calibration_targets$v_targets_names,
+        .f = function(target_) {
+          purrr::map_dfc(
+            .x = MAP_results,
+            .f = function(results_) {
+              results_[[target_]]
+            }
+          )
+        }
+      )
+      names(MAP_targets) <- self$calibration_targets$v_targets_names
+      # Merge MAP simulated targets with
+      targets <- purrr::map(
+        .x = self$calibration_targets$v_targets_names,
+        .f = function(target) {
+          self$calibration_targets[[target]] %>%
+            dplyr::bind_cols(MAP_targets[[target]])
+        }
+      )
+      names(targets) <- self$calibration_targets$v_targets_names
+      # Plot targets:
+      targets_plots <- purrr::map(
+        .x = self$calibration_targets$v_targets_names,
+        .f = function(target_) {
+          data_ <- targets[[target_]] %>%
+            dplyr::mutate(id = dplyr::row_number()) %>%
+            dplyr::rename(target = value)
+          # add lb and ub if missing:
+          if(is.null(data_$lb)) {
+            data$lb = data$target * (1 - error_)
+            data$ub = data$target * (1 + error_)
+          }
+          data_ <- data_ %>%
+            tidyr::pivot_longer(
+              cols = c(target, MAP_values$Label),
+              names_to = "Method",
+              values_to = "Values")
+          # plot line or bar based on number of data points per target
+          if(nrow(targets[[target_]]) < 4) {
+            data_ %>%
+              ggplot2::ggplot() +
+              ggplot2::geom_col(
+                ggplot2::aes(
+                  x = Values,
+                  y = Method,
+                  fill = Method,
+                  colour = Method),
+                alpha = 0.4,
+                show.legend = FALSE,
+                position = "dodge2") +
+              ggplot2::geom_errorbarh(
+                # data = data_ %>%
+                #   dplyr::filter(Method == "target"),
+                data = data_,
+                ggplot2::aes(
+                  y = Method,
+                  xmax = ub,
+                  xmin = lb),
+                colour = "black",
+                position = "dodge2") +
+              ggplot2::labs(
+                title = "Observed and simulated maximum-a-posteriori target(s)",
+                subtitle = if(!is.null(cal_HID_markov_2$
+                                      calibration_targets$
+                                      v_targets_labels[[target_]])) {
+                  cal_HID_markov_2$calibration_targets$
+                    v_targets_labels[[target_]]
+                } else {
+                  target_
+                }
+              ) +
+              ggplot2::theme(
+                plot.title.position = "plot",
+                plot.subtitle = ggplot2::element_text(
+                  face = "italic"))
+          } else {
 
+          }
+        }
+      )
+
+      return(targets_plots)
     },
     ### Prior-posterior plots:----
     # Create combined prior and posterior line plots
@@ -1499,11 +1638,13 @@ calibR_R6 <- R6::R6Class(
     # @param plots_row Number of rows in faceted plot or faceted plot page
     # @param plots_col Number of columns in faceted plot or faceted plot
     # page
+    # @param log_scaled TRUE to use log scale
     #
     draw_priors_posteriors_line_plots = function(data_,
                                                  ggplot_,
                                                  plots_row,
-                                                 plots_col) {
+                                                 plots_col,
+                                                 log_scaled = TRUE) {
       plots_ <- purrr::map(
         .x = self$calibration_parameters$v_params_names,
         .f = function(.parameter_) {
@@ -1521,25 +1662,98 @@ calibR_R6 <- R6::R6Class(
             ggplot2::geom_density(
               data = data_ %>%
                 dplyr::filter(Label %in% "Prior") %>%
-                dplyr::rename(Prior = Label),
+                dplyr::rename(Method = Label),
               ggplot2::aes(
                 x = .data[[.parameter_]],
                 y = ..scaled..),
               fill = "red",
               col = "red",
               alpha = 0.2) +
-            ggplot2::scale_x_log10() +
             ggplot2::theme(
               axis.ticks.y = ggplot2::element_blank(),
               axis.text.y = ggplot2::element_blank(),
               axis.title.y = ggplot2::element_blank())
+          # if log scale to be used
+          if(log_scaled) {
+            plot_ <- plot_ +
+              ggplot2::scale_x_log10()
+          }
           # If true values are known
           if(!is.null(self$calibration_parameters$
                       v_params_true_values[[.parameter_]])) {
             plot_ <- plot_ +
               ggplot2::geom_vline(
                 xintercept = self$calibration_parameters$
-                  v_params_true_values[[.parameter_]])
+                  v_params_true_values[[.parameter_]],
+                show.legend = TRUE)
+          }
+          # ggplot2 or trelliscopejs
+          if(ggplot_) {
+            plot_ <- plot_ +
+              ggplot2::facet_wrap(
+                facets = ~ Method,
+                nrow = plots_row,
+                ncol = plots_col,
+                scales = "free")
+          } else {
+            plot_ <- plot_ +
+              trelliscopejs::facet_trelliscope(
+                facets = ~ Method,
+                nrow = 2,
+                ncol = 3,
+                self_contained = TRUE)
+          }
+        }
+      )
+
+      return(plots_)
+    },
+    # Create combined prior and posterior line plots
+    #
+    # @param data_ Data set containing prior and posterior data
+    # @param ggplot_ Boolean, \code{TRUE} to generate ggplot2 otherwise
+    # trelliscopejs
+    # @param plots_row Number of rows in faceted plot or faceted plot page
+    # @param plots_col Number of columns in faceted plot or faceted plot
+    # page
+    # @param log_scaled TRUE to use log scale
+    #
+    draw_density_line_plots = function(data_,
+                                       ggplot_,
+                                       plots_row,
+                                       plots_col,
+                                       log_scaled = FALSE) {
+      plots_ <- purrr::map(
+        .x = self$calibration_parameters$v_params_names,
+        .f = function(.parameter_) {
+          plot_ <- data_ %>%
+            dplyr::rename(Method = Label) %>%
+            ggplot2::ggplot() +
+            ggplot2::geom_density(
+              ggplot2::aes(
+                x = .data[[.parameter_]],
+                y = ..scaled..,
+                colour = Method,
+                fill = Method),
+              alpha = 0.4,
+              show.legend = FALSE) +
+            ggplot2::theme(
+              axis.ticks.y = ggplot2::element_blank(),
+              axis.text.y = ggplot2::element_blank(),
+              axis.title.y = ggplot2::element_blank())
+          # if log scale to be used
+          if(log_scaled) {
+            plot_ <- plot_ +
+              ggplot2::scale_x_log10()
+          }
+          # If true values are known
+          if(!is.null(self$calibration_parameters$
+                      v_params_true_values[[.parameter_]])) {
+            plot_ <- plot_ +
+              ggplot2::geom_vline(
+                xintercept = self$calibration_parameters$
+                  v_params_true_values[[.parameter_]],
+                show.legend = TRUE)
           }
           # ggplot2 or trelliscopejs
           if(ggplot_) {
@@ -1570,11 +1784,15 @@ calibR_R6 <- R6::R6Class(
     # @param plots_row Number of rows in faceted plot or faceted plot page
     # @param plots_col Number of columns in faceted plot or faceted plot
     # page
+    # @param log_scaled TRUE to use log scale
+    # @param facet_scale_ "fixed" or "free" facet scale
     #
     draw_priors_posteriors_box_plots = function(data_,
                                                 ggplot_,
                                                 plots_row,
-                                                plots_col) {
+                                                plots_col,
+                                                log_scaled = TRUE,
+                                                facet_scale_ = "fixed") {
       plots_ <- purrr::map(
         .x = self$calibration_parameters$v_params_names,
         .f = function(.parameter_) {
@@ -1592,26 +1810,40 @@ calibR_R6 <- R6::R6Class(
             ggplot2::geom_boxplot(
               ggplot2::aes(
                 x = .data[[.parameter_]],
-                y = Method,
                 group = Method,
                 fill = Method,
                 col = Method),
               alpha = 0.4,
               show.legend = FALSE) +
-            ggplot2::scale_x_log10() +
             ggplot2::theme(
-              axis.title.y = ggplot2::element_blank())
+              axis.title.y = ggplot2::element_blank(),
+              axis.ticks.y = ggplot2::element_blank(),
+              axis.text.y = ggplot2::element_blank(),
+              panel.border = ggplot2::element_rect(
+                colour = "black",
+                fill = NA))
           # If true values are known
           if(!is.null(self$calibration_parameters$
                       v_params_true_values[[.parameter_]])) {
             plot_ <- plot_ +
               ggplot2::geom_vline(
                 xintercept = self$calibration_parameters$
-                  v_params_true_values[[.parameter_]])
+                  v_params_true_values[[.parameter_]],
+                show.legend = TRUE)
+          }
+          # if log scale to be used
+          if(log_scaled) {
+            plot_ <- plot_ +
+              ggplot2::scale_x_log10()
           }
           # ggplot2 or trelliscopejs
           if(ggplot_) {
-            plot_
+            plot_ +
+              ggplot2::facet_wrap(
+                facets = ~ Method,
+                scales = facet_scale_,
+                ncol = 1,
+                strip.position = "left")
           } else {
             plot_ <- plot_ +
               trelliscopejs::facet_trelliscope(
@@ -1682,8 +1914,7 @@ calibR_R6 <- R6::R6Class(
           self$PSA_samples$directed,
           self$PSA_samples$bayesian) %>%
           purrr::transpose() %>%
-          .[['PSA_calib_draws']]
-      )
+          .[['PSA_calib_draws']]) + 1
       if(tot_plots > ceiling(sqrt(tot_plots))^2 -
          ceiling(sqrt(tot_plots))) {
         p_row <- p_col <- ceiling(sqrt(tot_plots))
@@ -1694,30 +1925,52 @@ calibR_R6 <- R6::R6Class(
 
       # One parameter at a time:
       ## ggplot2:
-      self$plots$prior_posterior$parameters_ggplot$line <-
+      self$plots$prior_posterior$parameters_ggplot$line_log <-
         private$draw_priors_posteriors_line_plots(
           data_ = data_,
           ggplot_ = TRUE,
           plots_row = p_row,
-          plots_col = p_col
+          plots_col = p_row,
+          log_scaled = TRUE
+        )
+      self$plots$prior_posterior$parameters_ggplot$line <-
+        private$draw_density_line_plots(
+          data_ = data_,
+          ggplot_ = TRUE,
+          plots_row = p_row,
+          plots_col = p_col,
+          log_scaled = FALSE
         )
       self$plots$prior_posterior$parameters_ggplot$box <-
         private$draw_priors_posteriors_box_plots(
           data_ = data_,
           ggplot_ = TRUE,
           plots_row = p_row,
-          plots_col = p_col
+          plots_col = p_col,
+          log_scaled = TRUE,
+          facet_scale_ = "free"
         )
-      names(self$plots$prior_posterior$parameters_ggplot$line) <-
+
+      names(self$plots$prior_posterior$parameters_ggplot$line_log) <-
+        names(self$plots$prior_posterior$parameters_ggplot$line) <-
         names(self$plots$prior_posterior$parameters_ggplot$box) <-
         self$calibration_parameters$v_params_names
       ## trelliscopejs:
-      self$plots$prior_posterior$parameters_trelli$line <-
+      self$plots$prior_posterior$parameters_trelli$line_log <-
         private$draw_priors_posteriors_line_plots(
           data_ = data_,
           ggplot_ = FALSE,
           plots_row = p_row,
-          plots_col = p_col
+          plots_col = p_col,
+          log_scaled = TRUE
+        )
+      self$plots$prior_posterior$parameters_trelli$line <-
+        private$draw_density_line_plots(
+          data_ = data_,
+          ggplot_ = FALSE,
+          plots_row = p_row,
+          plots_col = p_col,
+          log_scaled = FALSE
         )
       self$plots$prior_posterior$parameters_trelli$box <-
         private$draw_priors_posteriors_box_plots(
@@ -1726,7 +1979,8 @@ calibR_R6 <- R6::R6Class(
           plots_row = p_row,
           plots_col = p_col
         )
-      names(self$plots$prior_posterior$parameters_trelli$line) <-
+      names(self$plots$prior_posterior$parameters_trelli$line_log) <-
+        names(self$plots$prior_posterior$parameters_trelli$line) <-
         names(self$plots$prior_posterior$parameters_trelli$box) <-
         self$calibration_parameters$v_params_names
 
@@ -1753,7 +2007,8 @@ calibR_R6 <- R6::R6Class(
             y = ..scaled..),
           fill = "cadetblue",
           col = "blue",
-          alpha = 0.4) +
+          alpha = 0.4,
+          show.legend = TRUE) +
         ggplot2::geom_density(
           data = data2_ %>%
             dplyr::filter(Label %in% "Prior") %>%
@@ -1763,7 +2018,8 @@ calibR_R6 <- R6::R6Class(
             y = ..scaled..),
           fill = "red",
           col = "red",
-          alpha = 0.2) +
+          alpha = 0.2,
+          show.legend = TRUE) +
         ggplot2::theme(
           axis.ticks.y = ggplot2::element_blank(),
           axis.text.y = ggplot2::element_blank(),
@@ -1873,7 +2129,7 @@ calibR_R6 <- R6::R6Class(
         title = "Scatterplot matrix of calibration parameters grouped by calibration methods"
       )
     },
-    ### Printable corralation plot:----
+    ### Printable correlation plot:----
     print_pair_correlations = function() {
       data_ <- c(self$PSA_samples$random,
                  self$PSA_samples$directed,
@@ -1890,6 +2146,78 @@ calibR_R6 <- R6::R6Class(
       data_ %>%
         dplyr::select(-c(Overall_fit, Label)) %>%
         psych::pairs.panels()
+    },
+    ## Helper functions:----
+    # Get Maximum a-posteriori (MAP) values from calibration methods
+    #
+    # @param .l_calib_res_lists
+    # @param .search_method
+    # @param .l_params
+    # @param .transform_
+    #
+    get_MAP_values = function(.l_calib_res_lists,
+                              .search_method,
+                              .l_params = self$calibration_parameters,
+                              .transform_ = self$transform_parameters) {
+      # Apply appropriate extraction method:
+      if(.search_method == 'directed') {
+        results <- purrr::map_df(
+          .x = .l_calib_res_lists,
+          .f = function(.list_ = .x) {
+            max_a_posteriori <- .list_[[1]][["Estimate"]] %>%
+              t() %>%
+              dplyr::as_tibble(~ vctrs::vec_as_names(
+                ...,
+                repair = "unique",
+                quiet = TRUE)) %>%
+              `colnames<-`(.list_[[1]][["Params"]]) %>%
+              dplyr::mutate(
+                Label =
+                  .list_[[1]][["Calibration method"]],
+                Overall_fit =
+                  round(.list_[[1]][["GOF value"]], 2)) %>%
+              dplyr::select(Label, Overall_fit, dplyr::everything())
+          })
+      } else if(.search_method == 'random') {
+        results <- purrr::map_df(
+          .x = .l_calib_res_lists,
+          .f = function(.data_ = .x) {
+            max_a_posteriori = .data_ %>%
+              dplyr::slice_max(
+                order_by = Overall_fit,
+                n = 1) %>%
+              dplyr::slice_head(n = 1) %>%
+              dplyr::select(Label, Overall_fit, dplyr::everything())
+          }
+        )
+      } else {
+        results <- purrr::map_df(
+          .x = .l_calib_res_lists,
+          .f = function(.list_ = .x) {
+            max_a_posteriori <- .list_[["Results"]] %>%
+              dplyr::mutate(Label = .list_[["Method"]]) %>%
+              dplyr::select(-Posterior_prob) %>%
+              dplyr::slice_max(
+                order_by = Overall_fit,
+                n = 1) %>%
+              dplyr::slice_head(n = 1) %>%
+              dplyr::select(Label, Overall_fit, dplyr::everything())
+          }
+        )
+      }
+
+      return(results)
+    },
+    # Get the names of the calibration methods used
+    #
+    get_calibration_methods = function() {
+      methods_names <- names(
+        c(self$PSA_samples$random,
+          self$PSA_samples$directed,
+          self$PSA_samples$bayesian)
+        )
+
+      return(methods_names)
     }
   )
 )

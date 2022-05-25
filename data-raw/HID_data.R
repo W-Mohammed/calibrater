@@ -1,16 +1,20 @@
 # This script defines the l_params and l_targets list for the HID_Markov():
 
 v_targets_names <- c("Prev", "Surv", "Trt_vol")
+v_targets_labels <- c("Prev" = "Prevalence",
+                      "Surv" = "Survival",
+                      "Trt_vol" = "Treatment volume")
 v_targets_weights <- c(1, 1, 1)
 v_targets_dists <- c("binom", "norm", "norm")
 l_targets <-
   list('v_targets_names' = v_targets_names,
+       'v_targets_labels' = v_targets_labels,
        'Prev' = dplyr::tibble('value' = c(5/100, 15/100, 10/100), # %
                        'se' = c(5/1000, 15/1000, 10/1000), # 10% of value
                        'x' = c(25, 75, 50),
                        'size' = 500,
-                       'lb' = c(3.3, 12, 7.5),
-                       'ub' = c(7.1, 18.3, 12.8)),
+                       'lb' = c(3.3/100, 12/100, 7.5/100),
+                       'ub' = c(7.1/100, 18.3/100, 12.8/100)),
        'Surv' = dplyr::tibble('value' = 10,
                        'se' = 2/1.96,
                        'lb' = 8,

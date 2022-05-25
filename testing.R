@@ -1888,7 +1888,7 @@ cal_HID_markov_2$draw_plots()
 #     temp = 10,
 #     tmax = 10)
 
-# New testing:----
+# testing:----
 cal = calibR_R6$
   new(
     .model = HID_markov_2,
@@ -1968,7 +1968,7 @@ saveRDS(object = cal, file = "data/calibrateR_R6_flat.rds")
 # exp(mean(cal$prior_samples$LHS$mu_e))
 # exp(mean(cal$prior_samples$LHS$mu_e))
 
-# New testing 2 params:----
+# testing 2 params:----
 cal_2p = calibR_R6$
   new(
     .model = HID_markov_2,
@@ -2027,7 +2027,7 @@ cal_2p$
 #saveRDS(object = cal_2p, file = "data/calibrateR_R6_flat_2p.rds")
 #cal_2p <- readRDS(file = "data/calibrateR_R6_flat_2p.rds")
 
-# New testing other 2 params:----
+# testing other 2 params:----
 cal_2p2 = calibR_R6$
   new(
     .model = HID_markov_2,
@@ -2081,7 +2081,7 @@ cal_2p2$draw_plots()
 # cal_2p2$
 #   run_PSA()
 # saveRDS(object = cal_2p2, file = "data/calibrateR_R6_flat_2p2.rds")
-# New testing all ps:----
+# testing all ps:----
 cal = calibR_R6$
   new(
     .model = HID_markov_2,
@@ -2155,8 +2155,143 @@ cal$draw_plots()
 # cal_2p2 = cal_HID_markov_2
 # saveRDS(object = cal_2p2, file = "inst/extdata/calibrateR_R6_flat_2p2.rds")
 
-cal = readRDS(file = "inst/extdata/calibrateR_R6_flat.rds")
-cal_HID_markov_2 = calibR_R6$
+# cal = readRDS(file = "inst/extdata/calibrateR_R6_flat.rds")
+# cal_HID_markov_2 = calibR_R6$
+#   new(
+#     .model = HID_markov_2,
+#     .params = HID_data2_flat$l_params,
+#     .targets = HID_data2_flat$l_targets,
+#     .args = NULL,
+#     .transform = TRUE
+#   )
+# cal_HID_markov_2$prior_samples = cal$prior_samples
+# cal_HID_markov_2$calibration_results = cal$calibration_results
+# cal_HID_markov_2$PSA_summary = cal$PSA_summary
+# cal_HID_markov_2$PSA_samples = cal$PSA_samples
+# cal_HID_markov_2$PSA_results = cal$PSA_results
+# cal_HID_markov_2$draw_plots()
+# cal_HID_markov_2$print_test()
+# cal = cal_HID_markov_2
+# saveRDS(object = cal, file = "inst/extdata/calibrateR_R6_flat.rds")
+
+# New testing 2 params:----
+cal_2p = calibR_R6$
+  new(
+    .model = HID_markov_2,
+    .params = HID_data2_flat_2p$l_params,
+    .targets = HID_data2_flat_2p$l_targets,
+    .args = NULL,
+    .transform = TRUE
+  )
+cal_2p$
+  sampleR(
+    .n_samples = 100000,
+    .sampling_method = c("LHS", "RGS", "FGS")
+  )
+cal_2p$
+  calibrateR_random(
+    .optim = FALSE,
+    .maximise = TRUE,
+    .weighted = TRUE,
+    .sample_method = "LHS",
+    .calibration_method = "LLK")
+cal_2p$
+  calibrateR_directed(
+    .gof = 'LLK',
+    .n_samples = 20,
+    .calibration_method = c('NM', 'BFGS', 'SANN'),
+    .sample_method = "LHS",
+    .max_iterations = 10000,
+    temp = 10,
+    tmax = 10)
+cal_2p$
+  calibrateR_bayesian(
+    .b_method = c('SIR', 'IMIS'),
+    .n_resample = 10000,
+    .IMIS_iterations = 400,
+    .IMIS_sample = 100)
+# cal_2p$calibration_results$bayesian$SIR %>%
+#   effective_sample_size(bayes_calib_output_list = .)
+# cal_2p$calibration_results$bayesian$SIR$Results %>%
+#   dplyr::distinct() %>%
+#   nrow()
+# cal_2p$calibration_results$bayesian$IMIS %>%
+#   effective_sample_size(bayes_calib_output_list = .)
+# cal_2p$calibration_results$bayesian$IMIS$Results %>%
+#   dplyr::distinct() %>%
+#   nrow()
+cal_2p$
+  sample_PSA_values(
+    .calibration_methods = c('Random', 'Directed', 'Bayesian'),
+    .PSA_samples = 1000)
+cal_2p$
+  draw_plots()
+cal_2p$
+  run_PSA()
+cal_2p$
+  summarise_PSA()
+saveRDS(object = cal_2p, file = "data/calibR_R6_flat_2p.rds")
+#cal_2p <- readRDS(file = "data/calibrateR_R6_flat_2p.rds")
+
+# New testing other 2 params:----
+cal_2p2 = calibR_R6$
+  new(
+    .model = HID_markov_2,
+    .params = HID_data2_flat_2p2$l_params,
+    .targets = HID_data2_flat_2p2$l_targets,
+    .args = NULL,
+    .transform = TRUE
+  )
+cal_2p2$
+  sampleR(
+    .n_samples = 100000,
+    .sampling_method = c("LHS", "RGS", "FGS")
+  )
+cal_2p2$
+  calibrateR_random(
+    .optim = FALSE,
+    .maximise = TRUE,
+    .weighted = TRUE,
+    .sample_method = "LHS",
+    .calibration_method = "LLK")
+cal_2p2$
+  calibrateR_directed(
+    .gof = 'LLK',
+    .n_samples = 20,
+    .calibration_method = c('NM', 'BFGS', 'SANN'),
+    .sample_method = "LHS",
+    .max_iterations = 10000,
+    temp = 10,
+    tmax = 10)
+cal_2p2$
+  calibrateR_bayesian(
+    .b_method = c('SIR', 'IMIS'),
+    .n_resample = 10000,
+    .IMIS_iterations = 400,
+    .IMIS_sample = 100)
+# cal_2p2$calibration_results$bayesian$SIR %>%
+#   effective_sample_size(bayes_calib_output_list = .)
+# cal_2p2$calibration_results$bayesian$SIR$Results %>%
+#   dplyr::distinct() %>%
+#   nrow()
+# cal_2p2$calibration_results$bayesian$IMIS %>%
+#   effective_sample_size(bayes_calib_output_list = .)
+# cal_2p2$calibration_results$bayesian$IMIS$Results %>%
+#   dplyr::distinct() %>%
+#   nrow()
+cal_2p2$
+  sample_PSA_values(
+    .calibration_methods = c('Random', 'Directed', 'Bayesian'),
+    .PSA_samples = 1000)
+cal_2p2$
+  draw_plots()
+cal_2p2$
+  run_PSA()
+cal_2p2$
+  summarise_PSA()
+saveRDS(object = cal_2p2, file = "data/calibR_R6_flat_2p2.rds")
+# New testing all ps:----
+cal = calibR_R6$
   new(
     .model = HID_markov_2,
     .params = HID_data2_flat$l_params,
@@ -2164,11 +2299,51 @@ cal_HID_markov_2 = calibR_R6$
     .args = NULL,
     .transform = TRUE
   )
-cal_HID_markov_2$prior_samples = cal$prior_samples
-cal_HID_markov_2$calibration_results = cal$calibration_results
-cal_HID_markov_2$PSA_summary = cal$PSA_summary
-cal_HID_markov_2$PSA_samples = cal$PSA_samples
-cal_HID_markov_2$PSA_results = cal$PSA_results
-cal_HID_markov_2$draw_plots()
-cal = cal_HID_markov_2
-# saveRDS(object = cal, file = "inst/extdata/calibrateR_R6_flat.rds")
+cal$
+  sampleR(
+    .n_samples = 100000,
+    .sampling_method = c("LHS", "RGS", "FGS")
+  )
+cal$
+  calibrateR_random(
+    .optim = FALSE,
+    .maximise = TRUE,
+    .weighted = TRUE,
+    .sample_method = "LHS",
+    .calibration_method = "LLK")
+cal$
+  calibrateR_directed(
+    .gof = 'LLK',
+    .n_samples = 10,
+    .calibration_method = c('NM', 'BFGS', 'SANN'),
+    .sample_method = "LHS",
+    .max_iterations = 10000,
+    temp = 10,
+    tmax = 10)
+cal$
+  calibrateR_bayesian(
+    .b_method = c('SIR', 'IMIS'),
+    .n_resample = 10000,
+    .IMIS_iterations = 400,
+    .IMIS_sample = 100)
+# cal$calibration_results$bayesian$SIR %>%
+#   effective_sample_size(bayes_calib_output_list = .)
+# cal$calibration_results$bayesian$SIR$Results %>%
+#   dplyr::distinct() %>%
+#   nrow()
+# cal$calibration_results$bayesian$IMIS %>%
+#   effective_sample_size(bayes_calib_output_list = .)
+# cal$calibration_results$bayesian$IMIS$Results %>%
+#   dplyr::distinct() %>%
+#   nrow()
+cal$
+  sample_PSA_values(
+    .calibration_methods = c('Random', 'Directed', 'Bayesian'),
+    .PSA_samples = 1000)
+cal$
+  run_PSA()
+cal$
+  draw_plots()
+cal$
+  summarise_PSA()
+saveRDS(object = cal_2p2, file = "data/calibR_R6_flat.rds")
