@@ -72,10 +72,7 @@ calibR_R6 <- R6::R6Class(
       self$calibration_parameters <- .params
       self$calibration_targets <- .targets
       self$transform_parameters <- .transform
-      self$model_predictions$truth <- self$calibration_model(
-        .v_params_ = self$calibration_parameters$v_params_true_values,
-        transform_ = FALSE
-      )
+      self$model_predictions$truth <- self$calibration_model()
 
       invisible(self)
 
@@ -288,6 +285,8 @@ calibR_R6 <- R6::R6Class(
       private$draw_pair_correlations()
       if(isTRUE(print_pair_correlations))
         private$print_pair_correlations()
+      private$draw_targets()
+
     },
 
     #' Print
@@ -297,7 +296,6 @@ calibR_R6 <- R6::R6Class(
     #'
     #' @examples
     print_test = function() {
-      self$plots$targets <- private$draw_targets()
       # if(!is.null(self$calibration_results$random)) {
       #   tmp <- purrr::map_df(
       #     .x = c('random', 'directed', 'bayesian'),
@@ -1608,10 +1606,10 @@ calibR_R6 <- R6::R6Class(
                 position = "dodge2") +
               ggplot2::labs(
                 title = "Observed and simulated maximum-a-posteriori target(s)",
-                subtitle = if(!is.null(cal_HID_markov_2$
+                subtitle = if(!is.null(self$
                                       calibration_targets$
                                       v_targets_labels[[target_]])) {
-                  cal_HID_markov_2$calibration_targets$
+                  self$calibration_targets$
                     v_targets_labels[[target_]]
                 } else {
                   target_
@@ -1626,8 +1624,9 @@ calibR_R6 <- R6::R6Class(
           }
         }
       )
+      names(targets_plots) <- self$calibration_targets$v_targets_names
 
-      return(targets_plots)
+      self$plots$targets <- targets_plots
     },
     ### Prior-posterior plots:----
     # Create combined prior and posterior line plots

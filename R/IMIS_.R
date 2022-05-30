@@ -131,14 +131,35 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
           theta.NM = optimizer$par
 
           # The more efficient optimizer uses the BFGS algorithm
-          optimizer = stats::optim(
-            theta.NM,
-            posterior,
-            method = "BFGS",
-            hessian = TRUE,
-            control = list(
-              parscale = sqrt(diag(Sig2_global)),
-              maxit = 1000)
+          # added tryCatch to avoid: non-finite finite-difference value [1]
+          optimizer = tryCatch(
+            expr = {
+              stats::optim(
+                theta.NM,
+                posterior,
+                method = "BFGS",
+                hessian = TRUE,
+                control = list(
+                  parscale = sqrt(diag(Sig2_global)),
+                  maxit = 1000)
+              )
+            }, error = function(e) {
+              tryCatch(
+                expr = {
+                  stats::optim(
+                    theta.NM,
+                    posterior,
+                    method = "Nelder-Mead",
+                    hessian = TRUE,
+                    control = list(
+                      parscale = sqrt(diag(Sig2_global)),
+                      maxit = 1000)
+                  )
+                }, error = function(e) {
+                  optimizer
+                }
+              )
+            }
           )
           ptm.use = (proc.time() - ptm.opt)[3]
 
