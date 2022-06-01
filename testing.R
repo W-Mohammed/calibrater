@@ -2521,3 +2521,23 @@ cal$
 cal$
   summarise_PSA()
 saveRDS(object = cal, file = "inst/extdata/calibR_R6_flat_unT.rds")
+
+#####################################################################
+cal = calibR_R6$
+  new(
+    .model = HID_markov,
+    .params = HID_data_flat_2p$l_params,
+    .targets = HID_data_flat_2p$l_targets,
+    .args = NULL,
+    .transform = FALSE
+  )
+cal$prior_samples = calibR_R6_flat_2p_unT$prior_samples
+cal$calibration_results = calibR_R6_flat_2p_unT$calibration_results
+cal$PSA_samples = calibR_R6_flat_2p_unT$PSA_samples
+cal$PSA_results = calibR_R6_flat_2p_unT$PSA_results
+cal$PSA_summary = calibR_R6_flat_2p_unT$PSA_summary
+cal$draw_plots()
+cal$summarise_PSA()
+
+
+

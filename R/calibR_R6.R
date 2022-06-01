@@ -36,6 +36,8 @@ calibR_R6 <- R6::R6Class(
     model_predictions = NULL,
     #' @field prior_samples a Decision-Analytic model under calibration
     prior_samples = NULL,
+    #' @field prior_samples a Decision-Analytic model under calibration
+    maximum_a_posteriori = NULL,
     #' @field PSA_samples calibration and un-calibration parameters
     #' samples
     PSA_samples = NULL,
@@ -347,9 +349,9 @@ calibR_R6 <- R6::R6Class(
     ## Calibration methods:----
     ### Random:----
     calibrateR_random_ = function(
-      .calibration_method,
-      .sample_method,
-      ...) {
+    .calibration_method,
+    .sample_method,
+    ...) {
       if("RGS" %in% .sample_method){
         #### SSE:----
         if("SSE" %in% .calibration_method)
@@ -413,13 +415,13 @@ calibR_R6 <- R6::R6Class(
     },
     ### Directed:----
     calibrateR_directed_ = function(
-      .gof,
-      .n_samples,
-      .calibration_method,
-      .sample_method,
-      .max_iterations,
-      temp,
-      tmax) {
+    .gof,
+    .n_samples,
+    .calibration_method,
+    .sample_method,
+    .max_iterations,
+    temp,
+    tmax) {
       if("RGS" %in% .sample_method) {
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
@@ -880,8 +882,8 @@ calibR_R6 <- R6::R6Class(
     # generated.
     #
     sample_prior_IMIS = function(
-      .n_samples,
-      .l_params = self$calibration_parameters) {
+    .n_samples,
+    .l_params = self$calibration_parameters) {
       # Get the number of parameters:
       n_params <- length(.l_params[["v_params_names"]])
       # Get LHS samples:
@@ -920,9 +922,9 @@ calibR_R6 <- R6::R6Class(
     # to their original scale.
     #
     log_priors = function(
-      .samples,
-      .l_params = self$calibration_parameters,
-      .transform = self$transform_parameters) {
+    .samples,
+    .l_params = self$calibration_parameters,
+    .transform = self$transform_parameters) {
 
       v_params_names <- .l_params[['v_params_names']]
       names(.l_params[['v_params_names']]) <- v_params_names
@@ -971,9 +973,9 @@ calibR_R6 <- R6::R6Class(
     # to their original scale.
     #
     log_prior = function(
-      .samples,
-      .l_params = self$calibration_parameters,
-      .transform = self$transform_parameters) {
+    .samples,
+    .l_params = self$calibration_parameters,
+    .transform = self$transform_parameters) {
 
       v_params_names <- .l_params[['v_params_names']]
       names(.l_params[['v_params_names']]) <- v_params_names
@@ -1021,9 +1023,9 @@ calibR_R6 <- R6::R6Class(
     # to their original scale.
     #
     calculate_priors = function(
-      .samples,
-      .l_params = self$calibration_parameters,
-      .transform = self$transform_parameters) {
+    .samples,
+    .l_params = self$calibration_parameters,
+    .transform = self$transform_parameters) {
 
       v_prior <-  exp(private$log_priors(
         .samples = .samples,
@@ -1042,9 +1044,9 @@ calibR_R6 <- R6::R6Class(
     # to their original scale.
     #
     calculate_prior = function(
-      .samples,
-      .l_params = self$calibration_parameters,
-      .transform = self$transform_parameters) {
+    .samples,
+    .l_params = self$calibration_parameters,
+    .transform = self$transform_parameters) {
 
       v_prior <-  exp(private$log_prior(
         .samples = .samples,
@@ -1067,10 +1069,10 @@ calibR_R6 <- R6::R6Class(
     # target.
     #
     log_likelihood = function(
-      .samples,
-      .func = self$calibration_model,
-      .args = self$calibration_model_args,
-      .l_targets = self$calibration_targets) {
+    .samples,
+    .func = self$calibration_model,
+    .args = self$calibration_model_args,
+    .l_targets = self$calibration_targets) {
       # Ensure .samples is of appropriate class and named properly:
       if(is.null(dim(.samples))) # If vector, change to matrix
         .samples <- t(.samples)
@@ -1154,10 +1156,10 @@ calibR_R6 <- R6::R6Class(
     # target.
     #
     calculate_likelihood = function(
-      .samples,
-      .func = self$calibration_model,
-      .args = self$calibration_model_args,
-      .l_targets = self$calibration_targets) {
+    .samples,
+    .func = self$calibration_model,
+    .args = self$calibration_model_args,
+    .l_targets = self$calibration_targets) {
 
       v_likelihood <-  exp(private$log_likelihood(
         .samples = .samples,
@@ -1185,12 +1187,12 @@ calibR_R6 <- R6::R6Class(
     # to their original scale.
     #
     log_posteriors = function(
-      .samples,
-      .func = self$calibration_model,
-      .args = self$calibration_model_args,
-      .l_targets = self$calibration_targets,
-      .l_params = self$calibration_parameters,
-      .transform = self$transform_parameters) {
+    .samples,
+    .func = self$calibration_model,
+    .args = self$calibration_model_args,
+    .l_targets = self$calibration_targets,
+    .l_params = self$calibration_parameters,
+    .transform = self$transform_parameters) {
       # calculate log prior:
       l_prior <- private$log_priors(
         .samples = .samples,
@@ -1225,12 +1227,12 @@ calibR_R6 <- R6::R6Class(
     # to their original scale.
     #
     log_posterior = function(
-      .samples,
-      .func = self$calibration_model,
-      .args = self$calibration_model_args,
-      .l_targets = self$calibration_targets,
-      .l_params = self$calibration_parameters,
-      .transform = self$transform_parameters) {
+    .samples,
+    .func = self$calibration_model,
+    .args = self$calibration_model_args,
+    .l_targets = self$calibration_targets,
+    .l_params = self$calibration_parameters,
+    .transform = self$transform_parameters) {
       # calculate log prior:
       l_prior <- private$log_prior(
         .samples = .samples,
@@ -1265,12 +1267,12 @@ calibR_R6 <- R6::R6Class(
     # to their original scale.
     #
     calculate_posteriors = function(
-      .samples,
-      .func = self$calibration_model,
-      .args = self$calibration_model_args,
-      .l_targets = self$calibration_targets,
-      .l_params = self$calibration_parameters,
-      .transform = self$transform_parameters) {
+    .samples,
+    .func = self$calibration_model,
+    .args = self$calibration_model_args,
+    .l_targets = self$calibration_targets,
+    .l_params = self$calibration_parameters,
+    .transform = self$transform_parameters) {
       # calculate the posterior:
       posterior <- exp(private$log_posteriors(
         .samples = .samples,
@@ -1299,12 +1301,12 @@ calibR_R6 <- R6::R6Class(
     # to their original scale.
     #
     calculate_posterior = function(
-      .samples,
-      .func = self$calibration_model,
-      .args = self$calibration_model_args,
-      .l_targets = self$calibration_targets,
-      .l_params = self$calibration_parameters,
-      .transform = self$transform_parameters) {
+    .samples,
+    .func = self$calibration_model,
+    .args = self$calibration_model_args,
+    .l_targets = self$calibration_targets,
+    .l_params = self$calibration_parameters,
+    .transform = self$transform_parameters) {
       # calculate the posterior:
       posterior <- exp(private$log_posterior(
         .samples = .samples,
@@ -1342,16 +1344,16 @@ calibR_R6 <- R6::R6Class(
     # to their original scale.
     #
     calibrateModel_beyesian = function(
-      .b_method = "SIR",
-      .func = self$calibration_model,
-      .args = self$calibration_model_args,
-      .l_targets = self$calibration_targets,
-      .l_params = self$calibration_parameters,
-      .transform = self$transform_parameters,
-      .samples,
-      .n_resample = 1000,
-      .IMIS_sample = 1000,
-      .IMIS_iterations = 30) {
+    .b_method = "SIR",
+    .func = self$calibration_model,
+    .args = self$calibration_model_args,
+    .l_targets = self$calibration_targets,
+    .l_params = self$calibration_parameters,
+    .transform = self$transform_parameters,
+    .samples,
+    .n_resample = 1000,
+    .IMIS_sample = 1000,
+    .IMIS_iterations = 30) {
       # Ensure that .b_method is supported by the function:
       stopifnot(".b_method is supported by the function" =
                   any(.b_method %in% c('SIR', 'IMIS', 'MCMC')))
@@ -1448,8 +1450,8 @@ calibR_R6 <- R6::R6Class(
     # @param .PSA_samples number of PSA samples
     #
     sample_PSA_values_ = function(
-      .calibration_methods,
-      .PSA_samples) {
+    .calibration_methods,
+    .PSA_samples) {
       # Random calibration methods:
       if('Random' %in% .calibration_methods) {
         self$PSA_samples$random <- calibR::PSA_calib_values(
@@ -1487,7 +1489,7 @@ calibR_R6 <- R6::R6Class(
     # @param .PSA_unCalib_values_ PSA values for un-calibrated parameters
     #
     run_PSA_ = function(
-      .PSA_unCalib_values_) {
+    .PSA_unCalib_values_) {
       self$PSA_results <- calibR::run_PSA(
         .func_ = self$calibration_model,
         .PSA_calib_values_ = c(self$PSA_samples$random,
@@ -1506,14 +1508,25 @@ calibR_R6 <- R6::R6Class(
         .x = self$PSA_results,
         .f = function(PSA) {
           data_ <- dplyr::tibble(
+            'calibration_method' = if(nrow(PSA) == 1) paste(PSA$Label[[1]], "_*") else PSA$Label[[1]],
             'mean_inc_Costs' = mean(PSA$inc_cost, na.rm = TRUE),
             'mean_inc_LY' = mean(PSA$inc_LY, na.rm = TRUE),
             'iNMB' = (mean_inc_LY * 30000) - mean_inc_Costs,
-            'calibration_method' = if(nrow(PSA) == 1) paste(PSA$Label[[1]], "_*") else PSA$Label[[1]],
-            'goodness_of_fit' = mean(PSA$Overall_fit, na.rm = TRUE)
+            'PSA_samples' = nrow(PSA),
+            'mean_goodness_of_fit' = mean(PSA$Overall_fit, na.rm = TRUE),
+            'effective_sample_size' =
+              if(PSA$Label[[1]] %in% c("SIR", "IMIS")) {
+                calibR::effective_sample_size(
+                  bayes_calib_output_list = self$calibration_results$
+                    bayesian[[PSA$Label[[1]]]])
+              } else {
+                NA
+              }
           )
         }
       )
+      self$PSA_summary <- self$PSA_summary %>%
+        dplyr::arrange(dplyr::desc(mean_goodness_of_fit))
     },
     ## Plots:----
     ### Target plots:----
@@ -1524,7 +1537,7 @@ calibR_R6 <- R6::R6Class(
     #
     draw_targets = function(error_ = 0.1) {
       # Get MAP values:
-      MAP_values <- purrr::map_df(
+      self$maximum_a_posteriori$parameters <- purrr::map_df(
         .x = c('random', 'directed', 'bayesian'),
         .f = function(.category_) {
           private$get_MAP_values(
@@ -1533,38 +1546,43 @@ calibR_R6 <- R6::R6Class(
         }
       )
       # Run model using MAP values
-      MAP_results <- purrr::pmap(
-        .l = MAP_values,
+      self$maximum_a_posteriori$simulated_results <- purrr::pmap(
+        .l = self$maximum_a_posteriori$parameters,
         .f = function(...) {
           params = list(...)
           self$calibration_model(params)
         }
       )
       # set names:
-      names(MAP_results) <- MAP_values$Label
+      names(self$maximum_a_posteriori$simulated_results) <-
+        self$maximum_a_posteriori$parameters$Label
       # Combine MAP results for same calibration targets
-      MAP_targets <- purrr::map(
+      self$maximum_a_posteriori$simulated_endpoints <- purrr::map(
         .x = self$calibration_targets$v_targets_names,
         .f = function(target_) {
           purrr::map_dfc(
-            .x = MAP_results,
+            .x = self$maximum_a_posteriori$simulated_results,
             .f = function(results_) {
               results_[[target_]]
             }
           )
         }
       )
-      names(MAP_targets) <- self$calibration_targets$v_targets_names
+      names(self$maximum_a_posteriori$simulated_endpoints) <-
+        self$calibration_targets$v_targets_names
       # Merge MAP simulated targets with
       targets <- purrr::map(
         .x = self$calibration_targets$v_targets_names,
         .f = function(target) {
           self$calibration_targets[[target]] %>%
-            dplyr::bind_cols(MAP_targets[[target]])
+            dplyr::bind_cols(
+              self$maximum_a_posteriori$simulated_endpoints[[target]]
+            )
         }
       )
       names(targets) <- self$calibration_targets$v_targets_names
       # Plot targets:
+      ## geom_col:
       targets_plots <- purrr::map(
         .x = self$calibration_targets$v_targets_names,
         .f = function(target_) {
@@ -1576,9 +1594,14 @@ calibR_R6 <- R6::R6Class(
             data$lb = data$target * (1 - error_)
             data$ub = data$target * (1 + error_)
           }
-          data_ <- data_ %>%
+          # query x and y axis variables:
+          x_var = self$calibration_targets$v_targets_axis[[target_]]$x
+          y_var = self$calibration_targets$v_targets_axis[[target_]]$y
+          # prepare data:
+          data_ <- data_  %>%
             tidyr::pivot_longer(
-              cols = c(target, MAP_values$Label),
+              cols = c(target,
+                       self$maximum_a_posteriori$parameters$Label),
               names_to = "Method",
               values_to = "Values")
           # plot line or bar based on number of data points per target
@@ -1589,14 +1612,13 @@ calibR_R6 <- R6::R6Class(
                 ggplot2::aes(
                   x = Values,
                   y = Method,
-                  fill = Method,
-                  colour = Method),
-                alpha = 0.4,
-                show.legend = FALSE,
+                  fill = as.factor(.data[[y_var]]),
+                  colour = as.factor(.data[[y_var]])),
+            alpha = 0.4,
+                show.legend = TRUE,
                 position = "dodge2") +
               ggplot2::geom_errorbarh(
-                # data = data_ %>%
-                #   dplyr::filter(Method == "target"),
+              # ggplot2::geom_linerange(
                 data = data_,
                 ggplot2::aes(
                   y = Method,
@@ -1607,18 +1629,22 @@ calibR_R6 <- R6::R6Class(
               ggplot2::labs(
                 title = "Observed and simulated maximum-a-posteriori target(s)",
                 subtitle = if(!is.null(self$
-                                      calibration_targets$
-                                      v_targets_labels[[target_]])) {
+                                       calibration_targets$
+                                       v_targets_labels[[target_]])) {
                   self$calibration_targets$
                     v_targets_labels[[target_]]
                 } else {
                   target_
-                }
+                },
+                caption = "Black bars represent target's 95% confidence internval",
+                fill = y_var,
+                colour = y_var
               ) +
               ggplot2::theme(
                 plot.title.position = "plot",
                 plot.subtitle = ggplot2::element_text(
-                  face = "italic"))
+                  face = "italic"),
+                plot.caption.position= "plot")
           } else {
 
           }
@@ -1626,7 +1652,172 @@ calibR_R6 <- R6::R6Class(
       )
       names(targets_plots) <- self$calibration_targets$v_targets_names
 
-      self$plots$targets <- targets_plots
+      self$plots$targets$col_plots <- targets_plots
+
+      ## geom_point:
+      targets_plots <- purrr::map(
+        .x = self$calibration_targets$v_targets_names,
+        .f = function(target_) {
+          data_ <- targets[[target_]] %>%
+            dplyr::mutate(id = dplyr::row_number()) %>%
+            dplyr::rename(target = value)
+          # add lb and ub if missing:
+          if(is.null(data_$lb)) {
+            data$lb = data$target * (1 - error_)
+            data$ub = data$target * (1 + error_)
+          }
+          # query x and y axis variables:
+          x_var = self$calibration_targets$v_targets_axis[[target_]]$x
+          y_var = self$calibration_targets$v_targets_axis[[target_]]$y
+          if(is.null(x_var)) x_var = id
+          if(is.null(y_var)) y_var = id
+          # prepare data:
+          data_ <- data_ %>%
+            tidyr::pivot_longer(
+              cols = c(target,
+                       self$maximum_a_posteriori$parameters$Label),
+              names_to = "Method",
+              values_to = "Values")
+          # plot line or bar based on number of data points per target
+          if(nrow(targets[[target_]]) < 4) {
+            data_ %>%
+              dplyr::filter(!Method == "target") %>%
+              ggplot2::ggplot() +
+              ggplot2::geom_point(
+                ggplot2::aes(
+                  x = .data[[y_var]],
+                  y = Values,
+                  fill = Method,
+                  colour = Method),
+                alpha = 0.4,
+                show.legend = TRUE) +
+              ggplot2::geom_line(
+                ggplot2::aes(
+                  x = .data[[y_var]],
+                  y = Values,
+                  colour = Method),
+                alpha = 0.4,
+                show.legend = FALSE) +
+              ggplot2::geom_errorbar(
+                data = data_ %>%
+                  dplyr::filter(Method == "target"),
+                ggplot2::aes(
+                  x = .data[[y_var]],
+                  ymax = ub,
+                  ymin = lb,
+                  colour = Method),
+                colour = "black",
+                position = "dodge2") +
+              ggplot2::labs(
+                title = "Observed and simulated maximum-a-posteriori target(s)",
+                subtitle = if(!is.null(self$
+                                       calibration_targets$
+                                       v_targets_labels[[target_]])) {
+                  self$calibration_targets$
+                    v_targets_labels[[target_]]
+                } else {
+                  target_
+                },
+                caption = "Black bars represent target's 95% confidence internval"
+              ) +
+              ggplot2::theme(
+                plot.title.position = "plot",
+                plot.subtitle = ggplot2::element_text(
+                  face = "italic"),
+                plot.caption.position= "plot")
+          } else {
+
+          }
+        }
+      )
+      names(targets_plots) <- self$calibration_targets$v_targets_names
+
+      self$plots$targets$point_plots <- targets_plots
+
+      # geom vlines:
+      ## geom_point:
+      targets_plots <- purrr::map(
+        .x = self$calibration_targets$v_targets_names,
+        .f = function(target_) {
+          data_ <- targets[[target_]] %>%
+            dplyr::mutate(id = dplyr::row_number()) %>%
+            dplyr::rename(target = value)
+          # add lb and ub if missing:
+          if(is.null(data_$lb)) {
+            data$lb = data$target * (1 - error_)
+            data$ub = data$target * (1 + error_)
+          }
+          # query x and y axis variables:
+          x_var = self$calibration_targets$v_targets_axis[[target_]]$x
+          y_var = self$calibration_targets$v_targets_axis[[target_]]$y
+          # prepare data:
+          data_ <- data_ %>%
+            tidyr::pivot_longer(
+              cols = c(target,
+                       self$maximum_a_posteriori$parameters$Label),
+              names_to = "Method",
+              values_to = "Values")
+          # plot line or bar based on number of data points per target
+          if(nrow(targets[[target_]]) < 4) {
+            data_ %>%
+              dplyr::filter(!Method == "target") %>%
+              ggplot2::ggplot() +
+              ggplot2::geom_point(
+                ggplot2::aes(
+                  x = Values,
+                  y = .data[[y_var]],
+                  group = Method,
+                  colour = Method),
+                show.legend = TRUE) +
+              # 95% CI lower bound:
+              ggplot2::geom_vline(
+                data = data_ %>%
+                  dplyr::filter(Method == "target"),
+                ggplot2::aes(
+                  xintercept = lb),
+                lty = 2,
+                colour = "black") +
+              # target mean value:
+              ggplot2::geom_vline(
+                data = data_ %>%
+                  dplyr::filter(Method == "target"),
+                ggplot2::aes(
+                  xintercept = Values),
+                lty = 1,
+                colour = "black") +
+              # 95% CI upper bound:
+              ggplot2::geom_vline(
+                data = data_ %>%
+                  dplyr::filter(Method == "target"),
+                ggplot2::aes(
+                  xintercept = ub),
+                lty = 2,
+                colour = "black") +
+              ggplot2::labs(
+                title = "Observed and simulated maximum-a-posteriori target(s)",
+                subtitle = if(!is.null(self$
+                                       calibration_targets$
+                                       v_targets_labels[[target_]])) {
+                  self$calibration_targets$
+                    v_targets_labels[[target_]]
+                } else {
+                  target_
+                },
+                caption = "Black bars represent target's 95% confidence internval") +
+              ggplot2::theme(
+                plot.title.position = "plot",
+                plot.subtitle = ggplot2::element_text(
+                  face = "italic"),
+                plot.caption.position= "plot")
+          } else {
+
+          }
+        }
+      )
+      names(targets_plots) <- self$calibration_targets$v_targets_names
+
+      self$plots$targets$vline_plots <- targets_plots
+
     },
     ### Prior-posterior plots:----
     # Create combined prior and posterior line plots
@@ -1651,31 +1842,63 @@ calibR_R6 <- R6::R6Class(
             dplyr::filter(!Label %in% "Prior") %>%
             dplyr::rename(Method = Label) %>%
             ggplot2::ggplot() +
+            ggplot2::geom_histogram(
+              ggplot2::aes(
+                x = .data[[.parameter_]],
+                y = ..density..),
+              bins = 30,
+              fill = "white",
+              colour = "grey") +
             ggplot2::geom_density(
               ggplot2::aes(
                 x = .data[[.parameter_]],
-                y = ..scaled..),
+                y = ..density..),
               fill = "cadetblue",
               col = "blue",
               alpha = 0.4) +
+            ggplot2::geom_histogram(
+              data = data_ %>%
+                dplyr::filter(Label %in% "Prior") %>%
+                dplyr::rename(Method = Label),
+              ggplot2::aes(
+                x = .data[[.parameter_]],
+                y = ..density..),
+              bins = 30,
+              fill = "white",
+              colour = "grey") +
             ggplot2::geom_density(
               data = data_ %>%
                 dplyr::filter(Label %in% "Prior") %>%
                 dplyr::rename(Method = Label),
               ggplot2::aes(
                 x = .data[[.parameter_]],
-                y = ..scaled..),
+                y = ..density..),
               fill = "red",
               col = "red",
               alpha = 0.2) +
             ggplot2::theme(
+              plot.title.position = "plot",
+              plot.subtitle = ggplot2::element_text(
+                face = "italic"),
               axis.ticks.y = ggplot2::element_blank(),
               axis.text.y = ggplot2::element_blank(),
-              axis.title.y = ggplot2::element_blank())
+              axis.title.y = ggplot2::element_blank(),
+              axis.title.x = ggplot2::element_blank()) +
+            ggplot2::labs(
+              title = "Prior and posterior(s) plots",
+              subtitle = paste0(
+                "x-axis shows \"", .parameter_, "\" values"
+              ))
+
           # if log scale to be used
           if(log_scaled) {
             plot_ <- plot_ +
-              ggplot2::scale_x_log10()
+              ggplot2::scale_x_log10() +
+              ggplot2::labs(
+                title = "Prior and posterior(s) plots",
+                subtitle = paste0(
+                  "x-axis shows \"", .parameter_, "\" values on a logarithmic scale"
+                ))
           }
           # If true values are known
           if(!is.null(self$calibration_parameters$
@@ -1684,7 +1907,17 @@ calibR_R6 <- R6::R6Class(
               ggplot2::geom_vline(
                 xintercept = self$calibration_parameters$
                   v_params_true_values[[.parameter_]],
-                show.legend = TRUE)
+                show.legend = TRUE) +
+              ggplot2::labs(
+                caption = paste0(
+                  "The black vertical lines represent \"",
+                  .parameter_,
+                  "\"'s ",
+                  "true value: (",
+                  round(self$calibration_parameters$
+                    v_params_true_values[[.parameter_]], 2),
+                  ")"
+                ))
           }
           # ggplot2 or trelliscopejs
           if(ggplot_) {
@@ -1727,23 +1960,46 @@ calibR_R6 <- R6::R6Class(
         .f = function(.parameter_) {
           plot_ <- data_ %>%
             dplyr::rename(Method = Label) %>%
-            ggplot2::ggplot() +
+            ggplot2::ggplot(
+              ggplot2::aes(
+                x = .data[[.parameter_]])
+            ) +
             ggplot2::geom_density(
               ggplot2::aes(
-                x = .data[[.parameter_]],
-                y = ..scaled..,
+                # x = .data[[.parameter_]],
+                # y = ..scaled..,
                 colour = Method,
                 fill = Method),
               alpha = 0.4,
               show.legend = FALSE) +
+            ggplot2::geom_histogram(
+              ggplot2::aes(
+                # x = .data[[.parameter_]],
+                y = ..density..),
+              binwidth = 5,
+              fill = "white") +
             ggplot2::theme(
+              plot.title.position = "plot",
+              plot.subtitle = ggplot2::element_text(
+                face = "italic"),
               axis.ticks.y = ggplot2::element_blank(),
               axis.text.y = ggplot2::element_blank(),
-              axis.title.y = ggplot2::element_blank())
+              axis.title.y = ggplot2::element_blank(),
+              axis.title.x = ggplot2::element_blank()) +
+            ggplot2::labs(
+              title = "Prior and posterior(s) plots",
+              subtitle = paste0(
+                "x-axis shows \"", .parameter_, "\" values"
+              ))
           # if log scale to be used
           if(log_scaled) {
             plot_ <- plot_ +
-              ggplot2::scale_x_log10()
+              ggplot2::scale_x_log10() +
+              ggplot2::labs(
+                title = "Prior and posterior(s) plots",
+                subtitle = paste0(
+                  "x-axis shows \"", .parameter_, "\" values on a logarithmic scale"
+                ))
           }
           # If true values are known
           if(!is.null(self$calibration_parameters$
@@ -1752,7 +2008,17 @@ calibR_R6 <- R6::R6Class(
               ggplot2::geom_vline(
                 xintercept = self$calibration_parameters$
                   v_params_true_values[[.parameter_]],
-                show.legend = TRUE)
+                show.legend = TRUE) +
+              ggplot2::labs(
+                caption = paste0(
+                  "The black vertical lines represent \"",
+                  .parameter_,
+                  "\"'s ",
+                  "true value: (",
+                  round(self$calibration_parameters$
+                          v_params_true_values[[.parameter_]], 2),
+                  ")"
+                ))
           }
           # ggplot2 or trelliscopejs
           if(ggplot_) {
@@ -1815,12 +2081,21 @@ calibR_R6 <- R6::R6Class(
               alpha = 0.4,
               show.legend = FALSE) +
             ggplot2::theme(
+              plot.title.position = "plot",
+              plot.subtitle = ggplot2::element_text(
+                face = "italic"),
+              axis.title.x = ggplot2::element_blank(),
               axis.title.y = ggplot2::element_blank(),
               axis.ticks.y = ggplot2::element_blank(),
               axis.text.y = ggplot2::element_blank(),
               panel.border = ggplot2::element_rect(
                 colour = "black",
-                fill = NA))
+                fill = NA)) +
+            ggplot2::labs(
+              title = "Prior and posterior(s) box-plots",
+              subtitle = paste0(
+                "x-axis shows \"", .parameter_, "\" values"
+              ))
           # If true values are known
           if(!is.null(self$calibration_parameters$
                       v_params_true_values[[.parameter_]])) {
@@ -1828,12 +2103,26 @@ calibR_R6 <- R6::R6Class(
               ggplot2::geom_vline(
                 xintercept = self$calibration_parameters$
                   v_params_true_values[[.parameter_]],
-                show.legend = TRUE)
+                show.legend = TRUE) +
+              ggplot2::labs(
+                caption = paste0(
+                  "The black vertical lines represent \"",
+                  .parameter_,
+                  "\"'s ",
+                  "true value: (",
+                  round(self$calibration_parameters$
+                          v_params_true_values[[.parameter_]], 2),
+                  ")"
+                ))
           }
           # if log scale to be used
           if(log_scaled) {
             plot_ <- plot_ +
-              ggplot2::scale_x_log10()
+              ggplot2::scale_x_log10() +
+              ggplot2::labs(
+                subtitle = paste0(
+                  "x-axis shows \"", .parameter_, "\" values on a logarithmic scale"
+                ))
           }
           # ggplot2 or trelliscopejs
           if(ggplot_) {
@@ -1842,7 +2131,9 @@ calibR_R6 <- R6::R6Class(
                 facets = ~ Method,
                 scales = facet_scale_,
                 ncol = 1,
-                strip.position = "left")
+                strip.position = "left") +
+              ggplot2::theme(
+                strip.text.y.left = ggplot2::element_text(angle = 0))
           } else {
             plot_ <- plot_ +
               trelliscopejs::facet_trelliscope(
@@ -1933,11 +2224,11 @@ calibR_R6 <- R6::R6Class(
           log_scaled = TRUE
         )
       self$plots$prior_posterior$parameters_ggplot$line <-
-        private$draw_density_line_plots(
+        private$draw_priors_posteriors_line_plots(
           data_ = data_,
           ggplot_ = TRUE,
           plots_row = p_row,
-          plots_col = p_col,
+          plots_col = p_row,
           log_scaled = FALSE
         )
       self$plots$prior_posterior$parameters_ggplot$box <-
@@ -1985,6 +2276,11 @@ calibR_R6 <- R6::R6Class(
 
       # All parameters at once:
       ## ggplot2:
+      self$plots$prior_posterior$all_ggplot$line_log <-
+        gridExtra::marrangeGrob(
+          grobs = self$plots$prior_posterior$parameters_ggplot$line_log,
+          nrow = 1,
+          ncol = 1)
       self$plots$prior_posterior$all_ggplot$line <-
         gridExtra::marrangeGrob(
           grobs = self$plots$prior_posterior$parameters_ggplot$line,
@@ -2067,25 +2363,34 @@ calibR_R6 <- R6::R6Class(
                 data_ %>%
                   dplyr::select(-c(Overall_fit, Label))
               ),
-              ggplot2::aes(color = Label),
+              ggplot2::aes(color = Label, fill = Label),
               upper = list(
                 continuous = GGally::wrap(
                   'cor',
                   size = 3)),
               lower = list(
-                combo = GGally::wrap(
-                  "facethist",
-                  bins = 30)),
+                continuous = GGally::wrap(
+                  "points",
+                  alpha = 0.5)),
               diag = list(
                 continuous = GGally::wrap(
                   "densityDiag",
-                  alpha = 0.5)),
-              title = paste(
-                "Scatterplot matrix of calibration parameters grouped by",
-                method,
-                "calibration method(s)"
+                  alpha = 0.5))
               )
-            )
+
+            self$plots$correlations[[method]] <-
+              self$plots$correlations[[method]] +
+              ggplot2::labs(
+                title = "Pair-wise correlation matirx of calibration parameters",
+                subtitle =paste(
+                  "grouped by",
+                  method,
+                  "calibration method(s)")) +
+              ggplot2::theme(
+                plot.title.position = "plot",
+                plot.subtitle = ggplot2::element_text(
+                  face = "italic"))
+
           }, error = function(e) {
             message(paste0("\r", e))
 
@@ -2112,21 +2417,31 @@ calibR_R6 <- R6::R6Class(
           data_ %>%
             dplyr::select(-c(Overall_fit, Label))
         ),
-        ggplot2::aes(color = Label),
+        ggplot2::aes(color = Label, fill = Label),
         upper = list(
           continuous = GGally::wrap(
             'cor',
             size = 3)),
         lower = list(
-          combo = GGally::wrap(
-            "facethist",
-            bins = 30)),
+          continuous = GGally::wrap(
+            "points",
+            alpha = 0.5)),
         diag = list(
           continuous = GGally::wrap(
             "densityDiag",
-            alpha = 0.5)),
-        title = "Scatterplot matrix of calibration parameters grouped by calibration methods"
+            alpha = 0.5))
       )
+
+      self$plots$correlations$all <-
+        self$plots$correlations$all +
+        ggplot2::labs(
+          title = "Pair-wise correlation matirx of calibration parameters",
+          subtitle = "grouped by calibration method(s)") +
+        ggplot2::theme(
+          plot.title.position = "plot",
+          plot.subtitle = ggplot2::element_text(
+            face = "italic"))
+
     },
     ### Printable correlation plot:----
     print_pair_correlations = function() {
@@ -2214,7 +2529,7 @@ calibR_R6 <- R6::R6Class(
         c(self$PSA_samples$random,
           self$PSA_samples$directed,
           self$PSA_samples$bayesian)
-        )
+      )
 
       return(methods_names)
     }
