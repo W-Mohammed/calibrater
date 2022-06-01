@@ -1966,15 +1966,12 @@ calibR_R6 <- R6::R6Class(
             ) +
             ggplot2::geom_density(
               ggplot2::aes(
-                # x = .data[[.parameter_]],
-                # y = ..scaled..,
                 colour = Method,
                 fill = Method),
               alpha = 0.4,
               show.legend = FALSE) +
             ggplot2::geom_histogram(
               ggplot2::aes(
-                # x = .data[[.parameter_]],
                 y = ..density..),
               binwidth = 5,
               fill = "white") +

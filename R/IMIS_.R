@@ -144,19 +144,37 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                   maxit = 1000)
               )
             }, error = function(e) {
+              message(paste0("BFGS - first attempt failed: ", e))
+
               tryCatch(
                 expr = {
                   stats::optim(
                     theta.NM,
                     posterior,
-                    method = "Nelder-Mead",
+                    method = "BFGS",
                     hessian = TRUE,
                     control = list(
                       parscale = sqrt(diag(Sig2_global)),
                       maxit = 1000)
                   )
-                }, error = function(e) {
-                  optimizer
+                } error = function(e) {
+                  message(paste0("BFGS - second attempt failed: ", e))
+
+                  tryCatch(
+                    expr = {
+                      stats::optim(
+                        theta.NM,
+                        posterior,
+                        method = "BFGS",
+                        hessian = TRUE,
+                        control = list(
+                          parscale = sqrt(diag(Sig2_global)),
+                          maxit = 1000)
+                      )
+                    } error = function(e) {
+                      optimizer
+                    }
+                  )
                 }
               )
             }
