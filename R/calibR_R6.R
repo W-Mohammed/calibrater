@@ -1848,7 +1848,7 @@ calibR_R6 <- R6::R6Class(
                 y = ..density..),
               bins = 30,
               fill = "white",
-              colour = "grey") +
+              colour = "darkgrey") +
             ggplot2::geom_density(
               ggplot2::aes(
                 x = .data[[.parameter_]],
@@ -1865,7 +1865,7 @@ calibR_R6 <- R6::R6Class(
                 y = ..density..),
               bins = 30,
               fill = "white",
-              colour = "grey") +
+              colour = "darkgrey") +
             ggplot2::geom_density(
               data = data_ %>%
                 dplyr::filter(Label %in% "Prior") %>%
