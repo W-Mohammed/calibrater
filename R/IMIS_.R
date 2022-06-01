@@ -157,7 +157,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                       parscale = sqrt(diag(Sig2_global)),
                       maxit = 1000)
                   )
-                } error = function(e) {
+                }, error = function(e) {
                   message(paste0("BFGS - second attempt failed: ", e))
 
                   tryCatch(
@@ -171,7 +171,9 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                           parscale = sqrt(diag(Sig2_global)),
                           maxit = 1000)
                       )
-                    } error = function(e) {
+                    }, error = function(e) {
+                      message(paste0("BFGS - third attempt failed: ", e))
+
                       optimizer
                     }
                   )
