@@ -144,7 +144,10 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                   maxit = 1000)
               )
             }, error = function(e) {
-              message(paste0("BFGS - first attempt failed: ", e))
+              message(
+                paste0(sqrt(diag(Sig2_global)),
+                       "BFGS - first attempt failed: ",
+                       e))
 
               tryCatch(
                 expr = {
@@ -158,7 +161,9 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                       maxit = 1000)
                   )
                 }, error = function(e) {
-                  message(paste0("BFGS - second attempt failed: ", e))
+                  message(
+                    paste0("BFGS - second attempt failed: ",
+                           e))
 
                   tryCatch(
                     expr = {
@@ -172,9 +177,29 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                           maxit = 1000)
                       )
                     }, error = function(e) {
-                      message(paste0("BFGS - third attempt failed: ", e))
+                      message(
+                        paste0("BFGS - third attempt failed: ",
+                               e))
 
-                      optimizer
+                      tryCatch(
+                        expr = {
+                          stats::optim(
+                            theta.NM,
+                            posterior,
+                            method = "BFGS",
+                            hessian = FALSE,
+                            control = list(
+                              parscale = sqrt(diag(Sig2_global)),
+                              maxit = 1000)
+                          )
+                        }, error = function(e) {
+                          message(
+                            paste0("BFGS - fourth attempt failed: ",
+                                   e))
+
+                          optimizer
+                        }
+                      )
                     }
                   )
                 }
@@ -182,6 +207,19 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
             }
           )
           ptm.use = (proc.time() - ptm.opt)[3]
+
+          # Try a different way to get the hessian:
+          if(is.null(optimizer$hessian)) {
+            optimizer$hessian <- numDeriv::hessian(
+              func = posterior,
+              x = optimizer$par
+            )
+            if(!is.null(optimizer$hessian)) {
+              message("hessian estimated using the numDeriv package!")
+            } else {
+              message("hessian estimation via the numDeriv package failed!")
+            }
+          }
 
           print(paste(
             "maximum posterior=",

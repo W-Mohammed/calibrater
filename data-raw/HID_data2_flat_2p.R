@@ -35,15 +35,15 @@ l_targets <-
 v_params_names <- c("mu_e", "b")
 v_params_true_values <- c('mu_e' = 0.05300305, 'b' = 0.27229941)
 v_params_dists <- c("norm", "unif")
-v_true_params_dists <- c("lnorm", "unif")
-args <- list(list(mean = -3.121, sd = 2),
+v_true_params_dists <- c("lnorm", "beta")
+args <- list(list(mean = 0, sd = 2),
              list(min = -16, max = 16))
-true_args <- list(list(meanlog = -3.121, sdlog = 2),
+true_args <- list(list(meanlog = 0, sdlog = 1),
                   list(min = 0, max = 1))
-extra_args <- list(list(min = log(0.000001), max = log(50)),
+extra_args <- list(list(min = log(0.000001), max = log(15)),
                    list(min = prob_to_logit(1.125352e-07),
                         max = prob_to_logit(0.9999999)))
-true_extra_args <- list(list(min = 0, max = 50),
+true_extra_args <- list(list(min = 0, max = 15),
                         list(min = 0, max = 1))
 backTransform <- list('mu_e' = "exp",
                       'b' = "logit_to_prob")

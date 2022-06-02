@@ -29,6 +29,7 @@ Imports:
     GGally,
     ggplot2,
     gridExtra,
+    kableExtra,
     lhs,
     magrittr,
     matrixcalc,

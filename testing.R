@@ -2360,7 +2360,7 @@ cal_2p = calibR_R6$
 cal_2p$
   sampleR(
     .n_samples = 100000,
-    .sampling_method = c("LHS", "RGS", "FGS")
+    .sampling_method = c("LHS")
   )
 cal_2p$
   calibrateR_random(
@@ -2404,7 +2404,9 @@ cal_2p$
   run_PSA()
 cal_2p$
   summarise_PSA()
+
 saveRDS(object = cal_2p, file = "inst/extdata/calibR_R6_flat_2p_unT.rds")
+rm(list = ls())
 #cal_2p <- readRDS(file = "data/calibrateR_R6_flat_2p.rds")
 
 # New testing other 2 params (untransformed):----
@@ -2419,7 +2421,7 @@ cal_2p2 = calibR_R6$
 cal_2p2$
   sampleR(
     .n_samples = 100000,
-    .sampling_method = c("LHS", "RGS", "FGS")
+    .sampling_method = c("LHS")
   )
 cal_2p2$
   calibrateR_random(
@@ -2463,7 +2465,9 @@ cal_2p2$
   run_PSA()
 cal_2p2$
   summarise_PSA()
+
 saveRDS(object = cal_2p2, file = "inst/extdata/calibR_R6_flat_2p2_unT.rds")
+rm(list = ls())
 # New testing all ps  (untransformed):----
 cal = calibR_R6$
   new(
@@ -2476,7 +2480,7 @@ cal = calibR_R6$
 cal$
   sampleR(
     .n_samples = 100000,
-    .sampling_method = c("LHS", "RGS", "FGS")
+    .sampling_method = c("LHS")
   )
 cal$
   calibrateR_random(
@@ -2520,24 +2524,138 @@ cal$
   draw_plots()
 cal$
   summarise_PSA()
+
 saveRDS(object = cal, file = "inst/extdata/calibR_R6_flat_unT.rds")
+rm(list = ls())
 
-#####################################################################
-cal = calibR_R6$
-  new(
-    .model = HID_markov,
-    .params = HID_data_flat_2p$l_params,
-    .targets = HID_data_flat_2p$l_targets,
-    .args = NULL,
-    .transform = FALSE
-  )
-cal$prior_samples = calibR_R6_flat_2p_unT$prior_samples
-cal$calibration_results = calibR_R6_flat_2p_unT$calibration_results
-cal$PSA_samples = calibR_R6_flat_2p_unT$PSA_samples
-cal$PSA_results = calibR_R6_flat_2p_unT$PSA_results
-cal$PSA_summary = calibR_R6_flat_2p_unT$PSA_summary
-cal$draw_plots()
-cal$summarise_PSA()
+##Amendments #################################################
+# cal = calibR_R6$
+#   new(
+#     .model = HID_markov,
+#     .params = HID_data_flat_2p$l_params,
+#     .targets = HID_data_flat_2p$l_targets,
+#     .args = NULL,
+#     .transform = FALSE
+#   )
+# cal$prior_samples = calibR_R6_flat_2p_unT$prior_samples
+# cal$calibration_results = calibR_R6_flat_2p_unT$calibration_results
+# cal$PSA_samples = calibR_R6_flat_2p_unT$PSA_samples
+# cal$PSA_results = calibR_R6_flat_2p_unT$PSA_results
+# cal$PSA_summary = calibR_R6_flat_2p_unT$PSA_summary
+# cal$draw_plots()
+# cal$summarise_PSA()
+#
+# saveRDS(object = cal, file = "inst/extdata/calibR_R6_flat_2p_unT.rds")
+# rm(list = ls())
+
+# cal = calibR_R6$
+#   new(
+#     .model = HID_markov_2,
+#     .params = HID_data2_flat_2p$l_params,
+#     .targets = HID_data2_flat_2p$l_targets,
+#     .args = NULL,
+#     .transform = TRUE
+#   )
+# cal$prior_samples = calibR_R6_flat_2p$prior_samples
+# cal$calibration_results = calibR_R6_flat_2p$calibration_results
+# cal$PSA_samples = calibR_R6_flat_2p$PSA_samples
+# cal$PSA_results = calibR_R6_flat_2p$PSA_results
+# cal$PSA_summary = calibR_R6_flat_2p$PSA_summary
+# cal$draw_plots()
+# cal$summarise_PSA()
+#
+# saveRDS(object = cal, file = "inst/extdata/calibR_R6_flat_2p.rds")
+# rm(list = ls())
+
+# cal = calibR_R6$
+#   new(
+#     .model = HID_markov,
+#     .params = HID_data_flat_2p2$l_params,
+#     .targets = HID_data_flat_2p2$l_targets,
+#     .args = NULL,
+#     .transform = FALSE
+#   )
+# cal$prior_samples = calibR_R6_flat_2p2_unT$prior_samples
+# cal$calibration_results = calibR_R6_flat_2p2_unT$calibration_results
+# cal$PSA_samples = calibR_R6_flat_2p2_unT$PSA_samples
+# cal$PSA_results = calibR_R6_flat_2p2_unT$PSA_results
+# cal$PSA_summary = calibR_R6_flat_2p2_unT$PSA_summary
+# cal$draw_plots()
+# cal$summarise_PSA()
+#
+# saveRDS(object = cal, file = "inst/extdata/calibR_R6_flat_2p2_unT.rds")
+# rm(list = ls())
+
+# cal = calibR_R6$
+#   new(
+#     .model = HID_markov_2,
+#     .params = HID_data2_flat_2p2$l_params,
+#     .targets = HID_data2_flat_2p2$l_targets,
+#     .args = NULL,
+#     .transform = TRUE
+#   )
+# cal$prior_samples = calibR_R6_flat_2p2$prior_samples
+# cal$calibration_results = calibR_R6_flat_2p2$calibration_results
+# cal$PSA_samples = calibR_R6_flat_2p2$PSA_samples
+# cal$PSA_results = calibR_R6_flat_2p2$PSA_results
+# cal$PSA_summary = calibR_R6_flat_2p2$PSA_summary
+# cal$draw_plots()
+# cal$summarise_PSA()
+#
+# saveRDS(object = cal, file = "inst/extdata/calibR_R6_flat_2p2.rds")
+# rm(list = ls())
+
+# cal = calibR_R6$
+#   new(
+#     .model = HID_markov,
+#     .params = HID_data_flat$l_params,
+#     .targets = HID_data_flat$l_targets,
+#     .args = NULL,
+#     .transform = FALSE
+#   )
+# cal$prior_samples = calibR_R6_flat_unT$prior_samples
+# cal$calibration_results = calibR_R6_flat_unT$calibration_results
+# cal$PSA_samples = calibR_R6_flat_unT$PSA_samples
+# cal$PSA_results = calibR_R6_flat_unT$PSA_results
+# cal$PSA_summary = calibR_R6_flat_unT$PSA_summary
+# cal$
+#   calibrateR_bayesian(
+#     .b_method = c('SIR', 'IMIS'),
+#     .n_resample = 10000,
+#     .IMIS_iterations = 400,
+#     .IMIS_sample = 100)
+# cal$
+#   sample_PSA_values(
+#     .calibration_methods = c('Random', 'Directed', 'Bayesian'),
+#     .PSA_samples = 1000)
+# cal$
+#   run_PSA()
+# cal$
+#   draw_plots()
+# cal$
+#   summarise_PSA()
+#
+# saveRDS(object = cal, file = "inst/extdata/calibR_R6_flat_unT.rds")
+# rm(list = ls())
+
+# cal = calibR_R6$
+#   new(
+#     .model = HID_markov_2,
+#     .params = HID_data2_flat$l_params,
+#     .targets = HID_data2_flat$l_targets,
+#     .args = NULL,
+#     .transform = TRUE
+#   )
+# cal$prior_samples = calibR_R6_flat$prior_samples
+# cal$calibration_results = calibR_R6_flat$calibration_results
+# cal$PSA_samples = calibR_R6_flat$PSA_samples
+# cal$PSA_results = calibR_R6_flat$PSA_results
+# cal$PSA_summary = calibR_R6_flat$PSA_summary
+# cal$draw_plots()
+# cal$summarise_PSA()
+#
+# saveRDS(object = cal, file = "inst/extdata/calibR_R6_flat.rds")
+# rm(list = ls())
 
 
-
+#Rosenbrok################################

@@ -34,10 +34,10 @@ l_targets <-
        'v_targets_weights' = v_targets_weights)
 v_params_names <- c("mu_e", "b")
 v_params_true_values <- c('mu_e' = 0.05300305, 'b' = 0.27229941)
-v_params_dists <- c("lnorm", "unif")
-args <- list(list(meanlog = -3.121, sdlog = 2),
-             list(min = 0, max = 1))
-extra_args <- list(list(min = 0, max = 50),
+v_params_dists <- c("lnorm", "beta")
+args <- list(list(meanlog = 0, sdlog = 1),
+             list(shape1 = 1, shape2 = 1))
+extra_args <- list(list(min = 0, max = 15),
                    list(min = 0, max = 1))
 l_params <- list('v_params_names' = v_params_names,
                  'v_params_true_values' = v_params_true_values,

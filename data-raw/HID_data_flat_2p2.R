@@ -35,10 +35,10 @@ l_targets <-
 v_params_names <- c("mu_e", "rho")
 v_params_true_values <- c('mu_e' = 0.05300305, 'rho' = 0.62436759)
 v_params_dists <- c("lnorm", "lnorm")
-args <- list(list(meanlog = -3.121, sdlog = 2),
-             list(meanlog = -0.818, sdlog = 2))
-extra_args <- list(list(min = 0, max = 50),
-                   list(min = 0, max = 50))
+args <- list(list(meanlog = 0, sdlog = 1),
+             list(meanlog = 0, sdlog = 1))
+extra_args <- list(list(min = 0, max = 15),
+                   list(min = 0, max = 15))
 l_params <- list('v_params_names' = v_params_names,
                  'v_params_true_values' = v_params_true_values,
                  'v_params_dists' = v_params_dists,

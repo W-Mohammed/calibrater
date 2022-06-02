@@ -1490,15 +1490,30 @@ calibR_R6 <- R6::R6Class(
     #
     run_PSA_ = function(
     .PSA_unCalib_values_) {
-      self$PSA_results <- calibR::run_PSA(
-        .func_ = self$calibration_model,
-        .PSA_calib_values_ = c(self$PSA_samples$random,
-                               self$PSA_samples$directed,
-                               self$PSA_samples$bayesian),
-        .args_ = c(self$calibration_model_args,
-                   "calibrate_" = FALSE),
-        .PSA_unCalib_values_ = .PSA_unCalib_values_
-      )
+      self$PSA_results <-
+        # if the model supports parameter transformation:
+        if(!is.null(self$transform_parameters)) {
+          calibR::run_PSA(
+            .func_ = self$calibration_model,
+            .PSA_calib_values_ = c(self$PSA_samples$random,
+                                   self$PSA_samples$directed,
+                                   self$PSA_samples$bayesian),
+            .args_ = c(self$calibration_model_args,
+                       "calibrate_" = FALSE,
+                       "transform_" = FALSE),
+            .PSA_unCalib_values_ = .PSA_unCalib_values_
+          )
+        } else {
+          calibR::run_PSA(
+            .func_ = self$calibration_model,
+            .PSA_calib_values_ = c(self$PSA_samples$random,
+                                   self$PSA_samples$directed,
+                                   self$PSA_samples$bayesian),
+            .args_ = c(self$calibration_model_args,
+                       "calibrate_" = FALSE),
+            .PSA_unCalib_values_ = .PSA_unCalib_values_
+          )
+        }
     },
     ### Summarise PSA:----
     # Summarise PSA results
