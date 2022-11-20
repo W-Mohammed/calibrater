@@ -121,9 +121,11 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'
 #' @param .l_params A list that contains a vector of parameter names,
 #' distributions and distributions' arguments.
-#' @param .func A function defining the model to be optimised.
-#' @param .args A list of arguments to be passed to .func.
-#' @param .gof A goodness-of-fit function, default is log-likelihood.
+#' @param .func Function defining the model to be optimised.
+#' @param .args List of arguments to be passed to .func.
+#' @param .gof Name goodness-of-fit function, default is log-likelihood.
+#' @param .gof_func Goodness-of-fit function, when one other than supported
+#' is needed.
 #' @param .samples A table with sampled parameter values.
 #' @param .s_method A Character, "NM", "BFGS", "SANN" or "GA",
 #' that would identify the optimisation algorithm to be used.
@@ -263,8 +265,8 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 #'   maxit = 1000)
 #' }
 calibrateModel_directed <- function(.l_params = l_params, .func, .args,
-                                    .gof = 'LLK', .samples,
-                                    .s_method = 'NM',
+                                    .gof = 'LLK', .gof_func = NULL,
+                                    .samples, .s_method = 'NM',
                                     .maximise = TRUE,
                                     .l_targets, .seed_no = 1, ...) {
   set.seed(.seed_no)
@@ -273,9 +275,17 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
               any(.s_method %in% c('NM', 'BFGS', 'SANN', 'GA')))
   # Get the .gof method:
   .gof_name <- .gof
-  .gof <- switch(.gof,
-                 LLK = calibR::LLK_GOF,
-                 SSE = calibR::wSSE_GOF)
+  if(is.null(.gof_func)) {
+    .gof <- switch(.gof,
+                   LLK = calibR::LLK_GOF,
+                   SSE = calibR::wSSE_GOF)
+  } else {
+    .gof <- .gof_func
+    message(
+      paste0("using the bespoke goodness-of-fit function: ",
+             .gof_name))
+  }
+
   # Get parameters' names:
   params_name <- .l_params[['v_params_names']]
   # Capture the arguments in the .dots:
@@ -298,8 +308,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
               fn = .gof,
               method = .s_method,
               control = list( # control parameters
-                fnscale = ifelse(.maximise, -1, # maximiser/minimiser
-                                 arguments[['fnscale']]),
+                fnscale = ifelse(.maximise, -1, 1), # maximiser/minimiser
                 temp = arguments[['temp']], # SANN algorithm tuning
                 tmax = arguments[['tmax']], # SANN algorithm tuning
                 maxit = arguments[['maxit']]), # maximum iterations
@@ -307,7 +316,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
               .func = .func, # model to be optimised
               .args = .args, # arguments to be passed to the model
               .l_targets = .l_targets, # targets passed to .gof
-              .maximise = TRUE, # .gof should maximise
+              .maximise = .maximise, # .gof should maximise
               .optim = TRUE, # .gof reports gof value only
               seed_no = .seed_no
             )
@@ -406,11 +415,20 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
   # tryCatch errors where `GOF value` does not exist
   fits <- tryCatch(
     expr = {
-      fits %>%
-        rlist::list.exclude(is.null(.)) %>%
-        rlist::list.exclude(is.null(`GOF value`)) %>%
-        rlist::list.exclude(is.na(`GOF value`)) %>%
-        rlist::list.sort(-`GOF value`)
+      # if maximise, sort outputs in descending order:
+      if(.maximise) {
+        fits %>%
+          rlist::list.exclude(is.null(.)) %>%
+          rlist::list.exclude(is.null(`GOF value`)) %>%
+          rlist::list.exclude(is.na(`GOF value`)) %>%
+          rlist::list.sort(-`GOF value`)
+      } else {
+        fits %>%
+          rlist::list.exclude(is.null(.)) %>%
+          rlist::list.exclude(is.null(`GOF value`)) %>%
+          rlist::list.exclude(is.na(`GOF value`)) %>%
+          rlist::list.sort(`GOF value`)
+      }
     }, error = function(e) {
       message(paste0("\r", e))
 

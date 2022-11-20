@@ -2659,3 +2659,48 @@ rm(list = ls())
 
 
 #Rosenbrok################################
+
+cal <- calibR_R6$new(
+  .model = calibTest_rosen,
+  .args = NULL,
+  .params = ROSEN_data$l_params,
+  .targets = ROSEN_data$l_targets,
+  .transform = FALSE)
+
+cal$
+  sampleR(
+    .n_samples = 100000,
+    .sampling_method = c("LHS")
+  )
+cal$
+  calibrateR_directed(
+    .gof = 'Rosen',
+    .gof_func = calibTest_rosen,
+    .n_samples = 10,
+    .calibration_method = c('NM', 'BFGS', 'SANN'),
+    .sample_method = "LHS",
+    .max_iterations = 10000,
+    temp = 10,
+    tmax = 10,
+    .maximise = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

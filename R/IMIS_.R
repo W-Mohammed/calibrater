@@ -145,8 +145,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
               )
             }, error = function(e) {
               message(
-                paste0(sqrt(diag(Sig2_global)),
-                       "BFGS - first attempt failed: ",
+                paste0("BFGS - first attempt failed: ",
                        e))
 
               tryCatch(

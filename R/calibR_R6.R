@@ -123,7 +123,8 @@ calibR_R6 <- R6::R6Class(
     #' \code{1/(sd^2)}.
     #' @param .sample_method The method used to sample from the prior
     #' distribution.
-    #' @param .calibration_method The calibration process.
+    #' @param .calibration_method goodness-of-fit method name.
+    #' @param .calibration_function goodness-of-fit function.
     #'
     #' @return Executes the required calibration method and populates
     #' the samples internal object.
@@ -137,7 +138,8 @@ calibR_R6 <- R6::R6Class(
                                  .maximise = TRUE,
                                  .weighted = NULL,
                                  .sample_method = 'LHS',
-                                 .calibration_method = 'LLK') {
+                                 .calibration_method = 'LLK',
+                                 .calibration_function = NULL) {
       private$calibrateR_random_(
         .func = self$calibration_model,
         .args = self$calibration_model_args,
@@ -146,14 +148,18 @@ calibR_R6 <- R6::R6Class(
         .weighted = .weighted,
         .sample_method = .sample_method,
         .l_targets = self$calibration_targets,
-        .calibration_method = .calibration_method
+        .calibration_method = .calibration_method,
+        .calibration_function = .calibration_function
       )
     },
 
     #' @description
     #' Calibrate the model using one or more directed search method(s).
     #'
-    #' @param .gof A goodness-of-fit function, default is log-likelihood.
+    #' @param .gof Name of goodness-of-fit function, default is
+    #' log-likelihood.
+    #' @param .gof_func Goodness-of-fit function; if NULL (default) the
+    #' supported function defined by \code{.gof} will be used
     #' @param .n_samples Number of starting values (gausses) to use.
     #' @param .max_iterations Maximum number of algorithm iterations.
     #' @param temp SANN algorithm tuning parameter.
@@ -171,20 +177,24 @@ calibR_R6 <- R6::R6Class(
     #' \dontrun{
     #' }
     calibrateR_directed = function(.gof = 'LLK',
+                                   .gof_func = NULL,
                                    .n_samples = 1,
                                    .max_iterations = 1000,
                                    temp = 10,
                                    tmax = 10,
                                    .calibration_method = 'NM',
-                                   .sample_method = 'LHS') {
+                                   .sample_method = 'LHS',
+                                   .maximise = TRUE) {
       private$calibrateR_directed_(
         .gof = .gof,
+        .gof_func = .gof_func,
         .n_samples = .n_samples,
         .calibration_method = .calibration_method,
         .sample_method = .sample_method,
         .max_iterations = .max_iterations,
         temp = temp,
-        tmax = tmax
+        tmax = tmax,
+        .maximise = .maximise
       )
     },
 
@@ -350,6 +360,7 @@ calibR_R6 <- R6::R6Class(
     ### Random:----
     calibrateR_random_ = function(
     .calibration_method,
+    .calibration_function,
     .sample_method,
     ...) {
       if("RGS" %in% .sample_method){
@@ -371,6 +382,14 @@ calibR_R6 <- R6::R6Class(
               ...
             )
           )
+        #### others:----
+        # if(!.calibration_method %in% c("LLK", "SSE"))
+        #   self$calibration_results$
+        #     random[[paste0(.calibration_method, "RGS")]] <- list(
+        #       .calibration_function(
+        #         .samples = self$prior_samples[["RGS"]],
+        #       )
+        #     )
       }
       if("FGS" %in% .sample_method){
         #### SSE:----
@@ -416,12 +435,14 @@ calibR_R6 <- R6::R6Class(
     ### Directed:----
     calibrateR_directed_ = function(
     .gof,
+    .gof_func,
     .n_samples,
     .calibration_method,
     .sample_method,
     .max_iterations,
     temp,
-    tmax) {
+    tmax,
+    .maximise = TRUE) {
       if("RGS" %in% .sample_method) {
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
@@ -436,7 +457,7 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = "NM",
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -451,7 +472,24 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = "NM",
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("NM_", .gof, "_RGS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "NM",
+                maxit = .max_iterations,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -469,7 +507,7 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -484,7 +522,24 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("BFGS_", .gof, "_RGS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "BFGS",
+                maxit = .max_iterations,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -504,7 +559,7 @@ calibR_R6 <- R6::R6Class(
                 maxit = .max_iterations,
                 temp = temp,
                 tmax = tmax,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -521,7 +576,26 @@ calibR_R6 <- R6::R6Class(
                 maxit = .max_iterations,
                 temp = temp,
                 tmax = tmax,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("SANN_", .gof, "_RGS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "SANN",
+                maxit = .max_iterations,
+                temp = temp,
+                tmax = tmax,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -539,7 +613,7 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'GA',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -554,7 +628,24 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'GA',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("GA_", .gof, "_RGS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["RGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "GA",
+                maxit = .max_iterations,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -574,7 +665,7 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = "NM",
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -589,7 +680,24 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = "NM",
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("NM_", .gof, "_FGS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "NM",
+                maxit = .max_iterations,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -607,7 +715,7 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -622,7 +730,24 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("BFGS_", .gof, "_FGS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "BFGS",
+                maxit = .max_iterations,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -642,7 +767,7 @@ calibR_R6 <- R6::R6Class(
                 maxit = .max_iterations,
                 temp = temp,
                 tmax = tmax,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -659,7 +784,26 @@ calibR_R6 <- R6::R6Class(
                 maxit = .max_iterations,
                 temp = temp,
                 tmax = tmax,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("SANN_", .gof, "_FGS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "SANN",
+                maxit = .max_iterations,
+                temp = temp,
+                tmax = tmax,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -677,7 +821,7 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'GA',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -692,7 +836,24 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'GA',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("GA_", .gof, "_FGS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["FGS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "GA",
+                maxit = .max_iterations,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -712,7 +873,7 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = "NM",
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -727,7 +888,24 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = "NM",
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("NM_", .gof, "_LHS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "NM",
+                maxit = .max_iterations,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -745,7 +923,7 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -760,7 +938,24 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("BFGS_", .gof, "_LHS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "BFGS",
+                maxit = .max_iterations,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -780,7 +975,7 @@ calibR_R6 <- R6::R6Class(
                 maxit = .max_iterations,
                 temp = temp,
                 tmax = tmax,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -797,7 +992,26 @@ calibR_R6 <- R6::R6Class(
                 maxit = .max_iterations,
                 temp = temp,
                 tmax = tmax,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("SANN_", .gof, "_LHS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "SANN",
+                maxit = .max_iterations,
+                temp = temp,
+                tmax = tmax,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -815,7 +1029,7 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'GA',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
@@ -830,7 +1044,24 @@ calibR_R6 <- R6::R6Class(
                   dplyr::slice_sample(n = .n_samples),
                 .s_method = 'GA',
                 maxit = .max_iterations,
-                .maximise = TRUE,
+                .maximise = .maximise,
+                .l_params = self$calibration_parameters,
+                .l_targets = self$calibration_targets
+              )
+          ##### others:----
+          if(!.gof %in% c("LLK", "SSE"))
+            self$calibration_results$
+              directed[[paste0("GA_", .gof, "_LHS")]] <-
+              calibR::calibrateModel_directed(
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .gof = .gof,
+                .gof_func = .gof_func,
+                .samples = self$prior_samples[["LHS"]] %>%
+                  dplyr::slice_sample(n = .n_samples),
+                .s_method = "GA",
+                maxit = .max_iterations,
+                .maximise = .maximise,
                 .l_params = self$calibration_parameters,
                 .l_targets = self$calibration_targets
               )
