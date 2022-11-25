@@ -341,7 +341,8 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
               .hessian = fit$hessian, # hessian matrix estimated by optim()
               .convergence = fit$convergence, # 0 = successful
               .l_targets = .l_targets, # targets passed to .gof
-              .gof_name = .gof_name # name of the goodness-of-fit function
+              .gof_name = .gof_name, # name of the goodness-of-fit function
+              .maximiser = .maximise # whether the GOF was a maximiser
             )
           }, error = function(e) {
             message(paste0("\r", e))

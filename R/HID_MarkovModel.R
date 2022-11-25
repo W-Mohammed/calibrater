@@ -20,20 +20,18 @@
 #' \dontrun{
 #' }
 HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE,
-                       mu_e = 0.05300305, mu_l = 0.09492525,
-                       mu_t = 0.06949119, p = 0.35494867,
-                       r_l = 0.70669255, rho = 0.62436759,
-                       b = 0.27229941) {
+                       mu_e = 0.04, mu_l = 0.15, mu_t = 0.016, p = 0.12,
+                       r_l = 0.41, rho = 0.53, b = 0.21) {
   with(as.list(.v_params_), {
-    # mu_e: 0.05 [0.02, 0.12] Cause-specific mortality rate with early-stage disease
-    # mu_l: 0.25 [0.08, 0.59] Cause-specific mortality rate with late-stage disease
-    # mu_t: 0.025 [0.01, 0.06] Cause-specific mortality rate on treatment
-    # p: 0.10 [0.03, 0.24] Transition rate from early to late-stage disease
-    # r_l: 0.50 [0.17, 1.18] Rate of uptake onto treatment (r_l = late-stage disease)
+    # mu_e: 0.04 [0.036, 0.044] Cause-specific mortality rate with early-stage disease
+    # mu_l: 0.15 [0.13, 0.17] Cause-specific mortality rate with late-stage disease
+    # mu_t: 0.016 [0.013, 0.018] Cause-specific mortality rate on treatment
+    # p: 0.12 [0.09, 0.15] Transition rate from early to late-stage disease
+    # r_l: 0.41 [0.35, 0.48] Rate of uptake onto treatment (r_l = late-stage disease)
     # r_e: 0 Rate of uptake onto treatment (r_e = early-stage disease)
-    # rho: 0.025 [0.01, 0.06] Effective contact rate
+    # rho: 0.53 [0.50, 0.55] Effective contact rate
     # a: 15,000 Annual birth rate
-    # b: 0.20 [0.03, 0.48] Fraction of population in at-risk group
+    # b: 0.21 [0.18, 0.23] Fraction of population in at-risk group
     # c: $1000 [662, 1451] Annual cost of treatment
     pop_size <- 1e6; mu_b <- 0.015; c <- 1000; r_e <- r_l
 

@@ -34,33 +34,49 @@ l_targets <-
        'v_targets_weights' = v_targets_weights)
 v_params_names <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "rho",
                     "b")
-v_params_true_values <- c('mu_e' = 0.05300305, 'mu_l' = 0.09492525,
-                          'mu_t' = 0.06949119, 'p' = 0.35494867,
-                          'r_l' = 0.70669255, 'rho' = 0.62436759,
-                          'b' = 0.27229941)
-v_params_dists <- c("lnorm", "lnorm", "lnorm", "lnorm", "lnorm", "lnorm",
-                    "beta")
-args <- list(list(meanlog = -3.121, sdlog = 0.5),
-             list(meanlog = -1.511, sdlog = 0.5),
-             list(meanlog = -3.814, sdlog = 0.5),
-             list(meanlog = -2.428, sdlog = 0.5),
-             list(meanlog = -0.818, sdlog = 0.5),
-             list(meanlog = -0.818, sdlog = 0.5),
-             list(shape1 = 2, shape2 = 8))
-extra_args <- list(list(min = 0.02, max = 0.12),
-                   list(min = 0.08, max = 0.59),
-                   list(min = 0.01, max = 0.06),
-                   list(min = 0.03, max = 0.24),
-                   list(min = 0.17, max = 1.18),
-                   list(min = 0.01, max = 0.06),
-                   list(min = 0.03, max = 0.48))
+v_params_labels <- c(
+  "mu_e" = "Early-stage disease cause-specific mortality rate",
+  "mu_l" = "Late-stage disease cause-specific mortality rate",
+  "mu_t" = "On treatment cause-specific mortality rate",
+  "p" = "Transition rate from early to late-stage disease",
+  "r_l" = "Rate of uptake onto treatment",
+  "rho" = "Effective contact rate",
+  "b" = "Fraction of population in at-risk group")
+v_params_true_values <- c('mu_e' = 0.04, 'mu_l' = 0.15, 'mu_t' = 0.016,
+                          'p' = 0.12, 'r_l' = 0.41, 'rho' = 0.53, 'b' = 0.21)
+v_params_dists_paper <- c('mu_e' = "lnorm", 'mu_l' = "lnorm", 'mu_t' = "lnorm",
+                    'p' = "lnorm", 'r_l' = "lnorm", 'rho' = "lnorm", 'b' = "beta")
+v_params_dists <- c('mu_e' = "unif", 'mu_l' = "unif", 'mu_t' = "unif",
+                    'p' = "unif", 'r_l' = "unif", 'rho' = "unif", 'b' = "unif")
+args_paper <- list('mu_e' = list(meanlog = -3.121, sdlog = 0.5),
+                   'mu_l' = list(meanlog = -1.511, sdlog = 0.5),
+                   'mu_t' = list(meanlog = -3.814, sdlog = 0.5),
+                   'p'    = list(meanlog = -2.428, sdlog = 0.5),
+                   'r_l'  = list(meanlog = -0.818, sdlog = 0.5),
+                   'rho'  = list(meanlog = -0.818, sdlog = 0.5),
+                   'b'    = list(shape1 = 2, shape2 = 8))
+args <-  list('mu_e' = list(min = 0, max = 1),
+              'mu_l' = list(min = 0, max = 1),
+              'mu_t' = list(min = 0, max = 1),
+              'p'    = list(min = 0, max = 1),
+              'r_l'  = list(min = 0, max = 1),
+              'rho'  = list(min = 0, max = 1),
+              'b'    = list(min = 0, max = 1))
+extra_args <- list('mu_e' = list(min = 0, max = 1),
+                   'mu_l' = list(min = 0, max = 1),
+                   'mu_t' = list(min = 0, max = 1),
+                   'p'    = list(min = 0, max = 1),
+                   'r_l'  = list(min = 0, max = 1),
+                   'rho'  = list(min = 0, max = 1),
+                   'b'    = list(min = 0, max = 1))
 l_params <- list('v_params_names' = v_params_names,
+                 'v_params_labels' = v_params_labels,
                  'v_params_true_values' = v_params_true_values,
                  'v_params_dists' = v_params_dists,
                  'args' = args,
                  'Xargs' = extra_args)
 
-HID_data <- list('l_params' = l_params,
+HID_data_all <- list('l_params' = l_params,
                  'l_targets' = l_targets)
 
-usethis::use_data(HID_data, overwrite = TRUE)
+usethis::use_data(HID_data_all, overwrite = TRUE)
