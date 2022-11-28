@@ -10,6 +10,7 @@ calibrateModel_directed(
   .func,
   .args,
   .gof = "LLK",
+  .gof_func = NULL,
   .samples,
   .s_method = "NM",
   .maximise = TRUE,
@@ -22,11 +23,14 @@ calibrateModel_directed(
 \item{.l_params}{A list that contains a vector of parameter names,
 distributions and distributions' arguments.}
 
-\item{.func}{A function defining the model to be optimised.}
+\item{.func}{Function defining the model to be optimised.}
 
-\item{.args}{A list of arguments to be passed to .func.}
+\item{.args}{List of arguments to be passed to .func.}
 
-\item{.gof}{A goodness-of-fit function, default is log-likelihood.}
+\item{.gof}{Name goodness-of-fit function, default is log-likelihood.}
+
+\item{.gof_func}{Goodness-of-fit function, when one other than supported
+is needed.}
 
 \item{.samples}{A table with sampled parameter values.}
 

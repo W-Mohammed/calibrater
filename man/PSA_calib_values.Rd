@@ -29,9 +29,6 @@ distributions and distributions' arguments.}
 in the .l_params list will be used to transform the parameters to their
 original scale.}
 }
-\value{
-
-}
 \description{
 Merge calibration outputs and sample PSA values
 }

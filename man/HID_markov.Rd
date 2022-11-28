@@ -7,13 +7,13 @@
 HID_markov(
   .v_params_ = NULL,
   calibrate_ = TRUE,
-  mu_e = 0.05300305,
-  mu_l = 0.09492525,
-  mu_t = 0.06949119,
-  p = 0.35494867,
-  r_l = 0.70669255,
-  rho = 0.62436759,
-  b = 0.27229941
+  mu_e = 0.04,
+  mu_l = 0.15,
+  mu_t = 0.016,
+  p = 0.12,
+  r_l = 0.41,
+  rho = 0.53,
+  b = 0.21
 )
 }
 \arguments{
@@ -37,9 +37,6 @@ are returned.}
 \item{rho}{Effective contact rate}
 
 \item{b}{Fraction of population in at-risk group}
-}
-\value{
-
 }
 \description{
 Hypothetical Infectious Disease (HID) Markov Model

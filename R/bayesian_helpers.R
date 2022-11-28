@@ -27,8 +27,8 @@ sample_prior_IMIS <- function(.n_samples, .l_params = .l_params_) {
   # Get LHS samples:
   tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
     dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                    repair = "unique",
-                                    quiet = TRUE))
+                                           repair = "unique",
+                                           quiet = TRUE))
   # Define inputs list:
   l_lhs <- list(.l_params[['v_params_names']],
                 paste0('q', .l_params[['v_params_dists']]),
@@ -43,8 +43,8 @@ sample_prior_IMIS <- function(.n_samples, .l_params = .l_params_) {
     .f = function(.name, .func, p, .arg, .dist) {
       assign(.name,
              purrr::exec(.func,
-                  p,
-                  !!!.arg)
+                         p,
+                         !!!.arg)
       )
     })
 
@@ -75,8 +75,8 @@ log_priors <- function(.samples, .l_params, .transform) {
   if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
     .samples <- .samples %>%
     dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                    repair = "unique",
-                                    quiet = TRUE)) %>%
+                                           repair = "unique",
+                                           quiet = TRUE)) %>%
     `colnames<-`(v_params_names)
   # Get appropriate distributions' and distributions' parameters' objects:
   params_dists <- 'v_params_dists'
@@ -130,8 +130,8 @@ log_prior <- function(.samples, .l_params, .transform) {
   if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
     .samples <- .samples %>%
     dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                    repair = "unique",
-                                    quiet = TRUE)) %>%
+                                           repair = "unique",
+                                           quiet = TRUE)) %>%
     `colnames<-`(v_params_names)
   # Get appropriate distributions' and distributions' parameters' objects:
   params_dists <- 'v_params_dists'
@@ -179,7 +179,7 @@ calculate_priors <- function(.samples, .l_params = .l_params_,
                              .transform = .transform_) {
 
   v_prior <-  exp(calibR::log_priors(.samples = .samples, .l_params = .l_params,
-                             .transform = .transform))
+                                     .transform = .transform))
 
   return(v_prior)
 }
@@ -202,7 +202,7 @@ calculate_prior <- function(.samples, .l_params = .l_params_,
                             .transform = .transform_) {
 
   v_prior <-  exp(calibR::log_prior(.samples = .samples, .l_params = .l_params,
-                            .transform = .transform))
+                                    .transform = .transform))
 
   return(v_prior)
 }
@@ -254,8 +254,8 @@ log_likelihood <- function(.samples, .func, .args, .l_targets) {
   if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
     .samples <- .samples %>%
       dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                      repair = "unique",
-                                      quiet = TRUE))
+                                             repair = "unique",
+                                             quiet = TRUE))
   # Run the model using each set of sampled parameters:
   model_results <- purrr::pmap(
     .l = as.list(.samples),
@@ -281,27 +281,27 @@ log_likelihood <- function(.samples, .func, .args, .l_targets) {
             if(.dist == 'norm') {
               sum( # Sum all values of that one target, if many
                 purrr::exec(.func,
-                     .l_targets[[.name]]$value, # target's sd
-                     .mod_res[[.name]], # mean value
-                     .l_targets[[.name]]$se, # sd value (target's sd)
-                     log = TRUE)
+                            .l_targets[[.name]]$value, # target's sd
+                            .mod_res[[.name]], # mean value
+                            .l_targets[[.name]]$se, # sd value (target's sd)
+                            log = TRUE)
               ) * .weight # target weight
             } else if(.dist == 'binom') {
               sum( # Sum all values of that one target, if many
                 purrr::exec(.func,
-                     prob = .mod_res[[.name]],
-                     x = .l_targets[[.name]]$x,
-                     size = .l_targets[[.name]]$size,
-                     log = TRUE)
+                            prob = .mod_res[[.name]],
+                            x = .l_targets[[.name]]$x,
+                            size = .l_targets[[.name]]$size,
+                            log = TRUE)
               ) * .weight # target weight
             } else if(.dist == 'lnorm') {
               sum( # Sum all values of that one target, if many
                 purrr::exec(.func,
-                     .l_targets[[.name]]$value, # target's mean
-                     log(.mod_res[[.name]]) - (1/2) *
-                       .l_targets[[.name]]$se^2, # mean value
-                     .l_targets[[.name]]$se, # sd value (target's sd)
-                     log = TRUE)
+                            .l_targets[[.name]]$value, # target's mean
+                            log(.mod_res[[.name]]) - (1/2) *
+                              .l_targets[[.name]]$se^2, # mean value
+                            .l_targets[[.name]]$se, # sd value (target's sd)
+                            log = TRUE)
               ) * .weight # target weight
             }
           },
@@ -340,9 +340,9 @@ calculate_likelihood <- function(.samples, .func = .func_, .args = .args_,
                                  .l_targets = .l_targets_) {
 
   v_likelihood <-  exp(calibR::log_likelihood(.samples = .samples,
-                                      .func = .func,
-                                      .args = .args,
-                                      .l_targets = .l_targets))
+                                              .func = .func,
+                                              .args = .args,
+                                              .l_targets = .l_targets))
 
   return(v_likelihood)
 }
@@ -371,10 +371,10 @@ log_posteriors <- function(.samples, .func, .args, .l_targets, .l_params,
                            .transform) {
   # calculate log prior:
   l_prior <- calibR::log_priors(.samples = .samples, .l_params = .l_params,
-                        .transform = .transform)
+                                .transform = .transform)
   # calculate log likelihood:
   l_lilk <- calibR::log_likelihood(.samples = .samples, .func = .func,
-                           .args = .args, .l_targets = .l_targets)
+                                   .args = .args, .l_targets = .l_targets)
   # calculate log posterior:
   l_posterior <- l_prior + l_lilk
 
@@ -405,10 +405,10 @@ log_posterior <- function(.samples, .func, .args, .l_targets, .l_params,
                           .transform) {
   # calculate log prior:
   l_prior <- calibR::log_prior(.samples = .samples, .l_params = .l_params,
-                       .transform = .transform)
+                               .transform = .transform)
   # calculate log likelihood:
   l_lilk <- calibR::log_likelihood(.samples = .samples, .func = .func,
-                           .args = .args, .l_targets = .l_targets)
+                                   .args = .args, .l_targets = .l_targets)
   # calculate log posterior:
   l_posterior <- l_prior + l_lilk
 
@@ -440,9 +440,9 @@ calculate_posteriors <- function(.samples, .func = .func_, .args = .args_,
                                  .transform = FALSE) {
   # calculate the posterior:
   posterior <- exp(calibR::log_posteriors(.samples = .samples, .func = .func,
-                                  .args = .args, .l_targets = .l_targets,
-                                  .l_params = .l_params,
-                                  .transform = .transform))
+                                          .args = .args, .l_targets = .l_targets,
+                                          .l_params = .l_params,
+                                          .transform = .transform))
 
   return(posterior)
 }
@@ -472,9 +472,9 @@ calculate_posterior <- function(.samples, .func = .func_, .args = .args_,
                                 .transform = FALSE) {
   # calculate the posterior:
   posterior <- exp(calibR::log_posterior(.samples = .samples, .func = .func,
-                                 .args = .args, .l_targets = .l_targets,
-                                 .l_params = .l_params,
-                                 .transform = .transform))
+                                         .args = .args, .l_targets = .l_targets,
+                                         .l_params = .l_params,
+                                         .transform = .transform))
 
   return(posterior)
 }
@@ -496,6 +496,13 @@ calculate_posterior <- function(.samples, .func = .func_, .args = .args_,
 #' @param .n_resample the desired number of draws from the posterior
 #' @param .IMIS_sample the incremental sample size at each IMIS iteration
 #' @param .IMIS_iterations the maximum number of iterations in IMIS
+#' @param .MCMC_burnIn the number of samples before starting to retain samples
+#' @param .MCMC_samples the total number of samples the MCMC algorithm should
+#' generate including the burn-in sample including the .MCMC_burnIn. This value
+#' should not be equal to or less than .MCMC_burnIn.
+#' @param .MCMC_thin the value used to thin the resulting chain
+#' @param .MCMC_rerun use the proposal distribution covariance matrix from the
+#' first run to re-run the MCMC chain.
 #' @param .transform Logical for whether to back-transform parameters to
 #' their original scale.
 #'
@@ -510,13 +517,28 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
                                     .n_resample = 1000,
                                     .IMIS_sample = 1000,
                                     .IMIS_iterations = 30,
+                                    .MCMC_burnIn = 10000,
+                                    .MCMC_samples = 50000,
+                                    .MCMC_thin = 5,
+                                    .MCMC_rerun = TRUE,
                                     .transform = FALSE) {
   # Ensure that .b_method is supported by the function:
-  stopifnot(".b_method is supported by the function" =
+  stopifnot(".b_method is not supported by the function" =
               any(.b_method %in% c('SIR', 'IMIS', 'MCMC')))
 
+  # If user did not set an IMIS sample size:
   if(.b_method == 'IMIS' & is.null(.IMIS_sample))
     .IMIS_sample <- 1000
+
+  # If user set a .MCMC_burnIn equal to or more than .MCMC_samples:
+  if(.b_method == 'MCMC' & !is.null(.MCMC_samples) & !is.null(.MCMC_burnIn)) {
+    # ensure we can thin the chain as needed:
+    if(.MCMC_samples < .n_resample * .MCMC_thin)
+      .MCMC_samples <- .n_resample * .MCMC_thin
+    # make sure samples are more than burn-in to accommodate it:
+    if(.MCMC_burnIn >= .MCMC_samples)
+      .MCMC_samples <- .MCMC_burnIn * 2
+  }
 
   # SIR:
   if(.b_method == 'SIR') {
@@ -524,7 +546,7 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
       stop(paste("Please pass", .n_resample, "samples to the function."))
     ## Calculate log-likelihood for each sample value:
     llik <- calibR::log_likelihood(.samples = .samples, .func = .func,
-                           .args = .args, .l_targets = .l_targets)
+                                   .args = .args, .l_targets = .l_targets)
 
     ## Calculate weights for the re-sample:
     # Note: subtracting off the maximum log-likelihood before
@@ -558,9 +580,8 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
       sample.prior = calibR::sample_prior_IMIS,
       prior = calibR::calculate_prior,
       priors = calibR::calculate_priors,
-      likelihood = calibR::calculate_likelihood
-    )
-    ## Obtain draws from posterior:
+      likelihood = calibR::calculate_likelihood)
+    ## Calculate log-likelihood (overall fit) and posterior probability:
     m_calib_res <- fit_IMIS$resample
     Overall_fit <- calibR::log_likelihood(
       .samples = m_calib_res, .func = .func, .args = .args,
@@ -568,28 +589,105 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
     Posterior_prob <- calibR::calculate_posteriors(
       .samples = m_calib_res, .func = .func, .args = .args,
       .l_targets = .l_targets, .l_params = .l_params)
-    ## Calculate log-likelihood (overall fit) and posterior probability:
+    ## Group results into one object:
     IMIS_results <- m_calib_res %>%
-      dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                      repair = "unique",
-                                      quiet = TRUE)) %>%
+      dplyr::as_tibble(
+        ~ vctrs::vec_as_names(...,
+                              repair = "unique",
+                              quiet = TRUE)) %>%
       dplyr::mutate(
         "Overall_fit" = Overall_fit,
-        "Posterior_prob" = Posterior_prob) %>%
+        "Posterior_prob" = Posterior_prob / sum(Posterior_prob)) %>%
       dplyr::arrange(dplyr::desc(Overall_fit))
-    ## Name column names IMIS stats object:
+    ## Assign column names in the IMIS stats object:
     stats <- fit_IMIS$stat %>%
       dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                      repair = "unique",
-                                      quiet = TRUE)) %>%
+                                             repair = "unique",
+                                             quiet = TRUE)) %>%
       `colnames<-`(c("MargLike", "UniquePoint", "MaxWeight", "ESS",
                      "ImpWt", "ImpWtVar"))
 
     return(list('Results' = IMIS_results, 'Method' = "IMIS",
                 'Fit'  = fit_IMIS, 'Stats' = stats))
 
-  } else {
+  } else { # MCMC MH algorithm
+    ## Sample a random set of parameters as a starting point for the chain:
+    guess <- calibR::sample_prior_RGS_(
+      .n_samples = 1,
+      .l_params = .l_params)
+    ## Run the Metropolis-Hastings algorithm
+    fit_MCMC <- MHadaptive::Metro_Hastings(
+      li_func = calibR::log_posterior,
+      pars = guess,
+      par_names = .l_params[["v_params_names"]],
+      iterations = .MCMC_samples,
+      burn_in = .MCMC_burnIn,
+      .func = .func,
+      .l_targets = .l_targets,
+      .l_params = .l_params,
+      .args = .args,
+      .transform = .transform)
+    if(.MCMC_rerun){
+      guess <- calibR::sample_prior_RGS_(
+        .n_samples = 1,
+        .l_params = .l_params)
+      fit_MCMC <- MHadaptive::Metro_Hastings(
+        li_func = calibR::log_posterior,
+        pars = guess,
+        prop_sigma = fit_MCMC$prop_sigma,
+        par_names = .l_params[["v_params_names"]],
+        iterations = .MCMC_samples,
+        burn_in = .MCMC_burnIn,
+        .func = .func,
+        .l_targets = .l_targets,
+        .l_params = .l_params,
+        .args = .args,
+        .transform = .transform)}
+    ## Estimate 95% credible interval:
+    cred_int_95 <- MHadaptive::BCI(
+      mcmc_object = fit_MCMC,
+      interval = c(0.025, 0.975))
+    ## Thin the chain if needed:
+    if(!is.null(.MCMC_thin))
+      fit_MCMC <- MHadaptive::mcmc_thin(
+        mcmc_object = fit_MCMC,
+        thin = .MCMC_thin)
+    ## Calculate log-likelihood (overall fit) and posterior probability:
+    m_calib_res <- fit_MCMC$trace
+    colnames(m_calib_res) <- .l_params[["v_params_names"]]
+    Overall_fit <- calibR::log_likelihood(
+      .samples = m_calib_res, .func = .func, .args = .args,
+      .l_targets = .l_targets)
+    Posterior_prob <- calibR::calculate_posteriors(
+      .samples = m_calib_res, .func = .func, .args = .args,
+      .l_targets = .l_targets, .l_params = .l_params)
+    ## Group results into one object:
+    MCMC_results <- m_calib_res %>%
+      dplyr::as_tibble(
+        ~ vctrs::vec_as_names(...,
+                              repair = "unique",
+                              quiet = TRUE)) %>%
+      dplyr::mutate(
+        "Overall_fit" = Overall_fit,
+        "Posterior_prob" = Posterior_prob / sum(Posterior_prob)) %>%
+      dplyr::arrange(dplyr::desc(Overall_fit)) %>%
+      # randomly sample from the posterior, if required sample smaller than draws:
+      {if(.n_resample < nrow(.)){
+        dplyr::slice_sample(.data = ., n = .n_resample)
+      } else {
+        .
+      }}
 
+    ## Assign column names to the MCMC proposal distribution covariance matrix:
+    prop_sigma <- fit_MCMC$prop_sigma %>%
+      dplyr::as_tibble(~ vctrs::vec_as_names(...,
+                                             repair = "unique",
+                                             quiet = TRUE)) %>%
+      `colnames<-`(.l_params[["v_params_names"]])
+
+    return(list('Results' = MCMC_results, 'Method' = "MCMC",
+                'Cred_int_95' = cred_int_95, 'Fit'  = fit_MCMC,
+                'Propos_dist_Cov_matrix' = prop_sigma))
   }
 }
 
@@ -636,7 +734,7 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
   if(.b_method == 'SIR') {
     ## Calculate log-likelihood for each sample value:
     llik <- calibR::log_likelihood(.samples = .samples, .func = .func,
-                           .args = .args, .l_targets = .l_targets)
+                                   .args = .args, .l_targets = .l_targets)
 
     ## Calculate weights for the re-sample:
     # Note: subtracting off the maximum log-likelihood before
@@ -673,7 +771,7 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
       number_k = 10, # the maximum number of iterations in IMIS
       D = 0)
 
-    ## Obtain draws from posterior:
+    ## calculate fitness of the draws from posterior:
     m_calib_res <- fit_IMIS$resample
     Overall_fit <- calibR::log_likelihood(
       .samples = m_calib_res, .func = .func, .args = .args,
@@ -684,8 +782,8 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
     ## Calculate log-likelihood (overall fit) and posterior probability:
     IMIS_results <- m_calib_res %>%
       dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                      repair = "unique",
-                                      quiet = TRUE)) %>%
+                                             repair = "unique",
+                                             quiet = TRUE)) %>%
       dplyr::mutate(
         "Overall_fit" = Overall_fit,
         "Posterior_prob" = Posterior_prob) %>%
@@ -693,8 +791,8 @@ calibrateModel_beyesian2 <- function(.b_method = "SIR", .func, .args,
     ## Name column names IMIS stats object:
     stats <- fit_IMIS$stat %>%
       dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                      repair = "unique",
-                                      quiet = TRUE)) %>%
+                                             repair = "unique",
+                                             quiet = TRUE)) %>%
       `colnames<-`(c("MargLike", "UniquePoint", "MaxWeight", "ESS",
                      "ImpWt", "ImpWtVar"))
 

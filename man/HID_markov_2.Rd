@@ -42,9 +42,6 @@ back-transform them before they go into the model}
 
 \item{b}{Fraction of population in at-risk group}
 }
-\value{
-
-}
 \description{
 Hypothetical Infectious Disease (HID) Markov Model with transformations
 }

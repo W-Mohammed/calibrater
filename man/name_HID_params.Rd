@@ -10,9 +10,6 @@ name_HID_params(.v_params)
 \item{.v_params}{an un-named vector of model parameters in the following
 order: "mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho", "b", "c".}
 }
-\value{
-
-}
 \description{
 Helper function to set the hypothetical infectious disease (HID) model
 }

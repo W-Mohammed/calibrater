@@ -57,6 +57,7 @@ sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
   return(tbl_lhs_samp)
 }
 
+
 #' Use Full Factorial Grid Sampling (FGS) to sample from prior distribution
 #'
 #' @param .l_params A list that contains a vector of parameter names,
@@ -169,3 +170,74 @@ sample_prior_RGS <- function(.n_samples = 1, .l_params = .l_params_,
 
   return(tbl_rgs_samp)
 }
+
+#' Use Random Grid Sampling (RGS) to sample from prior distribution
+#' This (_) version of the function outputs a vector of values if .n_samples = 1
+#'
+#' @param .l_params A list that contains a vector of parameter names,
+#' distributions and distributions' arguments.
+#' @param .n_samples An integer specifying the number of samples to be
+#' generated.
+#' @param ... additional arguments, for example: .seed_no to set a seed
+#' number.
+#'
+#' @return A table with each parameter RGS samples in a separate column
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' v_params_names <- c("p_Mets", "p_DieMets")
+#' v_params_dists <- c("unif", "unif")
+#' args <- list(list(min = 0.04, max = 0.16),
+#'              list(min = 0.04, max = 0.12))
+#' l_params <- list('v_params_names' = v_params_names,
+#'                  'v_params_dists' = v_params_dists,
+#'                  'args' = args)
+#'
+#' sample_prior_RGS_(.l_params = l_params,
+#'                  .n_samples = 1)
+#' }
+sample_prior_RGS_ <- function(.n_samples = 1, .l_params = .l_params_,
+                             ...) {
+  # Grab additional arguments:
+  dots = list(...)
+  if(!is.null(dots[['.ssed_no']]))
+    set.seed(dots[['.ssed_no']])
+  # Define inputs list:
+  l_rgs <- list(.l_params[['v_params_names']],
+                paste0('r', .l_params[['v_params_dists']]),
+                .l_params[['args']],
+                .l_params[['v_params_dists']])
+  # Make sure parameter names are in a named vector:
+  names(l_rgs[[1]]) <- l_rgs[[1]]
+  # Map over parameters and sample values accordingly:
+  if(.n_samples == 1){
+    vec_rgs_samp <- purrr::pmap_dbl(
+      .l = l_rgs,
+      .f = function(.name, .func, .arg, .dist) {
+        assign(.name,
+               purrr::exec(.func,
+                           .n_samples,
+                           !!!.arg)
+        )
+      }
+    )
+
+    return(vec_rgs_samp)
+  } else {
+    tbl_rgs_samp <- purrr::pmap_dfc(
+      .l = l_rgs,
+      .f = function(.name, .func, .arg, .dist) {
+        assign(.name,
+               purrr::exec(.func,
+                           .n_samples,
+                           !!!.arg)
+        )
+      }
+    )
+
+    return(tbl_rgs_samp)
+  }
+}
+
+

@@ -18,9 +18,6 @@ calibration}
 
 \item{.post_prob_}{Name of column where posterior probability are found}
 }
-\value{
-
-}
 \description{
 Estimate Effective Sample Size from Bayesian calibration outputs
 }

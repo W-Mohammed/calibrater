@@ -23,9 +23,6 @@ of targets' weights, a vector of targets' distributions, and a table for
 each target that contains the values (column name 'value') and standard
 errors (column name 'sd') of the corresponding target.}
 }
-\value{
-
-}
 \description{
 Calculate likelihood
 }

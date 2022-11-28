@@ -2,8 +2,8 @@
 #'
 #' @param .v_params_ A vector of named vector with values to replace
 #' \code{p_Mets} and \code{p_DieMets} default values.
-#' @param p_Mets probability to become sicker when sick.
-#' @param p_DieMets hazard ratio of death in sick vs healthy.
+#' @param p_Mets A numeric representing the probability of contracting cancer.
+#' @param p_DieMets A numeric representing the probability of dying from cancer.
 #' @param calibrate_ If \code{TRUE} (default), the model outputs natural
 #' history data; otherwise, discounted outcomes \code{(costs and QALYs)}
 #' are returned.
