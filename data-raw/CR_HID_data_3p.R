@@ -40,7 +40,7 @@ l_targets <-
 
 ## Parameters:----
 v_params_names <- c("mu_e", "mu_l", "mu_t")
-v_params_names <- c(
+v_params_labels <- c(
   "mu_e" = "Cause-specific mortality rate with early-stage disease",
   "mu_l" = "Cause-specific mortality rate with late-stage disease",
   "mu_t" = "Cause-specific mortality rate on treatment")

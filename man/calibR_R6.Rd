@@ -98,9 +98,10 @@ parameters}
 
 \item{\code{model_predictions}}{simulated outputs}
 
-\item{\code{prior_samples}}{a Decision-Analytic model under calibration}
+\item{\code{prior_samples}}{samples from parameters' priors}
 
-\item{\code{prior_samples}}{a Decision-Analytic model under calibration}
+\item{\code{maximum_a_posteriori}}{parameter set with maximum posterior
+probability}
 
 \item{\code{PSA_samples}}{calibration and un-calibration parameters
 samples}

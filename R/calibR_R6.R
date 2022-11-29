@@ -34,9 +34,10 @@ calibR_R6 <- R6::R6Class(
     transform_parameters = FALSE,
     #' @field model_predictions simulated outputs
     model_predictions = NULL,
-    #' @field prior_samples a Decision-Analytic model under calibration
+    #' @field prior_samples samples from parameters' priors
     prior_samples = NULL,
-    #' @field prior_samples a Decision-Analytic model under calibration
+    #' @field maximum_a_posteriori parameter set with maximum posterior
+    #' probability
     maximum_a_posteriori = NULL,
     #' @field PSA_samples calibration and un-calibration parameters
     #' samples
@@ -1256,8 +1257,8 @@ calibR_R6 <- R6::R6Class(
     # @param .samples A vector/dataset containing sampled/proposed values.
     # @param .l_params A list that contains a vector of parameter names,
     # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
+    # @param .transform Logical for whether to back-transform parameters to
+    # their original scale.
     #
     log_priors = function(
     .samples,

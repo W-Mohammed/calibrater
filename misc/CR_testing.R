@@ -4,8 +4,8 @@
 ## Load the calibR package:
 devtools::load_all()
 ## Create calibration data:----
-internal_data <- list.files(path = "data-raw/", pattern = "CR_",full.names = T)
-purrr::walk(internal_data, .f = source)
+# internal_data <- list.files(path = "data-raw/", pattern = "CR_",full.names = T)
+# purrr::walk(internal_data, .f = source)
 
 ## Effects of using more calibration targets on CRS_markov_2 model:----
 ### One target testing:----
@@ -354,7 +354,7 @@ CR_HID_7P$
 
 
 
-### MISC testing:
+### MISC testing:----
 calibR::sample_prior_RGS(.n_samples = 1, .l_params = CR_CRS_data_1t$l_params)
 ## Sample a random set of parameters as a starting point for the chain:
 guess <- calibR::sample_prior_RGS_(
@@ -471,3 +471,162 @@ CR_HID_3P$
     .MCMC_samples = 50000,
     .MCMC_thin = 5,
     .MCMC_rerun = TRUE)
+
+CR_HID_3P_mcmc = calibR_R6$
+  new(
+    .model = HID_markov_2,
+    .params = HID_data2_flat$l_params,
+    .targets = HID_data2_flat$l_targets,
+    .args = NULL,
+    .transform = TRUE
+  )
+CR_HID_3P_mcmc$
+  sampleR(
+    .n_samples = 1000,
+    .sampling_method = c("RGS")
+  )
+CR_HID_3P_mcmc$
+  calibrateR_random(
+    .optim = FALSE,
+    .maximise = TRUE,
+    .weighted = TRUE,
+    .sample_method = c("RGS"),
+    .calibration_method = "LLK")
+CR_HID_3P_mcmc$
+  calibrateR_directed(
+    .gof = 'LLK',
+    .n_samples = 10,
+    .calibration_method = c('NM', 'BFGS', 'SANN'),
+    .sample_method = "RGS",
+    .max_iterations = 100,
+    temp = 10,
+    tmax = 10)
+CR_HID_3P_mcmc$
+  calibrateR_bayesian(
+    .b_method = c('SIR', 'IMIS', 'MCMC'),
+    .n_resample = 1e3,
+    .IMIS_iterations = 100,
+    .IMIS_sample = 1e2,
+    .MCMC_burnIn = 1e4,
+    .MCMC_samples = 4e4,
+    .MCMC_thin = 4,
+    .MCMC_rerun = TRUE)
+
+CR_HID_3P_mcmc$
+  calibrateR_bayesian(
+    .b_method = c('MCMC'),
+    .n_resample = 1e3,
+    .IMIS_iterations = 100,
+    .IMIS_sample = 1e2,
+    .MCMC_burnIn = 1e4,
+    .MCMC_samples = 4e4,
+    .MCMC_thin = 4,
+    .MCMC_rerun = TRUE)
+
+## Ploting tests:----
+library(ggplot2)
+
+ttt = CR_CRS_1T[["calibration_results"]][["bayesian"]][["IMIS"]][["Results"]]
+ggplot2::ggplot(data = ttt) +
+  ggplot2::geom_density2d(ggplot2::aes(x = p_Mets, y = p_DieMets))
+
+ttt %>%
+  ggplot(aes(p_Mets, p_DieMets)) +
+  geom_density2d() +
+  theme(axis.title.y = element_text(angle = 0, vjust = 0.5))
+
+testparams = CR_CRS_data_1t$l_params
+testparams$Xargs$p_Mets$min <- 0.02
+testparams$Xargs$p_Mets$max <- 0.12
+testparams$Xargs$p_DieMets$min <- 0.02
+testparams$Xargs$p_DieMets$max <- 0.12
+
+testparams$args$p_Mets$min <- 0.02
+testparams$args$p_Mets$max <- 0.12
+testparams$args$p_DieMets$min <- 0.02
+testparams$args$p_DieMets$max <- 0.12
+
+CR_CRS_1T = calibR_R6$
+  new(
+    .model = CRS_markov_2,
+    .params = CR_CRS_data_1t$l_params,
+    .targets = CR_CRS_data_2t$l_targets,
+    .args = NULL,
+    .transform = FALSE
+  )
+CR_CRS_1T = calibR_R6$
+  new(
+    .model = CRS_markov_2,
+    .params = CR_CRS_data_1t$l_params,
+    .targets = CR_CRS_data_1t$l_targets,
+    .args = NULL,
+    .transform = FALSE
+  )
+CR_CRS_1T$
+  sampleR(
+    .n_samples = 1000,
+    .sampling_method = c("FGS")
+  )
+CR_CRS_1T$prior_samples$FGS <- sample_prior_FGS_(
+  .n_samples = 10000,
+  .l_params = testparams)
+CR_CRS_1T$
+  calibrateR_random(
+    .optim = FALSE,
+    .maximise = TRUE,
+    .weighted = TRUE,
+    .sample_method = c("FGS"),
+    .calibration_method = "LLK")
+
+ttt2 <- CR_CRS_1T[["calibration_results"]][["random"]][["LLK_FGS"]]
+
+ggplot(ttt2, aes(x = p_Mets, y = p_DieMets)) +
+  geom_contour(aes(z = Overall_fit, colour = ..level..), bins = 30) +
+  theme_void() +
+  scale_color_continuous("Overall_fit")
+
+library(plotly)
+# good plot:
+fig_1 <- plot_ly(x = ttt2$p_Mets, y = ttt2$p_DieMets, z = ttt2$Overall_fit, type = "contour")
+
+ttt2 %>%
+  ggplot(aes(p_Mets, p_DieMets)) +
+  geom_density2d() +
+  theme(axis.title.y = element_text(angle = 0, vjust = 0.5))
+
+# HID model
+CR_HID_3P_mcmc = calibR_R6$
+  new(
+    .model = HID_markov_2,
+    .params = HID_data2_flat$l_params,
+    .targets = HID_data2_flat$l_targets,
+    .args = NULL,
+    .transform = TRUE
+  )
+# CR_HID_3P_mcmc$
+#   sampleR(
+#     .n_samples = 1000,
+#     .sampling_method = c("FGS")
+#   )
+CR_HID_3P_mcmc$prior_samples$FGS <- sample_prior_FGS_(
+  .n_samples = 10000,
+  .l_params = HID_data2_flat$l_params)
+CR_HID_3P_mcmc$
+  calibrateR_random(
+    .optim = FALSE,
+    .maximise = TRUE,
+    .weighted = TRUE,
+    .sample_method = c("FGS"),
+    .calibration_method = "LLK")
+
+ttt3 <- CR_HID_3P_mcmc[["calibration_results"]][["random"]][["LLK_FGS"]]
+
+ttt4 = backTransform(.t_data_ = ttt3,
+                     .l_params_ = HID_data2_flat$l_params)
+
+# good plot:
+  fig <- plot_ly(x = ttt4$mu_e, y = ttt4$b, z = ttt4$Overall_fit, type = "contour")
+
+
+
+
