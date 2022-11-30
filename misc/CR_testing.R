@@ -537,14 +537,14 @@ ttt %>%
 
 testparams = CR_CRS_data_1t$l_params
 testparams$Xargs$p_Mets$min <- 0.02
-testparams$Xargs$p_Mets$max <- 0.12
+testparams$Xargs$p_Mets$max <- 0.20
 testparams$Xargs$p_DieMets$min <- 0.02
-testparams$Xargs$p_DieMets$max <- 0.12
+testparams$Xargs$p_DieMets$max <- 0.20
 
 testparams$args$p_Mets$min <- 0.02
-testparams$args$p_Mets$max <- 0.12
+testparams$args$p_Mets$max <- 0.20
 testparams$args$p_DieMets$min <- 0.02
-testparams$args$p_DieMets$max <- 0.12
+testparams$args$p_DieMets$max <- 0.20
 
 CR_CRS_1T = calibR_R6$
   new(
@@ -579,6 +579,7 @@ CR_CRS_1T$
     .calibration_method = "LLK")
 
 ttt2 <- CR_CRS_1T[["calibration_results"]][["random"]][["LLK_FGS"]]
+ttt2.2 <- ttt2 %>% dplyr::slice_sample(n = 100)
 
 ggplot(ttt2, aes(x = p_Mets, y = p_DieMets)) +
   geom_contour(aes(z = Overall_fit, colour = ..level..), bins = 30) +
@@ -587,7 +588,18 @@ ggplot(ttt2, aes(x = p_Mets, y = p_DieMets)) +
 
 library(plotly)
 # good plot:
-fig_1 <- plot_ly(x = ttt2$p_Mets, y = ttt2$p_DieMets, z = ttt2$Overall_fit, type = "contour")
+fig_1 <- plot_ly(x = ttt2$p_Mets, y = ttt2$p_DieMets, z = ttt2$Overall_fit,
+                 type = "contour")
+fig_1 %>% add_trace(inherit = F, x = ttt2.2$p_Mets, y = ttt2.2$p_DieMets,
+                    type = 'scatter', mode = 'markers', marker = list(size = 2),
+                    symbols = 'x')
+fig_2 <- plot_ly(x = ttt2$p_Mets, y = ttt2$p_DieMets, z = ttt2$Overall_fit,
+                 type = "contour")
+fig_2
+
+# save it:
+plotly::export(p = fig, #the graph to export
+               file = "graph 1.png") #the name and type of file (can be .png, .jpeg, etc.)
 
 ttt2 %>%
   ggplot(aes(p_Mets, p_DieMets)) +
