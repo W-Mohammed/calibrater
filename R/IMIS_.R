@@ -96,6 +96,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
             hessian =TRUE,
             control = list(
               parscale = sqrt(Sig2_global)/10,
+              #fnscale = -1,
               maxit = 5000))
 
           print(paste("maximum posterior=",
@@ -126,6 +127,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
             method = "Nelder-Mead",
             control = list(
               maxit = 1000,
+              #fnscale = -1,
               parscale = sqrt(diag(Sig2_global)))
           )
           theta.NM = optimizer$par
@@ -141,6 +143,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                 hessian = TRUE,
                 control = list(
                   parscale = sqrt(diag(Sig2_global)),
+                  #fnscale = -1,
                   maxit = 1000)
               )
             }, error = function(e) {
@@ -157,6 +160,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                     hessian = TRUE,
                     control = list(
                       parscale = sqrt(diag(Sig2_global)),
+                      #fnscale = -1,
                       maxit = 1000)
                   )
                 }, error = function(e) {
@@ -173,6 +177,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                         hessian = TRUE,
                         control = list(
                           parscale = sqrt(diag(Sig2_global)),
+                          #fnscale = -1,
                           maxit = 1000)
                       )
                     }, error = function(e) {
@@ -189,6 +194,7 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                             hessian = FALSE,
                             control = list(
                               parscale = sqrt(diag(Sig2_global)),
+                              #fnscale = -1,
                               maxit = 1000)
                           )
                         }, error = function(e) {

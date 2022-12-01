@@ -15,9 +15,6 @@ distributions and distributions' arguments.}
 \item{.transform}{Logical for whether to back-transform parameters to
 their original scale.}
 }
-\value{
-
-}
 \description{
 Calculate priors
 }

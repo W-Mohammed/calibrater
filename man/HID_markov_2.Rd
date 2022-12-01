@@ -2,19 +2,19 @@
 % Please edit documentation in R/HID_MarkovModel.R
 \name{HID_markov_2}
 \alias{HID_markov_2}
-\title{Hypothetical Infectious Disease (HID) Markov Model with transformations}
+\title{Hypothetical Infectious Disease (HID) Markov Model with transformation}
 \usage{
 HID_markov_2(
   .v_params_ = NULL,
   calibrate_ = TRUE,
   transform_ = TRUE,
-  mu_e = log(0.05300305),
-  mu_l = log(0.09492525),
-  mu_t = log(0.06949119),
-  p = log(0.35494867),
-  r_l = log(0.70669255),
-  rho = log(0.62436759),
-  b = calibR::prob_to_logit(0.27229941)
+  mu_e = log(0.04),
+  mu_l = log(0.15),
+  mu_t = log(0.016),
+  p = log(0.12),
+  r_l = log(0.41),
+  rho = log(0.53),
+  b = calibR::prob_to_logit(0.21)
 )
 }
 \arguments{
@@ -42,11 +42,8 @@ back-transform them before they go into the model}
 
 \item{b}{Fraction of population in at-risk group}
 }
-\value{
-
-}
 \description{
-Hypothetical Infectious Disease (HID) Markov Model with transformations
+Hypothetical Infectious Disease (HID) Markov Model with transformation
 }
 \examples{
 \dontrun{

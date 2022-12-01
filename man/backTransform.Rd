@@ -13,9 +13,6 @@ backTransform(.t_data_, .l_params_)
 including; names and functions to back transform the parameters to their
 original/desired scale.}
 }
-\value{
-
-}
 \description{
 Back transform parameters values
 }

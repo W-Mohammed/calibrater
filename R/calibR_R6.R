@@ -34,9 +34,10 @@ calibR_R6 <- R6::R6Class(
     transform_parameters = FALSE,
     #' @field model_predictions simulated outputs
     model_predictions = NULL,
-    #' @field prior_samples a Decision-Analytic model under calibration
+    #' @field prior_samples samples from parameters' priors
     prior_samples = NULL,
-    #' @field prior_samples a Decision-Analytic model under calibration
+    #' @field maximum_a_posteriori parameter set with maximum posterior
+    #' probability
     maximum_a_posteriori = NULL,
     #' @field PSA_samples calibration and un-calibration parameters
     #' samples
@@ -194,8 +195,7 @@ calibR_R6 <- R6::R6Class(
         .max_iterations = .max_iterations,
         temp = temp,
         tmax = tmax,
-        .maximise = .maximise
-      )
+        .maximise = .maximise)
     },
 
     #' @description
@@ -217,13 +217,20 @@ calibR_R6 <- R6::R6Class(
     calibrateR_bayesian = function(.b_methods = 'SIR',
                                    .n_resample = 1000,
                                    .IMIS_iterations = 10,
-                                   .IMIS_sample = 100) {
+                                   .IMIS_sample = 100,
+                                   .MCMC_burnIn = 10000,
+                                   .MCMC_samples = 50000,
+                                   .MCMC_thin = 5,
+                                   .MCMC_rerun = TRUE) {
       private$calibrateR_bayesian_(
         .b_methods = .b_methods,
         .n_resample = .n_resample,
         .IMIS_iterations = .IMIS_iterations,
-        .IMIS_sample = .IMIS_sample
-      )
+        .IMIS_sample = .IMIS_sample,
+        .MCMC_burnIn = .MCMC_burnIn,
+        .MCMC_samples = .MCMC_samples,
+        .MCMC_thin = .MCMC_thin,
+        .MCMC_rerun = .MCMC_rerun)
     },
 
     #' @description
@@ -364,6 +371,7 @@ calibR_R6 <- R6::R6Class(
     .sample_method,
     ...) {
       if("RGS" %in% .sample_method){
+        cat(paste("Running RGS...", Sys.time(), "\n"))
         #### SSE:----
         if("SSE" %in% .calibration_method)
           self$calibration_results$random["SSE_RGS"] <- list(
@@ -392,6 +400,7 @@ calibR_R6 <- R6::R6Class(
         #     )
       }
       if("FGS" %in% .sample_method){
+        cat(paste("Running FGS...", Sys.time(), "\n"))
         #### SSE:----
         if("SSE" %in% .calibration_method)
           self$calibration_results$random["SSE_FGS"] <- list(
@@ -412,6 +421,7 @@ calibR_R6 <- R6::R6Class(
           )
       }
       if("LHS" %in% .sample_method){
+        cat(paste("Running LHS...", Sys.time(), "\n"))
         #### SSE:----
         if("SSE" %in% .calibration_method)
           self$calibration_results$random["SSE_LHS"] <- list(
@@ -446,6 +456,7 @@ calibR_R6 <- R6::R6Class(
       if("RGS" %in% .sample_method) {
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
+          cat(paste("Running NM...", Sys.time(), "\n"))
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_RGS"]] <-
@@ -496,6 +507,7 @@ calibR_R6 <- R6::R6Class(
         }
         #### BFGS:----
         if("BFGS" %in% .calibration_method) {
+          cat(paste("Running BFGS...", Sys.time(), "\n"))
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_RGS"]] <-
@@ -546,6 +558,7 @@ calibR_R6 <- R6::R6Class(
         }
         #### SANN:----
         if("SANN" %in% .calibration_method) {
+          cat(paste("Running SANN...", Sys.time(), "\n"))
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_RGS"]] <-
@@ -654,6 +667,7 @@ calibR_R6 <- R6::R6Class(
       if("FGS" %in% .sample_method) {
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
+          cat(paste("Running NM...", Sys.time(), "\n"))
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_FGS"]] <-
@@ -704,6 +718,7 @@ calibR_R6 <- R6::R6Class(
         }
         #### BFGS:----
         if("BFGS" %in% .calibration_method) {
+          cat(paste("Running BFGS...", Sys.time(), "\n"))
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_FGS"]] <-
@@ -754,6 +769,7 @@ calibR_R6 <- R6::R6Class(
         }
         #### SANN:----
         if("SANN" %in% .calibration_method) {
+          cat(paste("Running SANN...", Sys.time(), "\n"))
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_FGS"]] <-
@@ -862,6 +878,7 @@ calibR_R6 <- R6::R6Class(
       if("LHS" %in% .sample_method) {
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
+          cat(paste("Running NM...", Sys.time(), "\n"))
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_LHS"]] <-
@@ -912,6 +929,7 @@ calibR_R6 <- R6::R6Class(
         }
         #### BFGS:----
         if("BFGS" %in% .calibration_method) {
+          cat(paste("Running BFGS...", Sys.time(), "\n"))
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_LHS"]] <-
@@ -962,6 +980,7 @@ calibR_R6 <- R6::R6Class(
         }
         #### SANN:----
         if("SANN" %in% .calibration_method) {
+          cat(paste("Running SANN...", Sys.time(), "\n"))
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_LHS"]] <-
@@ -1070,9 +1089,26 @@ calibR_R6 <- R6::R6Class(
     },
     ### Bayesian:----
     calibrateR_bayesian_ = function(.b_methods,
-                                    .n_resample,
-                                    .IMIS_iterations,
-                                    .IMIS_sample) {
+                                    .n_resample = 1000,
+                                    .IMIS_sample = 1000,
+                                    .IMIS_iterations = 30,
+                                    .MCMC_burnIn = 10000,
+                                    .MCMC_samples = 50000,
+                                    .MCMC_thin = 5,
+                                    .MCMC_rerun = TRUE) {
+      #### SIR:----
+      if('SIR' %in% .b_methods) {
+        samples_ = private$sample_prior_IMIS(.n_samples = .n_resample)
+        self$calibration_results$bayesian[["SIR"]] <-
+          private$calibrateModel_beyesian(
+            .b_method = 'SIR',
+            .func = self$calibration_model,
+            .args = self$calibration_model_args,
+            .n_resample = .n_resample,
+            .samples = samples_,
+            .l_params = self$calibration_parameters,
+            .l_targets = self$calibration_targets)
+      }
       #### IMIS:----
       if('IMIS' %in% .b_methods) {
         self$calibration_results$bayesian[["IMIS"]] <-
@@ -1085,26 +1121,97 @@ calibR_R6 <- R6::R6Class(
             .IMIS_iterations = .IMIS_iterations,
             .IMIS_sample = .IMIS_sample,
             .l_params = self$calibration_parameters,
-            .l_targets = self$calibration_targets
-          )
+            .l_targets = self$calibration_targets)
       }
-      #### SIR:----
-      if('SIR' %in% .b_methods) {
-        samples_ = private$sample_prior_IMIS(.n_samples = .n_resample)
-        self$calibration_results$bayesian[["SIR"]] <-
+      #### MCMC:----
+      if('MCMC' %in% .b_methods) {
+        self$calibration_results$bayesian[["MCMC"]] <-
           private$calibrateModel_beyesian(
-            .b_method = 'SIR',
+            .b_method = 'MCMC',
             .func = self$calibration_model,
             .args = self$calibration_model_args,
+            .transform = self$transform_parameters,
             .n_resample = .n_resample,
-            .samples = samples_,
             .l_params = self$calibration_parameters,
-            .l_targets = self$calibration_targets
-          )
+            .l_targets = self$calibration_targets,
+            .MCMC_burnIn = .MCMC_burnIn,
+            .MCMC_samples = .MCMC_samples,
+            .MCMC_thin = .MCMC_thin,
+            .MCMC_rerun = .MCMC_rerun)
       }
     },
     ### Bayesian helper functions:----
     #### Sample prior:----
+    # Use Random Grid Sampling (RGS) to sample from prior distribution
+    # This (_) version of the function outputs a vector of values if .n_samples = 1
+    #
+    # @param .l_params A list that contains a vector of parameter names,
+    # distributions and distributions' arguments.
+    # @param .n_samples An integer specifying the number of samples to be
+    # generated.
+    # @param ... additional arguments, for example: .seed_no to set a seed
+    # number.
+    #
+    # @return A table with each parameter RGS samples in a separate column
+    #
+    # @examples
+    # \dontrun{
+    # v_params_names <- c("p_Mets", "p_DieMets")
+    # v_params_dists <- c("unif", "unif")
+    # args <- list(list(min = 0.04, max = 0.16),
+    #              list(min = 0.04, max = 0.12))
+    # l_params <- list('v_params_names' = v_params_names,
+    #                  'v_params_dists' = v_params_dists,
+    #                  'args' = args)
+    #
+    # sample_prior_RGS_(.l_params = l_params,
+    #                   .n_samples = 1)
+    # }
+    sample_prior_RGS_ = function(
+    .n_samples = 1,
+    .l_params = self$calibration_parameters,
+    ...) {
+      # Grab additional arguments:
+      dots = list(...)
+      if(!is.null(dots[['.ssed_no']]))
+        set.seed(dots[['.ssed_no']])
+      # Define inputs list:
+      l_rgs <- list(.l_params[['v_params_names']],
+                    paste0('r', .l_params[['v_params_dists']]),
+                    .l_params[['args']],
+                    .l_params[['v_params_dists']])
+      # Make sure parameter names are in a named vector:
+      names(l_rgs[[1]]) <- l_rgs[[1]]
+      # Map over parameters and sample values accordingly:
+      if(.n_samples == 1){
+        vec_rgs_samp <- purrr::pmap_dbl(
+          .l = l_rgs,
+          .f = function(.name, .func, .arg, .dist) {
+            assign(.name,
+                   purrr::exec(.func,
+                               .n_samples,
+                               !!!.arg)
+            )
+          }
+        )
+
+        return(vec_rgs_samp)
+      } else {
+        tbl_rgs_samp <- purrr::pmap_dfc(
+          .l = l_rgs,
+          .f = function(.name, .func, .arg, .dist) {
+            assign(.name,
+                   purrr::exec(.func,
+                               .n_samples,
+                               !!!.arg)
+            )
+          }
+        )
+
+        return(tbl_rgs_samp)
+      }
+    },
+
     # Sample from prior using Latin Hypercube Sampling (LHS) method
     #
     # @param .l_params A list that contains a vector of parameter names,
@@ -1143,14 +1250,15 @@ calibR_R6 <- R6::R6Class(
 
       return(tbl_lhs_samp %>% as.matrix())
     },
+
     #### Prior densities:----
     # Calculate log prior
     #
     # @param .samples A vector/dataset containing sampled/proposed values.
     # @param .l_params A list that contains a vector of parameter names,
     # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
+    # @param .transform Logical for whether to back-transform parameters to
+    # their original scale.
     #
     log_priors = function(
     .samples,
@@ -1195,6 +1303,7 @@ calibR_R6 <- R6::R6Class(
       return(v_lprior)
 
     },
+
     # Calculate log prior (one set of parameters at a time)
     #
     # @param .samples A vector/dataset containing sampled/proposed values.
@@ -1245,6 +1354,7 @@ calibR_R6 <- R6::R6Class(
 
       return(v_lprior)
     },
+
     # Calculate prior densities
     #
     # @param .samples A vector/dataset containing sampled/proposed values.
@@ -1266,6 +1376,7 @@ calibR_R6 <- R6::R6Class(
 
       return(v_prior)
     },
+
     # Calculate prior (one set of parameters at a time)
     #
     # @param .samples A vector/dataset containing sampled/proposed values.
@@ -1287,6 +1398,7 @@ calibR_R6 <- R6::R6Class(
 
       return(v_prior)
     },
+
     #### Likelihood:----
     # Calculate log likelihood (LLK)
     #
@@ -1375,6 +1487,7 @@ calibR_R6 <- R6::R6Class(
 
       return(overall_lliks)
     },
+
     # Calculate likelihood
     #
     # @param .samples A table or vector of sampled parameter values
@@ -1401,6 +1514,7 @@ calibR_R6 <- R6::R6Class(
 
       return(v_likelihood)
     },
+
     #### Posterior:----
     # Calculate log posteriors
     #
@@ -1442,6 +1556,7 @@ calibR_R6 <- R6::R6Class(
 
       return(l_posterior)
     },
+
     # Calculate log posterior (one set of parameters at a time)
     #
     # @param .samples A table or vector of sampled parameter values
@@ -1482,6 +1597,7 @@ calibR_R6 <- R6::R6Class(
 
       return(l_posterior)
     },
+
     # Calculate posterior densities
     #
     # @param .samples A table or vector of sampled parameter values
@@ -1516,6 +1632,7 @@ calibR_R6 <- R6::R6Class(
 
       return(posterior)
     },
+
     # Calculate posterior (one set of parameters at a time)
     #
     # @param .samples A table or vector of sampled parameter values
@@ -1571,6 +1688,13 @@ calibR_R6 <- R6::R6Class(
     # @param .IMIS_sample the incremental sample size at each IMIS
     # iteration
     # @param .IMIS_iterations the maximum number of iterations in IMIS
+    # @param .MCMC_burnIn the number of samples before starting to retain samples
+    # @param .MCMC_samples the total number of samples the MCMC algorithm should
+    # generate including the burn-in sample including the .MCMC_burnIn. This value
+    # should not be equal to or less than .MCMC_burnIn.
+    # @param .MCMC_thin the value used to thin the resulting chain
+    # @param .MCMC_rerun use the proposal distribution covariance matrix from the
+    # first run to re-run the MCMC chain.
     # @param .transform Logical for whether to back-transform parameters
     # to their original scale.
     #
@@ -1584,7 +1708,11 @@ calibR_R6 <- R6::R6Class(
     .samples,
     .n_resample = 1000,
     .IMIS_sample = 1000,
-    .IMIS_iterations = 30) {
+    .IMIS_iterations = 30,
+    .MCMC_burnIn = 10000,
+    .MCMC_samples = 50000,
+    .MCMC_thin = 5,
+    .MCMC_rerun = TRUE) {
       # Ensure that .b_method is supported by the function:
       stopifnot(".b_method is supported by the function" =
                   any(.b_method %in% c('SIR', 'IMIS', 'MCMC')))
@@ -1592,8 +1720,19 @@ calibR_R6 <- R6::R6Class(
       if(.b_method == 'IMIS' & is.null(.IMIS_sample))
         .IMIS_sample <- 1000
 
+      # If user set a .MCMC_burnIn equal to or more than .MCMC_samples:
+      if(.b_method == 'MCMC' & !is.null(.MCMC_samples) & !is.null(.MCMC_burnIn)) {
+        # ensure we can thin the chain as needed:
+        if(.MCMC_samples < .n_resample * .MCMC_thin)
+          .MCMC_samples <- .n_resample * .MCMC_thin
+        # make sure samples are more than burn-in to accommodate it:
+        if(.MCMC_burnIn >= .MCMC_samples)
+          .MCMC_samples <- .MCMC_burnIn * 2
+      }
+
       # SIR:
       if(.b_method == 'SIR') {
+        cat(paste("Running SIR...", Sys.time(), "\n"))
         if(nrow(.samples) != .n_resample)
           stop(paste("Please pass", .n_resample, "samples to the function."))
         ## Calculate log-likelihood for each sample value:
@@ -1626,6 +1765,7 @@ calibR_R6 <- R6::R6Class(
         return(list('Results' = SIR_results, 'Method' = "SIR"))
 
       } else if(.b_method == 'IMIS') { # IMIS:
+        cat(paste("Running IMIS...", Sys.time(), "\n"))
         ## Run IMIS:
         fit_IMIS <- calibR::IMIS_(
           B = .IMIS_sample, # incremental sample size at each iteration
@@ -1635,9 +1775,8 @@ calibR_R6 <- R6::R6Class(
           sample.prior = private$sample_prior_IMIS,
           prior = private$calculate_prior,
           priors = private$calculate_priors,
-          likelihood = private$calculate_likelihood
-        )
-        ## Obtain draws from posterior:
+          likelihood = private$calculate_likelihood)
+        ## Calculate log-likelihood (overall fit) and posterior probability:
         m_calib_res <- fit_IMIS$resample
         Overall_fit <- private$log_likelihood(
           .samples = m_calib_res,
@@ -1647,16 +1786,17 @@ calibR_R6 <- R6::R6Class(
         Posterior_prob <- private$calculate_posteriors(
           .samples = m_calib_res, .func = .func, .args = .args,
           .l_targets = .l_targets, .l_params = .l_params)
-        ## Calculate log-likelihood (overall fit) and posterior probability:
+        ## Group results into one object:
         IMIS_results <- m_calib_res %>%
-          dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                                 repair = "unique",
-                                                 quiet = TRUE)) %>%
+          dplyr::as_tibble(
+            ~ vctrs::vec_as_names(...,
+                                  repair = "unique",
+                                  quiet = TRUE)) %>%
           dplyr::mutate(
             "Overall_fit" = Overall_fit,
-            "Posterior_prob" = Posterior_prob) %>%
+            "Posterior_prob" = Posterior_prob / sum(Posterior_prob)) %>%
           dplyr::arrange(dplyr::desc(Overall_fit))
-        ## Name column names IMIS stats object:
+        ## Assign column names in the IMIS stats object:
         stats <- fit_IMIS$stat %>%
           dplyr::as_tibble(~ vctrs::vec_as_names(...,
                                                  repair = "unique",
@@ -1664,13 +1804,89 @@ calibR_R6 <- R6::R6Class(
           `colnames<-`(c("MargLike", "UniquePoint", "MaxWeight", "ESS",
                          "ImpWt", "ImpWtVar"))
 
-        return(list('Results' = IMIS_results,
-                    'Method' = "IMIS",
-                    'Fit'  = fit_IMIS,
-                    'Stats' = stats))
+        return(list('Results' = IMIS_results, 'Method' = "IMIS",
+                    'Fit'  = fit_IMIS, 'Stats' = stats))
 
-      } else {
+      } else { # MCMC MH algorithm
+        cat(paste("Running MCMC...", Sys.time(), "\n"))
+        ## Sample a random set of parameters as a starting point for the chain:
+        guess <- private$sample_prior_RGS_(
+          .n_samples = 1,
+          .l_params = .l_params)
+        ## Run the Metropolis-Hastings algorithm
+        fit_MCMC <- MHadaptive::Metro_Hastings(
+          li_func = private$log_posterior,
+          pars = guess,
+          par_names = .l_params[["v_params_names"]],
+          iterations = .MCMC_samples,
+          burn_in = .MCMC_burnIn,
+          .func = .func,
+          .l_targets = .l_targets,
+          .l_params = .l_params,
+          .args = .args,
+          .transform = .transform)
+        if(.MCMC_rerun){
+          cat(paste("Re-running MCMC...", Sys.time(), "\n"))
+          guess <- private$sample_prior_RGS_(
+            .n_samples = 1,
+            .l_params = .l_params)
+          fit_MCMC <- MHadaptive::Metro_Hastings(
+            li_func = private$log_posterior,
+            pars = guess,
+            prop_sigma = fit_MCMC$prop_sigma,
+            par_names = .l_params[["v_params_names"]],
+            iterations = .MCMC_samples,
+            burn_in = .MCMC_burnIn,
+            .func = .func,
+            .l_targets = .l_targets,
+            .l_params = .l_params,
+            .args = .args,
+            .transform = .transform)}
+        ## Estimate 95% credible interval:
+        cred_int_95 <- MHadaptive::BCI(
+          mcmc_object = fit_MCMC,
+          interval = c(0.025, 0.975))
+        ## Thin the chain if needed:
+        if(!is.null(.MCMC_thin))
+          fit_MCMC <- MHadaptive::mcmc_thin(
+            mcmc_object = fit_MCMC,
+            thin = .MCMC_thin)
+        ## Calculate log-likelihood (overall fit) and posterior probability:
+        m_calib_res <- fit_MCMC$trace
+        colnames(m_calib_res) <- .l_params[["v_params_names"]]
+        Overall_fit <- private$log_likelihood(
+          .samples = m_calib_res, .func = .func, .args = .args,
+          .l_targets = .l_targets)
+        Posterior_prob <- private$calculate_posteriors(
+          .samples = m_calib_res, .func = .func, .args = .args,
+          .l_targets = .l_targets, .l_params = .l_params)
+        ## Group results into one object:
+        MCMC_results <- m_calib_res %>%
+          dplyr::as_tibble(
+            ~ vctrs::vec_as_names(...,
+                                  repair = "unique",
+                                  quiet = TRUE)) %>%
+          dplyr::mutate(
+            "Overall_fit" = Overall_fit,
+            "Posterior_prob" = Posterior_prob / sum(Posterior_prob)) %>%
+          dplyr::arrange(dplyr::desc(Overall_fit)) %>%
+          # randomly sample from the posterior, if required sample smaller than draws:
+          {if(.n_resample < nrow(.)){
+            dplyr::slice_sample(.data = ., n = .n_resample)
+          } else {
+            .
+          }}
 
+        ## Assign column names to the MCMC proposal distribution covariance matrix:
+        prop_sigma <- fit_MCMC$prop_sigma %>%
+          dplyr::as_tibble(~ vctrs::vec_as_names(...,
+                                                 repair = "unique",
+                                                 quiet = TRUE)) %>%
+          `colnames<-`(.l_params[["v_params_names"]])
+
+        return(list('Results' = MCMC_results, 'Method' = "MCMC",
+                    'Cred_int_95' = cred_int_95, 'Fit'  = fit_MCMC,
+                    'Propos_dist_Cov_matrix' = prop_sigma))
       }
     },
     ## PSA:----

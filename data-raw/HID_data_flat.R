@@ -1,5 +1,5 @@
 # This script defines the l_params and l_targets list for the HID_Markov():
-
+## Targets:----
 v_targets_names <- c("Prev", "Surv", "Trt_vol")
 v_targets_labels <- c("Prev" = "Prevalence",
                       "Surv" = "Survival",
@@ -32,14 +32,19 @@ l_targets <-
        'v_targets_axis' = v_targets_axis,
        'v_targets_dists' = v_targets_dists,
        'v_targets_weights' = v_targets_weights)
-v_params_names <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "rho",
-                    "b")
-v_params_true_values <- c('mu_e' = 0.05300305, 'mu_l' = 0.09492525,
-                          'mu_t' = 0.06949119, 'p' = 0.35494867,
-                          'r_l' = 0.70669255, 'rho' = 0.62436759,
-                          'b' = 0.27229941)
-v_params_dists <- c("lnorm", "lnorm", "lnorm", "lnorm", "lnorm", "lnorm",
-                    "beta")
+## Parameters:----
+v_params_names <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "rho", "b")
+v_params_names <- c(
+  "mu_e" = "Cause-specific mortality rate with early-stage disease",
+  "mu_l" = "Cause-specific mortality rate with late-stage disease",
+  "mu_t" = "Cause-specific mortality rate on treatment",
+  "p"    = "Transition rate from early to late-stage disease",
+  "r_l"  = "Rate of uptake onto treatment from late-stage disease",
+  "rho"  = "Effective contact rate",
+  "b"    = "Fraction of population in at-risk group")
+v_params_true_values <- c('mu_e' = 0.04, 'mu_l' = 0.15, 'mu_t' = 0.016,
+                          'p' = 0.12, 'r_l' = 0.41, 'rho' = 0.53, 'b' = 0.21)
+v_params_dists <- c("lnorm", "lnorm", "lnorm", "lnorm", "lnorm", "lnorm", "beta")
 args <- list(list(meanlog = 0, sdlog = 1),
              list(meanlog = 0, sdlog = 1),
              list(meanlog = 0, sdlog = 1),

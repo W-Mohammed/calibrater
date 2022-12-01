@@ -14,6 +14,10 @@ calibrateModel_beyesian(
   .n_resample = 1000,
   .IMIS_sample = 1000,
   .IMIS_iterations = 30,
+  .MCMC_burnIn = 10000,
+  .MCMC_samples = 50000,
+  .MCMC_thin = 5,
+  .MCMC_rerun = TRUE,
   .transform = FALSE
 )
 }
@@ -42,11 +46,19 @@ distributions and distributions' arguments.}
 
 \item{.IMIS_iterations}{the maximum number of iterations in IMIS}
 
+\item{.MCMC_burnIn}{the number of samples before starting to retain samples}
+
+\item{.MCMC_samples}{the total number of samples the MCMC algorithm should
+generate including the burn-in sample including the .MCMC_burnIn. This value
+should not be equal to or less than .MCMC_burnIn.}
+
+\item{.MCMC_thin}{the value used to thin the resulting chain}
+
+\item{.MCMC_rerun}{use the proposal distribution covariance matrix from the
+first run to re-run the MCMC chain.}
+
 \item{.transform}{Logical for whether to back-transform parameters to
 their original scale.}
-}
-\value{
-
 }
 \description{
 Calibrate models using Bayesian methods - employing local IMIS_()

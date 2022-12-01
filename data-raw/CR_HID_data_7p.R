@@ -1,4 +1,4 @@
-# CRS Model calibration data - Two parameters (mu_e, "mu_l")
+# HID Model calibration data - All parameters
 # Targets simulated using 10% of true parameters'
 # values as the sd in a PSA analysis
 
@@ -17,7 +17,7 @@ v_targets_dists <- c('Prev' = "norm", 'Surv' = "norm", 'Trt_vol' = "norm")
 l_targets <-
   list('v_targets_names' = v_targets_names,
        'v_targets_labels' = v_targets_labels,
-       'Prev' = dplyr::tibble('value' = c(0.0527, 0.139, 0.116), # %
+       'Prev' = dplyr::tibble('value' = c(0.051, 0.143, 0.116), # %
                               'se' = c(0.0189, 0.0168, 0.01397),
                               'x' = c(527, 1390, 1160), # number of cases
                               'size' = 10000, # simulated PSA runs
@@ -29,7 +29,7 @@ l_targets <-
                               'lb' = 8.994,
                               'ub' = 11.028,
                               'Year' = 10),
-       'Trt_vol' = dplyr::tibble('value' = 73161.991,
+       'Trt_vol' = dplyr::tibble('value' = 74396.6,
                                  'se' = 8846.7299,
                                  'lb' = 56022.0837,
                                  'ub' = 90890.4878,
@@ -40,7 +40,7 @@ l_targets <-
 
 ## Parameters:----
 v_params_names <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "rho", "b")
-v_params_names <- c(
+v_params_labels <- c(
   "mu_e" = "Cause-specific mortality rate with early-stage disease",
   "mu_l" = "Cause-specific mortality rate with late-stage disease",
   "mu_t" = "Cause-specific mortality rate on treatment",
@@ -93,7 +93,7 @@ l_params <- list('v_params_names' = v_params_names,
                  'args' = args,
                  'Xargs' = extra_args)
 ## Pack targets and parameters together:----
-HID_data_2params <- list('l_params' = l_params,
-                      'l_targets' = l_targets)
+CR_HID_data_7p <- list('l_params' = l_params,
+                    'l_targets' = l_targets)
 ## Save calibration data internally:----
-usethis::use_data(HID_data_2params, overwrite = TRUE)
+usethis::use_data(CR_HID_data_7p, overwrite = TRUE)

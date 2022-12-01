@@ -34,42 +34,37 @@ l_targets <-
        'v_targets_weights' = v_targets_weights)
 v_params_names <- c("mu_e", "mu_l", "mu_t", "p", "r_l",
                     "rho", "b")
-v_params_true_values <- c('mu_e' = 0.05300305, 'mu_l' = 0.09492525,
-                          'mu_t' = 0.06949119, 'p' = 0.35494867,
-                          'r_l' = 0.70669255, 'rho' = 0.62436759,
-                          'b' = 0.27229941)
-v_params_dists <- c("norm", "norm", "norm", "norm", "norm", "norm",
-                    "unif")
-v_true_params_dists <- c("lnorm", "lnorm", "lnorm", "lnorm", "lnorm", "lnorm",
-                         "beta")
-args <- list(list(mean = 0, sd = 2),
-             list(mean = 0, sd = 2),
-             list(mean = 0, sd = 2),
-             list(mean = 0, sd = 2),
-             list(mean = 0, sd = 2),
-             list(mean = 0, sd = 2),
-             list(min = -16, max = 16))
-true_args <- list(list(meanlog = 0, sdlog = 1),
-                  list(meanlog = 0, sdlog = 1),
-                  list(meanlog = 0, sdlog = 1),
-                  list(meanlog = 0, sdlog = 1),
-                  list(meanlog = 0, sdlog = 1),
-                  list(meanlog = 0, sdlog = 1),
-                  list(shape1 = 1, shape2 = 1))
-extra_args <- list(list(min = log(0.000001), max = log(15)),
-                   list(min = log(0.000001), max = log(15)),
-                   list(min = log(0.000001), max = log(15)),
-                   list(min = log(0.000001), max = log(15)),
-                   list(min = log(0.000001), max = log(15)),
-                   list(min = log(0.000001), max = log(15)),
-                   list(min = prob_to_logit(1.125352e-07),
-                        max = prob_to_logit(0.9999999)))
-true_extra_args <- list(list(min = 0, max = 15),
-                        list(min = 0, max = 15),
-                        list(min = 0, max = 15),
-                        list(min = 0, max = 15),
-                        list(min = 0, max = 15),
-                        list(min = 0, max = 15),
+v_params_true_values <- c('mu_e' = 0.04, 'mu_l' = 0.15, 'mu_t' = 0.016,
+                          'p' = 0.12, 'r_l' = 0.41, 'rho' = 0.53, 'b' = 0.21)
+v_params_dists <- c("unif", "unif", "unif", "unif", "unif", "unif", "unif")
+v_true_params_dists <- c("unif", "unif", "unif", "unif", "unif", "unif", "unif")
+args <- list(list(min = -10, max = log(2)),
+             list(min = -10, max = log(2)),
+             list(min = -10, max = log(2)),
+             list(min = -10, max = log(2)),
+             list(min = -10, max = log(2)),
+             list(min = -10, max = log(2)),
+             list(min = -10, max = 10))
+true_args <- list(list(min = 0, max = 2),
+                  list(min = 0, max = 2),
+                  list(min = 0, max = 2),
+                  list(min = 0, max = 2),
+                  list(min = 0, max = 2),
+                  list(min = 0, max = 2),
+                  list(min = 0, max = 1))
+extra_args <- list(list(min = -10, max = log(2)),
+                   list(min = -10, max = log(2)),
+                   list(min = -10, max = log(2)),
+                   list(min = -10, max = log(2)),
+                   list(min = -10, max = log(2)),
+                   list(min = -10, max = log(2)),
+                   list(min = -10, max = 10))
+true_extra_args <- list(list(min = 0, max = 2),
+                        list(min = 0, max = 2),
+                        list(min = 0, max = 2),
+                        list(min = 0, max = 2),
+                        list(min = 0, max = 2),
+                        list(min = 0, max = 2),
                         list(min = 0, max = 1))
 backTransform <- list('mu_e' = "exp", 'mu_l' = "exp", 'mu_t' = "exp",
                       'p' = "exp", 'r_l' = "exp", 'rho' = "exp",

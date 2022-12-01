@@ -19,9 +19,6 @@ parameter(s).}
 \item{.PSA_unCalib_values_}{PSA values sampled for un-calibrated
 (known) parameters(s).}
 }
-\value{
-
-}
 \description{
 Run Probabilistic Sensitivity Analysis (PSA) for a Decision Analytic
 Models (DAM) using both calibrated and un-calibrated parameters.

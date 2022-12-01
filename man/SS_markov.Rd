@@ -20,9 +20,6 @@ are returned.}
 
 \item{hr_S2}{Hazard ratio of death in sicker vs healthy}
 }
-\value{
-
-}
 \description{
 Sick-Sicker (SS) Markov model
 }

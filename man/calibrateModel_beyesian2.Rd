@@ -45,9 +45,6 @@ distributions and distributions' arguments.}
 \item{.transform}{Logical for whether to back-transform parameters to
 their original scale.}
 }
-\value{
-
-}
 \description{
 Calibrate models using Bayesian methods - employing IMIS::IMIS()
 }

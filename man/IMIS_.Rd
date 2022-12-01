@@ -34,9 +34,6 @@ parameters at a time)}
 
 \item{likelihood}{Function that calculates the likelihood}
 }
-\value{
-
-}
 \description{
 Incremental Mixture Importance Sampling (IMIS) - amended version
 }
