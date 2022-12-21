@@ -29,9 +29,13 @@ calibR_R6 <- R6::R6Class(
     calibration_targets = NULL,
     #' @field calibration_results calibration interim results
     calibration_results = NULL,
+    #' @field initial_values directed methods starting values
+    initial_values = NULL,
     #' @field transform_parameters boolean for whether to back transform
     #' parameters
     transform_parameters = FALSE,
+    #' @field log_likelihood_plot log likelihood values for plot
+    log_likelihood_plot = NULL,
     #' @field model_predictions simulated outputs
     model_predictions = NULL,
     #' @field prior_samples samples from parameters' priors
@@ -119,7 +123,7 @@ calibR_R6 <- R6::R6Class(
     #' optimisation algorithm. Default is \code{FALSE}.
     #' @param .maximise Logical for whether the output of the function is
     #' used in a maximising optimisation function. Default is \code{TRUE}.
-    #' @param .weighted Logical for whether the SSR was to be weighted,
+    #' @param .weighted Logical for whether the SSE was to be weighted,
     #' default is \code{TRUE}. The weight used by function is
     #' \code{1/(sd^2)}.
     #' @param .sample_method The method used to sample from the prior
@@ -308,37 +312,65 @@ calibR_R6 <- R6::R6Class(
 
     },
 
-    #' Print
+    #' Plot log likelihood
+    #'
+    #' @param .engine_ Plotting engine, currently c("plotly", "ggplot2")
+    #' @param .n_samples_ Number of Grid samples to plot log likelihood
+    #' @param .points_ Boolean for whether to add scatter plot
+    #' @param .maximise_ Boolean for whether the function is maximising
+    #' @param .x_axis_lb_ Lower bound of the plot's x axis.
+    #' @param .x_axis_ub_ Upper bound of the plot's x axis.
+    #' @param .y_axis_lb_ Lower bound of the plot's y axis.
+    #' @param .y_axis_ub_ Upper bound of the plot's y axis.
+    #' @param .legend_ Boolean for whether to show a legend (default is FALSE).
+    #' This parameter also controls text labels in the opposite way.
+    #' @param .greys_ Boolean for whether to use a Grey scale in the plot.
+    #' @param .scale_ The colour bar colour-scale. Available options are Greys,
+    #' YlGnBu, Greens, YlOrRd, Bluered, RdBu, Reds, Blues, Picnic, Rainbow,
+    #' Portland, Jet, Hot, Blackbody, Earth, Electric, Viridis, Cividis.
     #'
     #' @return
     #' @export
     #'
     #' @examples
-    print_test = function() {
-      # if(!is.null(self$calibration_results$random)) {
-      #   tmp <- purrr::map_df(
-      #     .x = c('random', 'directed', 'bayesian'),
-      #     .f = function(.category_) {
-      #       print(.category_)
-      #       private$get_MAP_values(
-      #         .l_calib_res_lists = self$calibration_results[[.category_]],
-      #         .search_method = .category_)
-      #     }
-      #   )
-      #   print(tmp)
-      # }
-      # if(!is.null(self$calibration_results$directed)) {
-      #   tmp <- private$get_MAP_values(
-      #     .l_calib_res_lists = self$calibration_results$directed,
-      #     .search_method = "directed")
-      #   print(tmp)
-      # }
-      # if(!is.null(self$calibration_results$bayesian)) {
-      #   tmp <- private$get_MAP_values(
-      #     .l_calib_res_lists = self$calibration_results$bayesian,
-      #     .search_method = "bayesian")
-      #   print(tmp)
-      # }
+    #' \dontrun{
+    #' }
+    draw_log_likelihood = function(.engine_ = "plotly",
+                                   .maximise_ = TRUE,
+                                   .n_samples_ = 1e4,
+                                   .points_ = FALSE,
+                                   .greys_ = FALSE,
+                                   .scale_ = NULL,
+                                   .legend_ = FALSE,
+                                   .x_axis_lb_ = NULL,
+                                   .x_axis_ub_ = NULL,
+                                   .y_axis_lb_ = NULL,
+                                   .y_axis_ub_ = NULL) {
+      ## Sample values for the log likelihood plot:----
+      if(is.null(self$log_likelihood_plot[["Samples"]]))
+        self$log_likelihood_plot[["Samples"]] <- calibR::sample_prior_FGS_(
+          .n_samples = .n_samples_,
+          .l_params = self$calibration_parameters)
+      ## Estimate log likelihood:----
+      if(is.null(self$log_likelihood_plot[["Results"]]))
+        self$log_likelihood_plot[["Results"]] <- calibR::LLK_GOF(
+          .samples = self$log_likelihood_plot$Samples,
+          .sample_method = "FGS",
+          .func = self$calibration_model,
+          .args = self$calibration_model_args,
+          .maximise = .maximise_,
+          .l_targets = self$calibration_targets)
+      ## Plot log_likelihood:----
+      self$plots[["log_likelihood"]] <- private$plot_log_likelihood(
+        .engine_ = .engine_,
+        .points_ = .points_,
+        .greys_ = .greys_,
+        .scale_ = .scale_,
+        .legend_ = .legend_,
+        .x_axis_lb_ = .x_axis_lb_,
+        .x_axis_ub_ = .x_axis_ub_,
+        .y_axis_lb_ = .y_axis_lb_,
+        .y_axis_ub_ = .y_axis_ub_)
     }
   ),
 
@@ -457,6 +489,10 @@ calibR_R6 <- R6::R6Class(
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
           cat(paste("Running NM...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["NM_RGS"]] <-
+            self$prior_samples[["RGS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_RGS"]] <-
@@ -464,8 +500,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "LLK",
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["NM_RGS"]],
                 .s_method = "NM",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -479,8 +514,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "SSE",
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["NM_RGS"]],
                 .s_method = "NM",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -496,8 +530,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["NM_RGS"]],
                 .s_method = "NM",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -508,6 +541,10 @@ calibR_R6 <- R6::R6Class(
         #### BFGS:----
         if("BFGS" %in% .calibration_method) {
           cat(paste("Running BFGS...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["BFGS_RGS"]] <-
+            self$prior_samples[["RGS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_RGS"]] <-
@@ -515,8 +552,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["BFGS_RGS"]],
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -530,8 +566,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["BFGS_RGS"]],
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -547,8 +582,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["BFGS_RGS"]],
                 .s_method = "BFGS",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -559,6 +593,10 @@ calibR_R6 <- R6::R6Class(
         #### SANN:----
         if("SANN" %in% .calibration_method) {
           cat(paste("Running SANN...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["SANN_RGS"]] <-
+            self$prior_samples[["RGS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_RGS"]] <-
@@ -566,8 +604,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["SANN_RGS"]],
                 .s_method = 'SANN',
                 maxit = .max_iterations,
                 temp = temp,
@@ -583,8 +620,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["SANN_RGS"]],
                 .s_method = 'SANN',
                 maxit = .max_iterations,
                 temp = temp,
@@ -602,8 +638,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["SANN_RGS"]],
                 .s_method = "SANN",
                 maxit = .max_iterations,
                 temp = temp,
@@ -615,6 +650,11 @@ calibR_R6 <- R6::R6Class(
         }
         #### GA:----
         if("GA" %in% .calibration_method) {
+          cat(paste("Running GA...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["GA_RGS"]] <-
+            self$prior_samples[["RGS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["GA_LLK_RGS"]] <-
@@ -622,8 +662,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["GA_RGS"]],
                 .s_method = 'GA',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -637,8 +676,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["GA_RGS"]],
                 .s_method = 'GA',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -654,8 +692,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["RGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["GA_RGS"]],
                 .s_method = "GA",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -668,6 +705,10 @@ calibR_R6 <- R6::R6Class(
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
           cat(paste("Running NM...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["NM_FGS"]] <-
+            self$prior_samples[["FGS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_FGS"]] <-
@@ -675,8 +716,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "LLK",
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["NM_FGS"]],
                 .s_method = "NM",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -690,8 +730,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "SSE",
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["NM_FGS"]],
                 .s_method = "NM",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -707,8 +746,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["NM_FGS"]],
                 .s_method = "NM",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -719,6 +757,10 @@ calibR_R6 <- R6::R6Class(
         #### BFGS:----
         if("BFGS" %in% .calibration_method) {
           cat(paste("Running BFGS...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["BFGS_FGS"]] <-
+            self$prior_samples[["FGS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_FGS"]] <-
@@ -726,8 +768,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["BFGS_FGS"]],
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -741,8 +782,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["BFGS_FGS"]],
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -758,8 +798,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["BFGS_FGS"]],
                 .s_method = "BFGS",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -770,6 +809,10 @@ calibR_R6 <- R6::R6Class(
         #### SANN:----
         if("SANN" %in% .calibration_method) {
           cat(paste("Running SANN...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["SANN_FGS"]] <-
+            self$prior_samples[["FGS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_FGS"]] <-
@@ -777,8 +820,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["SANN_FGS"]],
                 .s_method = 'SANN',
                 maxit = .max_iterations,
                 temp = temp,
@@ -794,8 +836,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["SANN_FGS"]],
                 .s_method = 'SANN',
                 maxit = .max_iterations,
                 temp = temp,
@@ -813,8 +854,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["SANN_FGS"]],
                 .s_method = "SANN",
                 maxit = .max_iterations,
                 temp = temp,
@@ -826,6 +866,11 @@ calibR_R6 <- R6::R6Class(
         }
         #### GA:----
         if("GA" %in% .calibration_method) {
+          cat(paste("Running GA...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["GA_FGS"]] <-
+            self$prior_samples[["FGS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["GA_LLK_FGS"]] <-
@@ -833,8 +878,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["GA_FGS"]],
                 .s_method = 'GA',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -848,8 +892,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["GA_FGS"]],
                 .s_method = 'GA',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -865,8 +908,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["FGS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["GA_FGS"]],
                 .s_method = "GA",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -879,6 +921,10 @@ calibR_R6 <- R6::R6Class(
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
           cat(paste("Running NM...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["NM_LHS"]] <-
+            self$prior_samples[["LHS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_LHS"]] <-
@@ -886,8 +932,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "LLK",
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["NM_LHS"]],
                 .s_method = "NM",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -901,8 +946,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = "SSE",
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["NM_LHS"]],
                 .s_method = "NM",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -918,8 +962,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["NM_LHS"]],
                 .s_method = "NM",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -930,6 +973,10 @@ calibR_R6 <- R6::R6Class(
         #### BFGS:----
         if("BFGS" %in% .calibration_method) {
           cat(paste("Running BFGS...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["BFGS_LHS"]] <-
+            self$prior_samples[["LHS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_LHS"]] <-
@@ -937,8 +984,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["BFGS_LHS"]],
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -952,8 +998,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["BFGS_LHS"]],
                 .s_method = 'BFGS',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -969,8 +1014,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["BFGS_LHS"]],
                 .s_method = "BFGS",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -981,6 +1025,10 @@ calibR_R6 <- R6::R6Class(
         #### SANN:----
         if("SANN" %in% .calibration_method) {
           cat(paste("Running SANN...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["SANN_LHS"]] <-
+            self$prior_samples[["LHS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_LHS"]] <-
@@ -988,8 +1036,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["SANN_LHS"]],
                 .s_method = 'SANN',
                 maxit = .max_iterations,
                 temp = temp,
@@ -1005,8 +1052,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["SANN_LHS"]],
                 .s_method = 'SANN',
                 maxit = .max_iterations,
                 temp = temp,
@@ -1024,8 +1070,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["SANN_LHS"]],
                 .s_method = "SANN",
                 maxit = .max_iterations,
                 temp = temp,
@@ -1037,6 +1082,11 @@ calibR_R6 <- R6::R6Class(
         }
         #### GA:----
         if("GA" %in% .calibration_method) {
+          cat(paste("Running GA...", Sys.time(), "\n"))
+          ##### Save initial values:----
+          self$initial_values[["GA_LHS"]] <-
+            self$prior_samples[["LHS"]] %>%
+            dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["GA_LLK_LHS"]] <-
@@ -1044,8 +1094,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'LLK',
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["GA_LHS"]],
                 .s_method = 'GA',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -1059,8 +1108,7 @@ calibR_R6 <- R6::R6Class(
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
                 .gof = 'SSE',
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["GA_LHS"]],
                 .s_method = 'GA',
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -1076,8 +1124,7 @@ calibR_R6 <- R6::R6Class(
                 .args = self$calibration_model_args,
                 .gof = .gof,
                 .gof_func = .gof_func,
-                .samples = self$prior_samples[["LHS"]] %>%
-                  dplyr::slice_sample(n = .n_samples),
+                .samples = self$initial_values[["GA_LHS"]],
                 .s_method = "GA",
                 maxit = .max_iterations,
                 .maximise = .maximise,
@@ -2076,11 +2123,11 @@ calibR_R6 <- R6::R6Class(
                   y = Method,
                   fill = as.factor(.data[[y_var]]),
                   colour = as.factor(.data[[y_var]])),
-            alpha = 0.4,
+                alpha = 0.4,
                 show.legend = TRUE,
                 position = "dodge2") +
               ggplot2::geom_errorbarh(
-              # ggplot2::geom_linerange(
+                # ggplot2::geom_linerange(
                 data = data_,
                 ggplot2::aes(
                   y = Method,
@@ -2377,7 +2424,7 @@ calibR_R6 <- R6::R6Class(
                   "\"'s ",
                   "true value: (",
                   round(self$calibration_parameters$
-                    v_params_true_values[[.parameter_]], 2),
+                          v_params_true_values[[.parameter_]], 2),
                   ")"
                 ))
           }
@@ -2835,7 +2882,7 @@ calibR_R6 <- R6::R6Class(
                 continuous = GGally::wrap(
                   "densityDiag",
                   alpha = 0.5))
-              )
+            )
 
             self$plots$correlations[[method]] <-
               self$plots$correlations[[method]] +
@@ -2919,6 +2966,99 @@ calibR_R6 <- R6::R6Class(
       data_ %>%
         dplyr::select(-c(Overall_fit, Label)) %>%
         psych::pairs.panels()
+    },
+    ### Log likelihood plots:----
+    plot_log_likelihood = function(.engine_ = "plotly",
+                                   .points_ = FALSE,
+                                   .greys_ = FALSE,
+                                   .scale_ = NULL,
+                                   .legend_ = FALSE,
+                                   .x_axis_lb_ = NULL,
+                                   .x_axis_ub_ = NULL,
+                                   .y_axis_lb_ = NULL,
+                                   .y_axis_ub_ = NULL) {
+      #### Remove extreme values or plotly will trip:----
+      self$log_likelihood_plot$Results <- self$log_likelihood_plot$Results %>%
+        dplyr::as_tibble() %>%
+        dplyr::filter(!is.na(Overall_fit)) %>%
+        dplyr::filter(Overall_fit != Inf) %>%
+        dplyr::filter(Overall_fit != -Inf)
+      #### Generate plots:----
+      self$plots$log_likelihood <-
+        if(.engine_ == "plotly") {
+          #### Plotly log likelihood plots:----
+          plots_list <- purrr::map(
+            .x = self$calibration_parameters$v_params_names,
+            .f = function(.param_x) {
+              plots_list_ <- purrr::map(
+                .x = self$calibration_parameters$v_params_names,
+                .f = function(.param_y) {
+                  if(.param_x != .param_y) {
+                    if(is.null(.x_axis_lb_))
+                      .x_axis_lb_ <- self$calibration_parameters$
+                        Xargs[[.param_x]]$min
+                    if(is.null(.x_axis_ub_))
+                      .x_axis_ub_ <- self$calibration_parameters$
+                        Xargs[[.param_x]]$max
+                    if(is.null(.y_axis_lb_))
+                      .y_axis_lb_ <- self$calibration_parameters$
+                        Xargs[[.param_y]]$min
+                    if(is.null(.y_axis_ub_))
+                      .y_axis_ub_ <- self$calibration_parameters$
+                        Xargs[[.param_y]]$max
+                    plotly::plot_ly(
+                      x = self$log_likelihood_plot$Results[[.param_x]],
+                      y = self$log_likelihood_plot$Results[[.param_y]],
+                      z = self$log_likelihood_plot$Results$Overall_fit,
+                      type = "contour",
+                      colorscale = if(is.null(.scale_) & .greys_){
+                        "Greys"
+                      } else if(is.null(.scale_) & !.greys_) {
+                        "Viridis"
+                      } else if(is.null(.scale_) & is.null(.greys_)){
+                        "Viridis"
+                      } else {
+                        .scale_
+                      },
+                      contours = list(
+                        showlabels = ifelse(
+                          .legend_, FALSE, TRUE))) %>%
+                      plotly::layout(
+                          xaxis = list(
+                            title = self$calibration_parameters$
+                              v_params_labels[[.param_x]],
+                            range = list(.x_axis_lb_, .x_axis_ub_)),
+                          yaxis = list(
+                            title = self$calibration_parameters$
+                              v_params_labels[[.param_y]],
+                            range = list(.y_axis_lb_, .y_axis_ub_))) %>%
+                        {if(.legend_) {
+                          plotly::colorbar(
+                            p = .,
+                            title = "Log\nlikelihood")
+                        } else {
+                          plotly::hide_legend(p = .) %>%
+                            plotly::hide_colorbar(p = .)
+                        }} %>%
+                        {if(.points_) {
+                          plotly::add_trace(
+                            p = .,
+                            inherit = FALSE,
+                            x = self$log_likelihood_plot$Results[[.param_x]],
+                            y = self$log_likelihood_plot$Results[[.param_y]],
+                            type = 'scatter',
+                            mode = 'markers',
+                            marker = list(size = 1),
+                            symbols = 'o')
+                        } else {
+                          .
+                        }}
+                  }
+                })
+            })
+
+          return(plots_list)
+        }
     },
     ## Helper functions:----
     # Get Maximum a-posteriori (MAP) values from calibration methods

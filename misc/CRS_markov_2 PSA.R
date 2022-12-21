@@ -77,7 +77,14 @@ psa_object <- ShinyPSA::summarise_PSA_(
   .costs = CRS_true_CE$c,
   .params = CRS_true_CE$p,
   .interventions = CRS_true_CE$treats,
-  .plot = TRUE)
+  .plot = FALSE)
 
 saveRDS(object = psa_object[27:34], file = "../../2. Confirmation Review/CR_data/Case_study_1/CRS_true_PSA_summary.rds",compress = T)
 
+tabo <- ShinyPSA::draw_summary_table_(
+  .PSA_data = psa_object,
+  .wtp_ = c(2e4, 3e4, 5e4),
+  .beautify_ = FALSE,
+  .long_ = TRUE)
+
+tabo %>% gt::gt()
