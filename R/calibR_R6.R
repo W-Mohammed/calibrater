@@ -29,13 +29,11 @@ calibR_R6 <- R6::R6Class(
     calibration_targets = NULL,
     #' @field calibration_results calibration interim results
     calibration_results = NULL,
-    #' @field initial_values directed methods starting values
-    initial_values = NULL,
     #' @field transform_parameters boolean for whether to back transform
     #' parameters
     transform_parameters = FALSE,
-    #' @field log_likelihood_plot log likelihood values for plot
-    log_likelihood_plot = NULL,
+    #' @field GOF_measure_plot log likelihood values for plot
+    GOF_measure_plot = NULL,
     #' @field model_predictions simulated outputs
     model_predictions = NULL,
     #' @field prior_samples samples from parameters' priors
@@ -168,10 +166,13 @@ calibR_R6 <- R6::R6Class(
     #' @param .n_samples Number of starting values (gausses) to use.
     #' @param .max_iterations Maximum number of algorithm iterations.
     #' @param temp SANN algorithm tuning parameter.
-    #' @param tmax SANN algorithm tuning parameter.
+    #' @param trace Non-negative integer. If positive, tracing information on
+    #' the progress of the optimization is produced. Higher values may produce
+    #' more tracing information.
     #' @param .calibration_method The calibration process.
     #' @param .sample_method The method used to sample from the prior
     #' distribution.
+    #' @param .maximise Boolean for whether the function is to maximise.
     #'
     #' @return Executes the required calibration method and populates
     #' the samples internal object.
@@ -186,7 +187,7 @@ calibR_R6 <- R6::R6Class(
                                    .n_samples = 1,
                                    .max_iterations = 1000,
                                    temp = 10,
-                                   tmax = 10,
+                                   trace = NULL,
                                    .calibration_method = 'NM',
                                    .sample_method = 'LHS',
                                    .maximise = TRUE) {
@@ -198,7 +199,7 @@ calibR_R6 <- R6::R6Class(
         .sample_method = .sample_method,
         .max_iterations = .max_iterations,
         temp = temp,
-        tmax = tmax,
+        trace = trace,
         .maximise = .maximise)
     },
 
@@ -315,19 +316,22 @@ calibR_R6 <- R6::R6Class(
     #' Plot log likelihood
     #'
     #' @param .engine_ Plotting engine, currently c("plotly", "ggplot2")
+    #' @param .maximise_ Boolean for whether the function is maximising
+    #' @param .gof_ Goodness of fit (GOF) measure - fitness function. Either
+    #' "LLK" or "SEE" for the log-likelihood and sum-of-squared-errors GOF,
+    #' respectively.
     #' @param .n_samples_ Number of Grid samples to plot log likelihood
     #' @param .points_ Boolean for whether to add scatter plot
-    #' @param .maximise_ Boolean for whether the function is maximising
-    #' @param .x_axis_lb_ Lower bound of the plot's x axis.
-    #' @param .x_axis_ub_ Upper bound of the plot's x axis.
-    #' @param .y_axis_lb_ Lower bound of the plot's y axis.
-    #' @param .y_axis_ub_ Upper bound of the plot's y axis.
-    #' @param .legend_ Boolean for whether to show a legend (default is FALSE).
-    #' This parameter also controls text labels in the opposite way.
     #' @param .greys_ Boolean for whether to use a Grey scale in the plot.
     #' @param .scale_ The colour bar colour-scale. Available options are Greys,
     #' YlGnBu, Greens, YlOrRd, Bluered, RdBu, Reds, Blues, Picnic, Rainbow,
     #' Portland, Jet, Hot, Blackbody, Earth, Electric, Viridis, Cividis.
+    #' @param .legend_ Boolean for whether to show a legend (default is FALSE).
+    #' This parameter also controls text labels in the opposite way.
+    #' @param .x_axis_lb_ Lower bound of the plot's x axis.
+    #' @param .x_axis_ub_ Upper bound of the plot's x axis.
+    #' @param .y_axis_lb_ Lower bound of the plot's y axis.
+    #' @param .y_axis_ub_ Upper bound of the plot's y axis.
     #'
     #' @return
     #' @export
@@ -335,34 +339,50 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    draw_log_likelihood = function(.engine_ = "plotly",
-                                   .maximise_ = TRUE,
-                                   .n_samples_ = 1e4,
-                                   .points_ = FALSE,
-                                   .greys_ = FALSE,
-                                   .scale_ = NULL,
-                                   .legend_ = FALSE,
-                                   .x_axis_lb_ = NULL,
-                                   .x_axis_ub_ = NULL,
-                                   .y_axis_lb_ = NULL,
-                                   .y_axis_ub_ = NULL) {
-      ## Sample values for the log likelihood plot:----
-      if(is.null(self$log_likelihood_plot[["Samples"]]))
-        self$log_likelihood_plot[["Samples"]] <- calibR::sample_prior_FGS_(
+    draw_GOF_measure = function(.engine_ = "plotly",
+                                .maximise_ = TRUE,
+                                .gof_ = "LLK",
+                                .n_samples_ = 1e4,
+                                .points_ = FALSE,
+                                .greys_ = FALSE,
+                                .scale_ = NULL,
+                                .legend_ = FALSE,
+                                .x_axis_lb_ = NULL,
+                                .x_axis_ub_ = NULL,
+                                .y_axis_lb_ = NULL,
+                                .y_axis_ub_ = NULL) {
+      ## Sanity check:----
+      stopifnot(".gof_ value is not supported by the function" =
+                  any(.gof_ %in% c('LLK', 'SSE')))
+      ## Sample values for the fitness plot:----
+      if(is.null(self$GOF_measure_plot[["Samples"]]))
+        self$GOF_measure_plot[["Samples"]] <- calibR::sample_prior_FGS_(
           .n_samples = .n_samples_,
           .l_params = self$calibration_parameters)
-      ## Estimate log likelihood:----
-      if(is.null(self$log_likelihood_plot[["Results"]]))
-        self$log_likelihood_plot[["Results"]] <- calibR::LLK_GOF(
-          .samples = self$log_likelihood_plot$Samples,
-          .sample_method = "FGS",
-          .func = self$calibration_model,
-          .args = self$calibration_model_args,
-          .maximise = .maximise_,
-          .l_targets = self$calibration_targets)
-      ## Plot log_likelihood:----
-      self$plots[["log_likelihood"]] <- private$plot_log_likelihood(
+      ## Estimate GOF measure:----
+      if(is.null(self$GOF_measure_plot[["Results"]]))
+        self$GOF_measure_plot[["Results"]] <- if(.gof_ == "LLK"){
+          calibR::LLK_GOF(
+            .samples = self$GOF_measure_plot$Samples,
+            .sample_method = "FGS",
+            .func = self$calibration_model,
+            .args = self$calibration_model_args,
+            .maximise = TRUE,
+            .l_targets = self$calibration_targets)
+        } else {
+          calibR::wSSE_GOF(
+            .samples = self$GOF_measure_plot$Samples,
+            .sample_method = "FGS",
+            .func = self$calibration_model,
+            .args = self$calibration_model_args,
+            .maximise = FALSE,
+            .l_targets = self$calibration_targets)
+        }
+
+      ## Plot the fitness function:----
+      private$plot_GOF_measure(
         .engine_ = .engine_,
+        .gof_ = .gof_,
         .points_ = .points_,
         .greys_ = .greys_,
         .scale_ = .scale_,
@@ -483,222 +503,226 @@ calibR_R6 <- R6::R6Class(
     .sample_method,
     .max_iterations,
     temp,
-    tmax,
+    trace,
     .maximise = TRUE) {
       if("RGS" %in% .sample_method) {
         #### Nelder-Mead:----
         if("NM" %in% .calibration_method) {
           cat(paste("Running NM...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["NM_RGS"]] <-
-            self$prior_samples[["RGS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["NM_RGS"]] <- self$prior_samples[["RGS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_RGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = "LLK",
-                .samples = self$initial_values[["NM_RGS"]],
-                .s_method = "NM",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = "LLK",
+              .samples = initial_values[["NM_RGS"]],
+              .s_method = "NM",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["NM_SSE_RGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = "SSE",
-                .samples = self$initial_values[["NM_RGS"]],
-                .s_method = "NM",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = "SSE",
+              .samples = initial_values[["NM_RGS"]],
+              .s_method = "NM",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("NM_", .gof, "_RGS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["NM_RGS"]],
-                .s_method = "NM",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("NM_", .gof, "_RGS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["NM_RGS"]],
+              .s_method = "NM",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
         #### BFGS:----
         if("BFGS" %in% .calibration_method) {
           cat(paste("Running BFGS...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["BFGS_RGS"]] <-
-            self$prior_samples[["RGS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["BFGS_RGS"]] <- self$prior_samples[["RGS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_RGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'LLK',
-                .samples = self$initial_values[["BFGS_RGS"]],
-                .s_method = 'BFGS',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'LLK',
+              .samples = initial_values[["BFGS_RGS"]],
+              .s_method = 'BFGS',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["BFGS_SSE_RGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'SSE',
-                .samples = self$initial_values[["BFGS_RGS"]],
-                .s_method = 'BFGS',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'SSE',
+              .samples = initial_values[["BFGS_RGS"]],
+              .s_method = 'BFGS',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("BFGS_", .gof, "_RGS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["BFGS_RGS"]],
-                .s_method = "BFGS",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("BFGS_", .gof, "_RGS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["BFGS_RGS"]],
+              .s_method = "BFGS",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
         #### SANN:----
         if("SANN" %in% .calibration_method) {
           cat(paste("Running SANN...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["SANN_RGS"]] <-
-            self$prior_samples[["RGS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["SANN_RGS"]] <- self$prior_samples[["RGS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_RGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'LLK',
-                .samples = self$initial_values[["SANN_RGS"]],
-                .s_method = 'SANN',
-                maxit = .max_iterations,
-                temp = temp,
-                tmax = tmax,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'LLK',
+              .samples = initial_values[["SANN_RGS"]],
+              .s_method = 'SANN',
+              maxit = .max_iterations,
+              temp = temp,
+              trace = trace,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["SANN_SSE_RGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'SSE',
-                .samples = self$initial_values[["SANN_RGS"]],
-                .s_method = 'SANN',
-                maxit = .max_iterations,
-                temp = temp,
-                tmax = tmax,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'SSE',
+              .samples = initial_values[["SANN_RGS"]],
+              .s_method = 'SANN',
+              maxit = .max_iterations,
+              temp = temp,
+              trace = trace,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("SANN_", .gof, "_RGS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["SANN_RGS"]],
-                .s_method = "SANN",
-                maxit = .max_iterations,
-                temp = temp,
-                tmax = tmax,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("SANN_", .gof, "_RGS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["SANN_RGS"]],
+              .s_method = "SANN",
+              maxit = .max_iterations,
+              temp = temp,
+              trace = trace,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
         #### GA:----
         if("GA" %in% .calibration_method) {
           cat(paste("Running GA...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["GA_RGS"]] <-
-            self$prior_samples[["RGS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["GA_RGS"]] <- self$prior_samples[["RGS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["GA_LLK_RGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'LLK',
-                .samples = self$initial_values[["GA_RGS"]],
-                .s_method = 'GA',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'LLK',
+              .samples = initial_values[["GA_RGS"]],
+              .s_method = 'GA',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["GA_SSE_RGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'SSE',
-                .samples = self$initial_values[["GA_RGS"]],
-                .s_method = 'GA',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'SSE',
+              .samples = initial_values[["GA_RGS"]],
+              .s_method = 'GA',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("GA_", .gof, "_RGS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["GA_RGS"]],
-                .s_method = "GA",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("GA_", .gof, "_RGS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["GA_RGS"]],
+              .s_method = "GA",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
       }
       if("FGS" %in% .sample_method) {
@@ -706,215 +730,219 @@ calibR_R6 <- R6::R6Class(
         if("NM" %in% .calibration_method) {
           cat(paste("Running NM...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["NM_FGS"]] <-
-            self$prior_samples[["FGS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["NM_FGS"]] <- self$prior_samples[["FGS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_FGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = "LLK",
-                .samples = self$initial_values[["NM_FGS"]],
-                .s_method = "NM",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = "LLK",
+              .samples = initial_values[["NM_FGS"]],
+              .s_method = "NM",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["NM_SSE_FGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = "SSE",
-                .samples = self$initial_values[["NM_FGS"]],
-                .s_method = "NM",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = "SSE",
+              .samples = initial_values[["NM_FGS"]],
+              .s_method = "NM",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("NM_", .gof, "_FGS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["NM_FGS"]],
-                .s_method = "NM",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("NM_", .gof, "_FGS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["NM_FGS"]],
+              .s_method = "NM",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
         #### BFGS:----
         if("BFGS" %in% .calibration_method) {
           cat(paste("Running BFGS...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["BFGS_FGS"]] <-
-            self$prior_samples[["FGS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["BFGS_FGS"]] <- self$prior_samples[["FGS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_FGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'LLK',
-                .samples = self$initial_values[["BFGS_FGS"]],
-                .s_method = 'BFGS',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'LLK',
+              .samples = initial_values[["BFGS_FGS"]],
+              .s_method = 'BFGS',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["BFGS_SSE_FGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'SSE',
-                .samples = self$initial_values[["BFGS_FGS"]],
-                .s_method = 'BFGS',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'SSE',
+              .samples = initial_values[["BFGS_FGS"]],
+              .s_method = 'BFGS',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("BFGS_", .gof, "_FGS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["BFGS_FGS"]],
-                .s_method = "BFGS",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("BFGS_", .gof, "_FGS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["BFGS_FGS"]],
+              .s_method = "BFGS",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
         #### SANN:----
         if("SANN" %in% .calibration_method) {
           cat(paste("Running SANN...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["SANN_FGS"]] <-
-            self$prior_samples[["FGS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["SANN_FGS"]] <- self$prior_samples[["FGS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_FGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'LLK',
-                .samples = self$initial_values[["SANN_FGS"]],
-                .s_method = 'SANN',
-                maxit = .max_iterations,
-                temp = temp,
-                tmax = tmax,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'LLK',
+              .samples = initial_values[["SANN_FGS"]],
+              .s_method = 'SANN',
+              maxit = .max_iterations,
+              temp = temp,
+              trace = trace,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["SANN_SSE_FGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'SSE',
-                .samples = self$initial_values[["SANN_FGS"]],
-                .s_method = 'SANN',
-                maxit = .max_iterations,
-                temp = temp,
-                tmax = tmax,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'SSE',
+              .samples = initial_values[["SANN_FGS"]],
+              .s_method = 'SANN',
+              maxit = .max_iterations,
+              temp = temp,
+              trace = trace,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("SANN_", .gof, "_FGS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["SANN_FGS"]],
-                .s_method = "SANN",
-                maxit = .max_iterations,
-                temp = temp,
-                tmax = tmax,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("SANN_", .gof, "_FGS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["SANN_FGS"]],
+              .s_method = "SANN",
+              maxit = .max_iterations,
+              temp = temp,
+              trace = trace,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
         #### GA:----
         if("GA" %in% .calibration_method) {
           cat(paste("Running GA...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["GA_FGS"]] <-
-            self$prior_samples[["FGS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["GA_FGS"]] <- self$prior_samples[["FGS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["GA_LLK_FGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'LLK',
-                .samples = self$initial_values[["GA_FGS"]],
-                .s_method = 'GA',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'LLK',
+              .samples = initial_values[["GA_FGS"]],
+              .s_method = 'GA',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["GA_SSE_FGS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'SSE',
-                .samples = self$initial_values[["GA_FGS"]],
-                .s_method = 'GA',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'SSE',
+              .samples = initial_values[["GA_FGS"]],
+              .s_method = 'GA',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("GA_", .gof, "_FGS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["GA_FGS"]],
-                .s_method = "GA",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("GA_", .gof, "_FGS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["GA_FGS"]],
+              .s_method = "GA",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
       }
       if("LHS" %in% .sample_method) {
@@ -922,215 +950,219 @@ calibR_R6 <- R6::R6Class(
         if("NM" %in% .calibration_method) {
           cat(paste("Running NM...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["NM_LHS"]] <-
-            self$prior_samples[["LHS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["NM_LHS"]] <- self$prior_samples[["LHS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["NM_LLK_LHS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = "LLK",
-                .samples = self$initial_values[["NM_LHS"]],
-                .s_method = "NM",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = "LLK",
+              .samples = initial_values[["NM_LHS"]],
+              .s_method = "NM",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["NM_SSE_LHS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = "SSE",
-                .samples = self$initial_values[["NM_LHS"]],
-                .s_method = "NM",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = "SSE",
+              .samples = initial_values[["NM_LHS"]],
+              .s_method = "NM",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("NM_", .gof, "_LHS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["NM_LHS"]],
-                .s_method = "NM",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("NM_", .gof, "_LHS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["NM_LHS"]],
+              .s_method = "NM",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
         #### BFGS:----
         if("BFGS" %in% .calibration_method) {
           cat(paste("Running BFGS...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["BFGS_LHS"]] <-
-            self$prior_samples[["LHS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["BFGS_LHS"]] <- self$prior_samples[["LHS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["BFGS_LLK_LHS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'LLK',
-                .samples = self$initial_values[["BFGS_LHS"]],
-                .s_method = 'BFGS',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'LLK',
+              .samples = initial_values[["BFGS_LHS"]],
+              .s_method = 'BFGS',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["BFGS_SSE_LHS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'SSE',
-                .samples = self$initial_values[["BFGS_LHS"]],
-                .s_method = 'BFGS',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'SSE',
+              .samples = initial_values[["BFGS_LHS"]],
+              .s_method = 'BFGS',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("BFGS_", .gof, "_LHS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["BFGS_LHS"]],
-                .s_method = "BFGS",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("BFGS_", .gof, "_LHS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["BFGS_LHS"]],
+              .s_method = "BFGS",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
         #### SANN:----
         if("SANN" %in% .calibration_method) {
           cat(paste("Running SANN...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["SANN_LHS"]] <-
-            self$prior_samples[["LHS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["SANN_LHS"]] <- self$prior_samples[["LHS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["SANN_LLK_LHS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'LLK',
-                .samples = self$initial_values[["SANN_LHS"]],
-                .s_method = 'SANN',
-                maxit = .max_iterations,
-                temp = temp,
-                tmax = tmax,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'LLK',
+              .samples = initial_values[["SANN_LHS"]],
+              .s_method = 'SANN',
+              maxit = .max_iterations,
+              temp = temp,
+              trace = trace,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["SANN_SSE_LHS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'SSE',
-                .samples = self$initial_values[["SANN_LHS"]],
-                .s_method = 'SANN',
-                maxit = .max_iterations,
-                temp = temp,
-                tmax = tmax,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'SSE',
+              .samples = initial_values[["SANN_LHS"]],
+              .s_method = 'SANN',
+              maxit = .max_iterations,
+              temp = temp,
+              trace = trace,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("SANN_", .gof, "_LHS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["SANN_LHS"]],
-                .s_method = "SANN",
-                maxit = .max_iterations,
-                temp = temp,
-                tmax = tmax,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("SANN_", .gof, "_LHS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["SANN_LHS"]],
+              .s_method = "SANN",
+              maxit = .max_iterations,
+              temp = temp,
+              trace = trace,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
         #### GA:----
         if("GA" %in% .calibration_method) {
           cat(paste("Running GA...", Sys.time(), "\n"))
           ##### Save initial values:----
-          self$initial_values[["GA_LHS"]] <-
-            self$prior_samples[["LHS"]] %>%
+          if(!exists("initial_values"))
+            initial_values <- list()
+          initial_values[["GA_LHS"]] <- self$prior_samples[["LHS"]] %>%
             dplyr::slice_sample(n = .n_samples)
           ##### LLK:----
           if("LLK" %in% .gof)
             self$calibration_results$directed[["GA_LLK_LHS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'LLK',
-                .samples = self$initial_values[["GA_LHS"]],
-                .s_method = 'GA',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'LLK',
+              .samples = initial_values[["GA_LHS"]],
+              .s_method = 'GA',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### SSE:----
           if("SSE" %in% .gof)
             self$calibration_results$directed[["GA_SSE_LHS"]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = 'SSE',
-                .samples = self$initial_values[["GA_LHS"]],
-                .s_method = 'GA',
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = 'SSE',
+              .samples = initial_values[["GA_LHS"]],
+              .s_method = 'GA',
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
           ##### others:----
           if(!.gof %in% c("LLK", "SSE"))
             self$calibration_results$
-              directed[[paste0("GA_", .gof, "_LHS")]] <-
-              calibR::calibrateModel_directed(
-                .func = self$calibration_model,
-                .args = self$calibration_model_args,
-                .gof = .gof,
-                .gof_func = .gof_func,
-                .samples = self$initial_values[["GA_LHS"]],
-                .s_method = "GA",
-                maxit = .max_iterations,
-                .maximise = .maximise,
-                .l_params = self$calibration_parameters,
-                .l_targets = self$calibration_targets
-              )
+            directed[[paste0("GA_", .gof, "_LHS")]] <-
+            calibR::calibrateModel_directed(
+              .func = self$calibration_model,
+              .args = self$calibration_model_args,
+              .gof = .gof,
+              .gof_func = .gof_func,
+              .samples = initial_values[["GA_LHS"]],
+              .s_method = "GA",
+              maxit = .max_iterations,
+              .maximise = .maximise,
+              .l_params = self$calibration_parameters,
+              .l_targets = self$calibration_targets
+            )
         }
       }
     },
@@ -2967,31 +2999,39 @@ calibR_R6 <- R6::R6Class(
         dplyr::select(-c(Overall_fit, Label)) %>%
         psych::pairs.panels()
     },
-    ### Log likelihood plots:----
-    plot_log_likelihood = function(.engine_ = "plotly",
-                                   .points_ = FALSE,
-                                   .greys_ = FALSE,
-                                   .scale_ = NULL,
-                                   .legend_ = FALSE,
-                                   .x_axis_lb_ = NULL,
-                                   .x_axis_ub_ = NULL,
-                                   .y_axis_lb_ = NULL,
-                                   .y_axis_ub_ = NULL) {
+    ### Fitness function plots:----
+    #### Blank fineness plots:----
+    plot_GOF_measure = function(.engine_ = "plotly",
+                                .gof_ = "LLK",
+                                .points_ = FALSE,
+                                .greys_ = FALSE,
+                                .scale_ = NULL,
+                                .legend_ = FALSE,
+                                .x_axis_lb_ = NULL,
+                                .x_axis_ub_ = NULL,
+                                .y_axis_lb_ = NULL,
+                                .y_axis_ub_ = NULL) {
       #### Remove extreme values or plotly will trip:----
-      self$log_likelihood_plot$Results <- self$log_likelihood_plot$Results %>%
+      self$GOF_measure_plot$Results <- self$GOF_measure_plot$Results %>%
         dplyr::as_tibble() %>%
         dplyr::filter(!is.na(Overall_fit)) %>%
         dplyr::filter(Overall_fit != Inf) %>%
         dplyr::filter(Overall_fit != -Inf)
       #### Generate plots:----
-      self$plots$log_likelihood <-
+      ##### Blank plots:----
+      self$plots$GOF_plots$blank <-
         if(.engine_ == "plotly") {
-          #### Plotly log likelihood plots:----
+          ###### Plotly GOF plots:----
           plots_list <- purrr::map(
             .x = self$calibration_parameters$v_params_names,
             .f = function(.param_x) {
+              ###### Prepare parameter names:----
+              other_params_names <- self$calibration_parameters$
+                v_params_names[-which(self$calibration_parameters$
+                    v_params_names == .param_x)]
+              ###### Plots lists':----
               plots_list_ <- purrr::map(
-                .x = self$calibration_parameters$v_params_names,
+                .x = other_params_names,
                 .f = function(.param_y) {
                   if(.param_x != .param_y) {
                     if(is.null(.x_axis_lb_))
@@ -3007,9 +3047,9 @@ calibR_R6 <- R6::R6Class(
                       .y_axis_ub_ <- self$calibration_parameters$
                         Xargs[[.param_y]]$max
                     plotly::plot_ly(
-                      x = self$log_likelihood_plot$Results[[.param_x]],
-                      y = self$log_likelihood_plot$Results[[.param_y]],
-                      z = self$log_likelihood_plot$Results$Overall_fit,
+                      x = self$GOF_measure_plot$Results[[.param_x]],
+                      y = self$GOF_measure_plot$Results[[.param_y]],
+                      z = self$GOF_measure_plot$Results$Overall_fit,
                       type = "contour",
                       colorscale = if(is.null(.scale_) & .greys_){
                         "Greys"
@@ -3024,41 +3064,101 @@ calibR_R6 <- R6::R6Class(
                         showlabels = ifelse(
                           .legend_, FALSE, TRUE))) %>%
                       plotly::layout(
-                          xaxis = list(
-                            title = self$calibration_parameters$
-                              v_params_labels[[.param_x]],
-                            range = list(.x_axis_lb_, .x_axis_ub_)),
-                          yaxis = list(
-                            title = self$calibration_parameters$
-                              v_params_labels[[.param_y]],
-                            range = list(.y_axis_lb_, .y_axis_ub_))) %>%
-                        {if(.legend_) {
-                          plotly::colorbar(
-                            p = .,
-                            title = "Log\nlikelihood")
-                        } else {
-                          plotly::hide_legend(p = .) %>%
-                            plotly::hide_colorbar(p = .)
-                        }} %>%
-                        {if(.points_) {
-                          plotly::add_trace(
-                            p = .,
-                            inherit = FALSE,
-                            x = self$log_likelihood_plot$Results[[.param_x]],
-                            y = self$log_likelihood_plot$Results[[.param_y]],
-                            type = 'scatter',
-                            mode = 'markers',
-                            marker = list(size = 1),
-                            symbols = 'o')
-                        } else {
-                          .
-                        }}
+                        legend = list(
+                          x = ifelse(.legend_, "1.02", "0.25"),
+                          y = ifelse(.legend_, "1", "-0.15"),
+                          orientation = ifelse(
+                            .legend_, 'v', 'h')),
+                        xaxis = list(
+                          title = self$calibration_parameters$
+                            v_params_labels[[.param_x]],
+                          range = list(.x_axis_lb_, .x_axis_ub_)),
+                        yaxis = list(
+                          title = self$calibration_parameters$
+                            v_params_labels[[.param_y]],
+                          range = list(.y_axis_lb_, .y_axis_ub_))) %>%
+                      {if(.legend_) {
+                        plotly::colorbar(
+                          p = .,
+                          title = ifelse(
+                            .gof_ == "LLK",
+                            "Log\nlikelihood",
+                            "Sum of\nSquared Errors"))
+                      } else {
+                        # plotly::hide_legend(p = .) %>%
+                        plotly::hide_colorbar(p = .)
+                      }} %>%
+                      {if(.points_) {
+                        plotly::add_trace(
+                          p = .,
+                          inherit = FALSE,
+                          x = self$GOF_measure_plot$Results[[.param_x]],
+                          y = self$GOF_measure_plot$Results[[.param_y]],
+                          type = 'scatter',
+                          mode = 'markers',
+                          marker = list(size = 1),
+                          symbols = 'o')
+                      } else {
+                        .
+                      }}
                   }
                 })
             })
-
-          return(plots_list)
         }
+
+      ##### Directed plots:----
+      self$plots$GOF_plots$directed <-
+        if(.engine_ == "plotly") {
+          self$calibration_results$directed %>%
+            purrr::map(
+              .x = .,
+              .f = function(.calib_res_algorithm) {
+                ###### Transpose the list to group outputs together:----
+                transposed_calib_res <- .calib_res_algorithm %>%
+                  purrr::transpose()
+                ###### Extract "Starting values":----
+                calib_res <- transposed_calib_res[["Guess"]] %>%
+                  purrr::map_dfr(
+                    .x = .,
+                    .f = function(.x) {
+                      .x}) %>%
+                  dplyr::mutate(Points = "Starting values") %>%
+                  ###### Join "Identified values":----
+                dplyr::bind_rows(
+                  ###### Extract identified values:----
+                  transposed_calib_res[["Estimate"]] %>%
+                    purrr::map_dfr(
+                      .x = .,
+                      .f = function(.x) {
+                        .x}) %>%
+                    dplyr::mutate(Points = "Identified values"))
+                ###### Add points to the plots:----
+                purrr::map(
+                  .x = self$calibration_parameters$v_params_names,
+                  .f = function(.param_x) {
+                    ####### Prepare parameter names:----
+                    other_params_names <- self$calibration_parameters$
+                      v_params_names[-which(self$calibration_parameters$
+                                              v_params_names == .param_x)]
+                    ####### Plots list:----
+                    plots_list_ <- purrr::map(
+                      .x = other_params_names,
+                      .f = function(.param_y) {
+                        self$plots$GOF_plots$blank[[.param_x]][[.param_y]] %>%
+                          plotly::add_trace(
+                            p = .,
+                            inherit = FALSE,
+                            x = calib_res[[.param_x]],
+                            y = calib_res[[.param_y]],
+                            type = 'scatter',
+                            mode = 'markers',
+                            marker = list(size = 5),
+                            symbol = ~ calib_res[["Points"]],
+                            symbols = c("triangle-up", "circle-open"))
+                      })
+                  })
+              })
+          }
     },
     ## Helper functions:----
     # Get Maximum a-posteriori (MAP) values from calibration methods

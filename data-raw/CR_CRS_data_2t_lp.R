@@ -1,6 +1,6 @@
-# CRS Model calibration data - Two target (Survival, PropSick) - Full space
+# CRS Model calibration data - Two target (Survival, PropSick) - Limited space
 # Targets simulated using 10% of true parameters' values as the sd in a PSA
-# analysis.
+# analysis
 
 ## Targets:----
 v_targets_names <- c(
@@ -51,12 +51,12 @@ v_params_dists <- c(
   'p_DieMets' = "unif")
 #### Distribution moments/parameters:----
 args <- list(
-  'p_Mets'    = list(min = 0, max = 1),
-  'p_DieMets' = list(min = 0, max = 1))
+  'p_Mets'    = list(min = 0.07, max = 0.16),
+  'p_DieMets' = list(min = 0.03, max = 0.075))
 ### Parameter space bounds:----
 extra_args <- list(
-  'p_Mets'    = list(min = 0, max = 1),
-  'p_DieMets' = list(min = 0, max = 1))
+  'p_Mets'    = list(min = 0.07, max = 0.16),
+  'p_DieMets' = list(min = 0.03, max = 0.075))
 ### Pack parameters information together:----
 l_params <- list(
   'v_params_names' = v_params_names,
@@ -67,10 +67,10 @@ l_params <- list(
   'args' = args,
   'Xargs' = extra_args)
 ## Pack targets and parameters together:----
-CR_CRS_data_2t <- list(
+CR_CRS_data_2t_lp <- list(
   'l_params' = l_params,
   'l_targets' = l_targets)
 ## Save calibration data internally:----
 usethis::use_data(
-  CR_CRS_data_2t,
+  CR_CRS_data_2t_lp,
   overwrite = TRUE)

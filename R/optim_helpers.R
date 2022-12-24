@@ -3,6 +3,7 @@
 #' @param .params_name Character vector containing the names of the
 #' parameters that were passed to the goodness-of-fit algorithm or will be
 #' passed to .func.
+#' @param .params_vals Guess or initial values used to start the algorithm.
 #' @param .gof goodness-of-fit function used or to be used in the
 #' optimisation.
 #' @param .gof_name Character naming goodness-of-fit method that produced
@@ -20,6 +21,7 @@
 #' which will create) the hessian matrix maximised the goodness-of-fit
 #' function. Default is \code{TRUE}.
 #' @param .convergence Convergence label; 0 successful convergence
+#' @param .trace Optimisation function trace
 #' @param ... Extra arguments to be passed to .gof.
 #'
 #' @return A tibble with the best identified parameters, their 95%
@@ -28,10 +30,10 @@
 #' @examples
 #' \dontrun{
 #' }
-summ_optim <- function(.params_name = v_params_names, .gof = NULL,
+summ_optim <- function(.params_name = v_params_names, .params_vals, .gof = NULL,
                        .gof_name, .gof_value, .s_method, .par,
                        .func = NULL, .args = NULL, .hessian = NULL,
-                       .maximiser = TRUE, .convergence, ...) {
+                       .maximiser = TRUE, .convergence, .trace = NULL, ...) {
   if(.s_method == "Nelder-Mead") .s_method = 'NM'
   # Grab and assign additional arguments:
   dots <- list(...)
@@ -62,11 +64,12 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
 
   # If .hessian is NULL:
   if(is.null(.hessian)) {
-    return(list(Params = .params_name, Estimate = .par, Lower = NA,
-                Upper = NA, 'GOF value' = .gof_value,
+    return(list(Params = .params_name, Guess = .params_vals, Estimate = .par,
+                Lower = NA, Upper = NA, 'GOF value' = .gof_value,
                 'Calibration method' = paste0(.s_method, "_", .gof_name,
                                               "_", .convergence),
-                'Sigma' = NA))
+                'Sigma' = NA,
+                'Trace' = .trace))
   }
 
   # If .func was not maximising or .hessian resulted from a minimiser:
@@ -88,11 +91,12 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
   )
   # Exit function early if the inverse of .hessian is unattainable:
   if(is.null(fisher_info))
-    return(list(Params = .params_name, Estimate = .par, Lower = NA,
-                Upper = NA, 'GOF value' = .gof_value,
+    return(list(Params = .params_name, Guess = .params_vals, Estimate = .par,
+                Lower = NA, Upper = NA, 'GOF value' = .gof_value,
                 'Calibration method' = paste0(.s_method, "_", .gof_name,
                                               "_", .convergence),
-                'Sigma' = NA))
+                'Sigma' = NA,
+                'Trace' = .trace))
 
   # Continue if .hessian could be inversed:
   covr_mat <- fisher_info
@@ -109,11 +113,12 @@ summ_optim <- function(.params_name = v_params_names, .gof = NULL,
   upper <- .par + (1.96 * prop_se)
   lower <- .par - (1.96 * prop_se)
 
-  return(list(Params = .params_name, Estimate = .par, Lower = lower,
-              Upper = upper, 'GOF value' = .gof_value,
+  return(list(Params = .params_name, Guess = .params_vals, Estimate = .par,
+              Lower = lower, Upper = upper, 'GOF value' = .gof_value,
               'Calibration method' = paste0(.s_method, "_", .gof_name,
                                             "_", .convergence),
-              'Sigma' = covr_mat))
+              'Sigma' = covr_mat,
+              'Trace' = .trace))
 }
 
 #' Calibrate model using Directed search algorithms (optimisation
@@ -291,7 +296,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
   # Capture the arguments in the .dots:
   arguments <- list(...)
   # Apply appropriate method:
-  if(any(.s_method %in% c('NM', 'BFGS', 'SANN'))) {
+  if(any(.s_method %in% c('NM', 'BFGS'))) {
     # Map over sampled values:
     fits <- purrr::pmap(
       .l = .samples,
@@ -309,9 +314,10 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
               method = .s_method,
               control = list( # control parameters
                 fnscale = ifelse(.maximise, -1, 1), # maximiser/minimiser
-                temp = arguments[['temp']], # SANN algorithm tuning
-                tmax = arguments[['tmax']], # SANN algorithm tuning
-                maxit = arguments[['maxit']]), # maximum iterations
+                maxit = ifelse(
+                  is.null(arguments[['maxit']]),
+                  1000,
+                  arguments[['maxit']])), # maximum iterations
               hessian = TRUE, # estimate hessian matrix
               .func = .func, # model to be optimised
               .args = .args, # arguments to be passed to the model
@@ -332,6 +338,7 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
           expr = {
             summ_optim(
               .params_name = params_name,
+              .params_vals = params_set, # initial values
               .gof = .gof, # goodness-of-fit function used/to be used.
               .gof_value = fit$value, # best goodness-of-fit value
               .s_method = .s_method, # the name of the search method
@@ -343,6 +350,80 @@ calibrateModel_directed <- function(.l_params = l_params, .func, .args,
               .l_targets = .l_targets, # targets passed to .gof
               .gof_name = .gof_name, # name of the goodness-of-fit function
               .maximiser = .maximise # whether the GOF was a maximiser
+            )
+          }, error = function(e) {
+            message(paste0("\r", e))
+
+            NULL
+          }
+        )
+      }
+    )
+  } else if (.s_method == 'SANN') {
+    # Collect lower and upper bounds for GenSA():
+    lb = purrr::map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$min)
+    ub = purrr::map_dbl(.x = .l_params$Xargs, .f = function(.x) .x$max)
+    # Map over sampled values:
+    fits <- purrr::pmap(
+      .l = .samples,
+      .f = function(...) {
+        # Grab a parameter set:
+        params_set = c(...)
+        # Run the optimisation function GenSA():
+        fit <- tryCatch(
+          # Make sure to return NULL if the algorithm fails:
+          expr = {
+            GenSA::GenSA(
+              par = params_set,
+              fn = .gof,
+              lower = lb,
+              upper = ub,
+              method = .s_method,
+              control = list( # control parameters
+                maxit = ifelse(
+                  is.null(arguments[['maxit']]),
+                  1000,
+                  arguments[['maxit']]), # maximum iterations
+                temperature = ifelse(
+                  is.null(arguments[['temp']]),
+                  1000,
+                  arguments[['temp']]), # SANN algorithm tuning
+                trace.mat = ifelse(
+                  is.null(arguments[['trace']]),
+                  FALSE,
+                  arguments[['trace']]), # optimisation trace
+                seed = .seed_no),
+              .func = .func, # model to be optimised
+              .args = .args, # arguments to be passed to the model
+              .l_targets = .l_targets, # targets passed to .gof
+              .maximise = FALSE, # .gof should maximise
+              .optim = TRUE # .gof reports gof value only
+            )
+          }, error = function(e) {
+            message(paste0("\r", e))
+
+            NULL
+          }
+        )
+        # Summarise output produced by optim():
+        fit_summary <- tryCatch(
+          # Make sure to return NULL if the algorithm fails:
+          expr = {
+            summ_optim(
+              .params_name = params_name,
+              .params_vals = params_set, # initial values
+              .gof = .gof, # goodness-of-fit function used/to be used.
+              .gof_value = fit$value, # best goodness-of-fit value
+              .s_method = .s_method, # the name of the search method
+              .par = fit$par, # best parameter set identified
+              .func = .func, # the optimised function (decision model)
+              .args = .args, # arguments passed to .func
+              .hessian = NULL, # not reported by GenSA()
+              .convergence = NULL, # not reported by GenSA()
+              .l_targets = .l_targets, # targets passed to .gof
+              .gof_name = .gof_name, # name of the goodness-of-fit function
+              .maximiser = FALSE, # whether the GOF was a maximiser
+              .trace = fit$trace.mat # Trace matrix
             )
           }, error = function(e) {
             message(paste0("\r", e))
