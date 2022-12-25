@@ -10,7 +10,13 @@ devtools::load_all()
 
 ## Chapter 2 plots:----
 ### Parameter space:----
-parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
+seed_no <- 1
+set.seed(seed = seed_no)
+### Unbounded parameter space:----
+parameters_list <- calibR::CR_CRS_data_2t$l_params
+parameters_list$v_params_labels <- c(
+  'p_Mets' = "Parameter 1",
+  'p_DieMets' = "Parameter 2")
 param_space <- calibR::sample_prior_FGS_(
   .n_samples = 100,
   .l_params = parameters_list)
@@ -39,8 +45,46 @@ plotly::save_image(
   file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_parameter_space.jpeg",
   scale = 5)
 
-### SEE fitness plot:----
+### Explored parameter space:----
 parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
+parameters_list$v_params_labels <- c(
+  'p_Mets' = "Parameter 1",
+  'p_DieMets' = "Parameter 2")
+param_space <- calibR::sample_prior_FGS_(
+  .n_samples = 100,
+  .l_params = parameters_list)
+param_space_plot <- plotly::plot_ly(
+  data = param_space,
+  x = param_space[["p_Mets"]],
+  y = param_space[["p_DieMets"]],
+  type = 'scatter',
+  mode = 'markers',
+  marker = list(size = 0.001)) %>%
+  plotly::layout(
+    xaxis = list(
+      title = parameters_list$v_params_labels[["p_Mets"]],
+      range = list(
+        parameters_list$Xargs[["p_Mets"]]$min,
+        parameters_list$Xargs[["p_Mets"]]$max)),
+    yaxis = list(
+      title = parameters_list$v_params_labels[["p_DieMets"]],
+      range = list(
+        parameters_list$Xargs[["p_DieMets"]]$min,
+        parameters_list$Xargs[["p_DieMets"]]$max)))
+
+reticulate::py_run_string("import sys")
+plotly::save_image(
+  p = param_space_plot,
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_parameter_space_lp.jpeg",
+  scale = 5)
+
+### SEE fitness plot:----
+seed_no <- 1
+set.seed(seed = seed_no)
+parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
+parameters_list$v_params_labels <- c(
+  'p_Mets' = "Parameter 1",
+  'p_DieMets' = "Parameter 2")
 targets_list <- calibR::CR_CRS_data_2t_lp$l_targets
 #### Initiate CalibR R6 object:----
 CR_CRS_2P2T <- calibR_R6$new(
@@ -53,7 +97,10 @@ distance_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .legend_ = FALSE,
   .greys_ = TRUE,
   .scale_ = NULL,
-  .gof_ = "SSE")
+  .gof_ = "SSE")$
+  plots$
+  GOF_plots$
+  blank
 
 reticulate::py_run_string("import sys")
 plotly::save_image(
@@ -61,7 +108,12 @@ plotly::save_image(
   file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_distance_GOF_measure.jpeg", scale = 5)
 
 ### LLK fitness plot:----
+seed_no <- 1
+set.seed(seed = seed_no)
 parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
+parameters_list$v_params_labels <- c(
+  'p_Mets' = "Parameter 1",
+  'p_DieMets' = "Parameter 2")
 targets_list <- calibR::CR_CRS_data_2t_lp$l_targets
 #### Initiate CalibR R6 object:----
 CR_CRS_2P2T <- calibR_R6$new(
@@ -74,7 +126,10 @@ llik_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .legend_ = FALSE,
   .greys_ = TRUE,
   .scale_ = NULL,
-  .gof_ = "LLK")
+  .gof_ = "LLK")$
+  plots$
+  GOF_plots$
+  blank
 
 reticulate::py_run_string("import sys")
 plotly::save_image(
@@ -82,7 +137,12 @@ plotly::save_image(
   file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_log_likelihood_GOF_measure.jpeg", scale = 5)
 
 ### RGS, FGS and LHS with SEE fitness plot:----
+seed_no <- 1
+set.seed(seed = seed_no)
 parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
+parameters_list$v_params_labels <- c(
+  'p_Mets' = "Parameter 1",
+  'p_DieMets' = "Parameter 2")
 targets_list <- calibR::CR_CRS_data_2t_lp$l_targets
 #### Initiate CalibR R6 object:----
 CR_CRS_2P2T <- calibR_R6$new(
@@ -96,19 +156,77 @@ CR_CRS_2P2T$
   sampleR(
     .n_samples = 1e2,
     .sampling_method = c("RGS", "FGS", "LHS"))
-llik_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+CR_CRS_2P2T$
+  prior_samples$FGS <- calibR::sample_prior_FGS_(
+    .n_samples = 1e2,
+    .l_params = parameters_list)
+##### Unguided searching methods:----
+CR_CRS_2P2T$
+  calibrateR_random(
+    .optim = FALSE,
+    .maximise = FALSE,
+    .weighted = FALSE,
+    .sample_method = c("RGS", "FGS", "LHS"),
+    .calibration_method = "SSE")
+###### Fitness function without True values:----
+random_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+  .true_points_ = FALSE,
+  .maximise_ = FALSE,
   .legend_ = FALSE,
   .greys_ = TRUE,
   .scale_ = NULL,
-  .gof_ = "SEE")
+  .gof_ = "SSE")$
+  plots$
+  GOF_plots$
+  random
 
 reticulate::py_run_string("import sys")
 plotly::save_image(
-  p = llik_GOF_measure[[1]][[1]],
-  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_log_likelihood_GOF_measure.jpeg", scale = 5)
+  p = random_GOF_measure[[1]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_RGS.jpeg",
+  scale = 5)
+plotly::save_image(
+  p = random_GOF_measure[[2]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_FGS.jpeg",
+  scale = 5)
+plotly::save_image(
+  p = random_GOF_measure[[3]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_LHS.jpeg",
+  scale = 5)
+
+###### Fitness function with True values:----
+random_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+  .true_points_ = TRUE,
+  .maximise_ = FALSE,
+  .legend_ = FALSE,
+  .greys_ = TRUE,
+  .scale_ = NULL,
+  .gof_ = "SSE")$
+  plots$
+  GOF_plots$
+  random
+
+reticulate::py_run_string("import sys")
+plotly::save_image(
+  p = random_GOF_measure[[1]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_RGS2.jpeg",
+  scale = 5)
+plotly::save_image(
+  p = random_GOF_measure[[2]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_FGS2.jpeg",
+  scale = 5)
+plotly::save_image(
+  p = random_GOF_measure[[3]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_LHS2.jpeg",
+  scale = 5)
 
 ### BFGS, NM, and SANN with SEE fitness plot:----
+seed_no <- 1
+set.seed(seed = seed_no)
 parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
+parameters_list$v_params_labels <- c(
+  'p_Mets' = "Parameter 1",
+  'p_DieMets' = "Parameter 2")
 targets_list <- calibR::CR_CRS_data_2t_lp$l_targets
 #### Initiate CalibR R6 object:----
 CR_CRS_2P2T <- calibR_R6$new(
@@ -120,7 +238,7 @@ CR_CRS_2P2T <- calibR_R6$new(
 #### Generate samples using Random Grid Search:----
 CR_CRS_2P2T$
   sampleR(
-    .n_samples = 1e4,
+    .n_samples = 10,
     .sampling_method = "RGS")
 #### Directed calibration:----
 CR_CRS_2P2T$
@@ -132,12 +250,18 @@ CR_CRS_2P2T$
     .sample_method = "RGS",
     .max_iterations = 1e4,
     temp = 1000,
-    trace = TRUE)
+    trace = FALSE)
+###### Fitness function without True values:----
 SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+  .true_points_ = FALSE,
+  .maximise_ = FALSE,
   .legend_ = FALSE,
   .greys_ = TRUE,
   .scale_ = NULL,
-  .gof_ = "SSE")
+  .gof_ = "SSE")$
+  plots$
+  GOF_plots$
+  directed
 
 reticulate::py_run_string("import sys")
 plotly::save_image(
@@ -160,7 +284,10 @@ SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .x_axis_lb_ = 0.098578,
   .x_axis_ub_ = 0.098588,
   .y_axis_lb_ = 0.0496,
-  .y_axis_ub_ = 0.0502)
+  .y_axis_ub_ = 0.0502)$
+  plots$
+  GOF_plots$
+  directed
 plotly::save_image(
   p = SSE_GOF_measure[[1]][[1]][[1]],
   file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_NM_z.jpeg",
@@ -173,7 +300,10 @@ SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .x_axis_lb_ = 0.098578,
   .x_axis_ub_ = 0.098592,
   .y_axis_lb_ = 0.04986,
-  .y_axis_ub_ = 0.0499)
+  .y_axis_ub_ = 0.0499)$
+  plots$
+  GOF_plots$
+  directed
 plotly::save_image(
   p = SSE_GOF_measure[[2]][[1]][[1]],
   file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_BFGS_z.jpeg",
@@ -186,12 +316,90 @@ SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .x_axis_lb_ = 0.098580995,
   .x_axis_ub_ = 0.098581003,
   .y_axis_lb_ = 0.049885,
-  .y_axis_ub_ = 0.04988515)
+  .y_axis_ub_ = 0.04988515)$
+  plots$
+  GOF_plots$
+  directed
 plotly::save_image(
   p = SSE_GOF_measure[[3]][[1]][[1]],
   file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_SNN_z.jpeg",
   scale = 5)
 
+###### Fitness function with True values:----
+SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+  .true_points_ = TRUE,
+  .maximise_ = FALSE,
+  .legend_ = FALSE,
+  .greys_ = TRUE,
+  .scale_ = NULL,
+  .gof_ = "SSE")$
+  plots$
+  GOF_plots$
+  directed
+
+reticulate::py_run_string("import sys")
+plotly::save_image(
+  p = SSE_GOF_measure[[1]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_NM2.jpeg",
+  scale = 5)
+plotly::save_image(
+  p = SSE_GOF_measure[[2]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_BFGS2.jpeg",
+  scale = 5)
+plotly::save_image(
+  p = SSE_GOF_measure[[3]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_SNN2.jpeg",
+  scale = 5)
+SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+  .legend_ = FALSE,
+  .greys_ = TRUE,
+  .scale_ = NULL,
+  .gof_ = "SSE",
+  .x_axis_lb_ = 0.098578,
+  .x_axis_ub_ = 0.098588,
+  .y_axis_lb_ = 0.0496,
+  .y_axis_ub_ = 0.0502)$
+  plots$
+  GOF_plots$
+  directed
+plotly::save_image(
+  p = SSE_GOF_measure[[1]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_NM_z2.jpeg",
+  scale = 5)
+SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+  .legend_ = FALSE,
+  .greys_ = TRUE,
+  .scale_ = NULL,
+  .gof_ = "SSE",
+  .x_axis_lb_ = 0.098578,
+  .x_axis_ub_ = 0.098592,
+  .y_axis_lb_ = 0.04986,
+  .y_axis_ub_ = 0.0499)$
+  plots$
+  GOF_plots$
+  directed
+plotly::save_image(
+  p = SSE_GOF_measure[[2]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_BFGS_z2.jpeg",
+  scale = 5)
+SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+  .legend_ = FALSE,
+  .greys_ = TRUE,
+  .scale_ = NULL,
+  .gof_ = "SSE",
+  .x_axis_lb_ = 0.098580995,
+  .x_axis_ub_ = 0.098581003,
+  .y_axis_lb_ = 0.049885,
+  .y_axis_ub_ = 0.04988515)$
+  plots$
+  GOF_plots$
+  directed
+plotly::save_image(
+  p = SSE_GOF_measure[[3]][[1]][[1]],
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_SNN_z2.jpeg",
+  scale = 5)
+
+## Chapter 3 plots:----
 ## Effects of using more calibration targets on CRS_markov_2 model:----
 ### One target testing:----
 #### Initiate CalibR R6 object:----

@@ -322,6 +322,7 @@ calibR_R6 <- R6::R6Class(
     #' respectively.
     #' @param .n_samples_ Number of Grid samples to plot log likelihood
     #' @param .points_ Boolean for whether to add scatter plot
+    #' @param .true_points_ Boolean for whether to add "True values" to plots.
     #' @param .greys_ Boolean for whether to use a Grey scale in the plot.
     #' @param .scale_ The colour bar colour-scale. Available options are Greys,
     #' YlGnBu, Greens, YlOrRd, Bluered, RdBu, Reds, Blues, Picnic, Rainbow,
@@ -344,6 +345,7 @@ calibR_R6 <- R6::R6Class(
                                 .gof_ = "LLK",
                                 .n_samples_ = 1e4,
                                 .points_ = FALSE,
+                                .true_points_ = FALSE,
                                 .greys_ = FALSE,
                                 .scale_ = NULL,
                                 .legend_ = FALSE,
@@ -382,8 +384,10 @@ calibR_R6 <- R6::R6Class(
       ## Plot the fitness function:----
       private$plot_GOF_measure(
         .engine_ = .engine_,
+        .maximise_ = .maximise_,
         .gof_ = .gof_,
         .points_ = .points_,
+        .true_points_ = .true_points_,
         .greys_ = .greys_,
         .scale_ = .scale_,
         .legend_ = .legend_,
@@ -391,6 +395,8 @@ calibR_R6 <- R6::R6Class(
         .x_axis_ub_ = .x_axis_ub_,
         .y_axis_lb_ = .y_axis_lb_,
         .y_axis_ub_ = .y_axis_ub_)
+
+      invisible(self)
     }
   ),
 
@@ -3002,8 +3008,10 @@ calibR_R6 <- R6::R6Class(
     ### Fitness function plots:----
     #### Blank fineness plots:----
     plot_GOF_measure = function(.engine_ = "plotly",
+                                .maximise_ = TRUE,
                                 .gof_ = "LLK",
                                 .points_ = FALSE,
+                                .true_points_ = FALSE,
                                 .greys_ = FALSE,
                                 .scale_ = NULL,
                                 .legend_ = FALSE,
@@ -3065,8 +3073,17 @@ calibR_R6 <- R6::R6Class(
                           .legend_, FALSE, TRUE))) %>%
                       plotly::layout(
                         legend = list(
-                          x = ifelse(.legend_, "1.02", "0.25"),
-                          y = ifelse(.legend_, "1", "-0.15"),
+                          x = ifelse(
+                            .legend_,
+                            "1.02",
+                            ifelse(
+                              .true_points_,
+                              "0.15",
+                              "0.25")),
+                          y = ifelse(
+                            .legend_,
+                            "1",
+                            "-0.15"),
                           orientation = ifelse(
                             .legend_, 'v', 'h')),
                         xaxis = list(
@@ -3097,7 +3114,22 @@ calibR_R6 <- R6::R6Class(
                           type = 'scatter',
                           mode = 'markers',
                           marker = list(size = 1),
-                          symbols = 'o')
+                          symbols = 'o') %>%
+                          {if(.true_points_) {
+                            plotly::add_trace(
+                              p = .,
+                              inherit = FALSE,
+                              x = self$calibration_parameters$
+                                v_params_true_values[[.param_x]],
+                              y = self$calibration_parameters$
+                                v_params_true_values[[.param_y]],
+                              type = 'scatter',
+                              mode = 'markers',
+                              marker = list(size = 1),
+                              symbols = 'x')
+                          } else {
+                            .
+                          }}
                       } else {
                         .
                       }}
@@ -3131,7 +3163,18 @@ calibR_R6 <- R6::R6Class(
                       .x = .,
                       .f = function(.x) {
                         .x}) %>%
-                    dplyr::mutate(Points = "Identified values"))
+                    dplyr::mutate(Points = "Identified values")) %>%
+                  ###### Add true values:----
+                {if(.true_points_) {
+                  dplyr::bind_rows(
+                    .,
+                    self$calibration_parameters$v_params_true_values) %>%
+                    dplyr::mutate(Points = dplyr::case_when(
+                      is.na(Points) ~ "True values",
+                      TRUE ~ Points))
+                } else {
+                  .
+                }}
                 ###### Add points to the plots:----
                 purrr::map(
                   .x = self$calibration_parameters$v_params_names,
@@ -3154,11 +3197,84 @@ calibR_R6 <- R6::R6Class(
                             mode = 'markers',
                             marker = list(size = 5),
                             symbol = ~ calib_res[["Points"]],
-                            symbols = c("triangle-up", "circle-open"))
+                            symbols = c(
+                              "triangle-up",
+                              "circle-open",
+                              "circle-dot"))
                       })
                   })
               })
-          }
+        }
+
+      ##### Un-directed plots:----
+      self$plots$GOF_plots$random <-
+        if(.engine_ == "plotly") {
+          self$calibration_results$random %>%
+            purrr::map(
+              .x = .,
+              .f = function(.calib_res_random) {
+                ###### Sort calibration results:----
+                sorted_calib_res <- .calib_res_random %>%
+                  {if(.maximise_){
+                    dplyr::arrange(
+                      .data = .,
+                      dplyr::desc(Overall_fit))
+                  } else {
+                    dplyr::arrange(
+                      .data = .,
+                      Overall_fit)}}
+                calib_res <- sorted_calib_res %>%
+                  dplyr::mutate(
+                    Points = "Sampling values") %>%
+                  dplyr::bind_rows(
+                    sorted_calib_res %>%
+                      dplyr::slice_head(
+                        n = nrow(.)/10) %>%
+                      dplyr::mutate(
+                        Points = "Identified values")) %>%
+                  ###### Add true values:----
+                {if(.true_points_) {
+                  dplyr::bind_rows(
+                    .,
+                    self$calibration_parameters$v_params_true_values) %>%
+                    dplyr::mutate(Points = dplyr::case_when(
+                      is.na(Points) ~ "True values",
+                      TRUE ~ Points))
+                } else {
+                  .
+                }}
+
+                ###### Add points to the plots:----
+                purrr::map(
+                  .x = self$calibration_parameters$v_params_names,
+                  .f = function(.param_x) {
+                    ####### Prepare parameter names:----
+                    other_params_names <- self$calibration_parameters$
+                      v_params_names[-which(self$calibration_parameters$
+                                              v_params_names == .param_x)]
+                    ####### Plots list:----
+                    plots_list_ <- purrr::map(
+                      .x = other_params_names,
+                      .f = function(.param_y) {
+                        self$plots$GOF_plots$blank[[.param_x]][[.param_y]] %>%
+                          plotly::add_trace(
+                            p = .,
+                            inherit = FALSE,
+                            x = calib_res[[.param_x]],
+                            y = calib_res[[.param_y]],
+                            type = 'scatter',
+                            mode = 'markers',
+                            marker = list(size = 4),
+                            symbol = ~ calib_res[["Points"]],
+                            symbols = c(
+                              "triangle-up",
+                              "circle-open",
+                              "circle-dot"))
+                      })
+                  })
+              })
+        }
+
     },
     ## Helper functions:----
     # Get Maximum a-posteriori (MAP) values from calibration methods
