@@ -93,6 +93,7 @@ CR_CRS_2P2T <- calibR_R6$new(
   .targets = targets_list,
   .args = NULL,
   .transform = FALSE)
+#### SSE fitness function without True values:----
 distance_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .legend_ = FALSE,
   .greys_ = TRUE,
@@ -122,6 +123,7 @@ CR_CRS_2P2T <- calibR_R6$new(
   .targets = targets_list,
   .args = NULL,
   .transform = FALSE)
+#### LLK function without True values:----
 llik_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .legend_ = FALSE,
   .greys_ = TRUE,
@@ -251,7 +253,7 @@ CR_CRS_2P2T$
     .max_iterations = 1e4,
     temp = 1000,
     trace = FALSE)
-###### Fitness function without True values:----
+##### Fitness function without True values:----
 SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .true_points_ = FALSE,
   .maximise_ = FALSE,
@@ -325,7 +327,7 @@ plotly::save_image(
   file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_SNN_z.jpeg",
   scale = 5)
 
-###### Fitness function with True values:----
+##### Fitness function with True values:----
 SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .true_points_ = TRUE,
   .maximise_ = FALSE,
@@ -402,6 +404,8 @@ plotly::save_image(
 ## Chapter 3 plots:----
 ## Effects of using more calibration targets on CRS_markov_2 model:----
 ### One target testing:----
+seed_no <- 1
+set.seed(seed = seed_no)
 #### Initiate CalibR R6 object:----
 CR_CRS_2P1T = calibR_R6$
   new(
@@ -409,14 +413,12 @@ CR_CRS_2P1T = calibR_R6$
     .params = CR_CRS_data_1t$l_params,
     .targets = CR_CRS_data_1t$l_targets,
     .args = NULL,
-    .transform = FALSE
-  )
+    .transform = FALSE)
 #### Generate samples using Random Grid Search:----
 CR_CRS_2P1T$
   sampleR(
     .n_samples = 1e4,
-    .sampling_method = c("RGS", "FGS", "LHS")
-  )
+    .sampling_method = c("RGS", "FGS", "LHS"))
 #### Parameter exploration calibration methods:----
 ##### Unguided searching methods:----
 CR_CRS_2P1T$
@@ -425,19 +427,17 @@ CR_CRS_2P1T$
     .maximise = TRUE,
     .weighted = TRUE,
     .sample_method = c("RGS", "FGS", "LHS"),
-    .calibration_method = "LLK"
-  )
+    .calibration_method = "LLK")
 ##### Guided searching methods:----
 CR_CRS_2P1T$
   calibrateR_directed(
     .gof = 'LLK',
-    .n_samples = 10,
-    .calibration_method = c("NM", "BFGS", "SANN"),
+    .n_samples = 1e1,
+    .calibration_method = c("NM", "BFGS"),
     .sample_method = "RGS",
-    .max_iterations = 1e4,
-    temp = 10,
-    tmax = 1000
-  )
+    .max_iterations = 1e3,
+    temp = 1,
+    trace = FALSE)
 #### Bayesian methods:----
 CR_CRS_2P1T$
   calibrateR_bayesian(
@@ -448,13 +448,14 @@ CR_CRS_2P1T$
     .MCMC_burnIn = 1e4,
     .MCMC_samples = 4e4,
     .MCMC_thin = 4,
-    .MCMC_rerun = TRUE
-  )
+    .MCMC_rerun = TRUE)
 #### Plots:----
 CR_CRS_2P1T$draw_log_likelihood(.points_ = F)
 
 ## Effects of using more calibration targets on CRS_markov_2 model:----
 ### One target testing:----
+seed_no <- 1
+set.seed(seed = seed_no)
 #### Initiate CalibR R6 object:----
 CR_CRS_2P2T = calibR_R6$
   new(
@@ -462,14 +463,12 @@ CR_CRS_2P2T = calibR_R6$
     .params = CR_CRS_data_2t$l_params,
     .targets = CR_CRS_data_2t$l_targets,
     .args = NULL,
-    .transform = FALSE
-  )
+    .transform = FALSE)
 #### Generate samples using Random Grid Search:----
 CR_CRS_2P2T$
   sampleR(
-    .n_samples = 1e4,
-    .sampling_method = c("RGS", "FGS", "LHS")
-  )
+    .n_samples = 1e2,
+    .sampling_method = c("RGS", "FGS", "LHS"))
 #### Parameter exploration calibration methods:----
 ##### Unguided searching methods:----
 CR_CRS_2P2T$
@@ -478,34 +477,44 @@ CR_CRS_2P2T$
     .maximise = TRUE,
     .weighted = TRUE,
     .sample_method = c("RGS", "FGS", "LHS"),
-    .calibration_method = "LLK"
-  )
+    .calibration_method = "LLK")
 ##### Guided searching methods:----
 CR_CRS_2P2T$
   calibrateR_directed(
     .gof = 'LLK',
-    .n_samples = 1e2,
-    .calibration_method = c("NM", "BFGS", "SANN"),
+    .n_samples = 1e1,
+    .calibration_method = c("NM", "BFGS"),
     .sample_method = "RGS",
-    .max_iterations = 1e4,
-    temp = 10,
-    tmax = 10
-  )
+    .max_iterations = 1e3,
+    temp = 1,
+    trace = FALSE)
 #### Bayesian methods:----
 CR_CRS_2P2T$
   calibrateR_bayesian(
     .b_method = c("SIR", "IMIS", "MCMC"),
-    .n_resample = 1e3,
+    .n_resample = 1e2,
     .IMIS_iterations = 200,
     .IMIS_sample = 1e3,
     .MCMC_burnIn = 1e4,
     .MCMC_samples = 4e4,
-    .MCMC_thin = 4,
-    .MCMC_rerun = TRUE
-  )
-#### Plots:----
-CR_CRS_2P2T$draw_log_likelihood(.points_ = F)
-
+    .MCMC_thin = 30,
+    .MCMC_rerun = TRUE,
+    .diag_ = TRUE)
+#### Sample PSA values:----
+CR_CRS_2P2T$
+  sample_PSA_values(
+    .calibration_methods = c("Random", "Directed", "Bayesian"),
+    .PSA_samples = 1e2)
+# #### Run PSA:----
+# CR_CRS_2P2T$run_PSA(
+#   .PSA_unCalib_values_ = NULL)
+# #### Plots:----
+# ##### Plot fitness function:----
+# CR_CRS_2P2T$draw_GOF_measure(.points_ = F)
+##### Plot targets:----
+CR_CRS_2P2T$draw_targets_plots(
+  .sim_targets_ = TRUE,
+  .calibration_methods_ = c("random", "directed", "bayesian"))
 
 plotly::plot_ly(
   x = test[["p_Mets"]],

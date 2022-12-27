@@ -8,19 +8,27 @@ v_targets_names <- c(
 v_targets_labels <- c(
   'Surv' = "Survival")
 v_targets_axis <- list(
-  'Surv' = list('x' = "value", 'y' = "Year"))
-v_targets_weights <- c('Surv' = 1)
+  'Surv' = list(
+    'x' = "time",
+    'y' = "value"))
+v_targets_axis_labels <- list(
+  'Surv' = list(
+    'x' = "Time in years",
+    'y' = "Proportion of cohort survived"))
+v_targets_weights <- c(
+  'Surv' = 1)
 ### Likelihood distributions:----
-v_targets_dists <- c('Surv' = "norm")
+v_targets_dists <- c(
+  'Surv' = "norm")
 ### Load saved target data:----
 data("CRS_targets_2")
 ### Pack targets distributions together:----
 l_targets <-
-  list(
-    'v_targets_names' = v_targets_names,
+  list('v_targets_names' = v_targets_names,
        'v_targets_labels' = v_targets_labels,
        'Surv' = CRS_targets_2$Surv,
        'v_targets_axis' = v_targets_axis,
+       'v_targets_axis_labels' = v_targets_axis_labels,
        'v_targets_dists' = v_targets_dists,
        'v_targets_weights' = v_targets_weights)
 

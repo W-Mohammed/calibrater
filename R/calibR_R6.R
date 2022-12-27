@@ -48,6 +48,8 @@ calibR_R6 <- R6::R6Class(
     PSA_results = NULL,
     #' @field PSA_summary PSA results' summary
     PSA_summary = NULL,
+    #' @field simulated_targets PSA results
+    simulated_targets = NULL,
     #' @field plots summary plots
     plots = NULL,
 
@@ -226,7 +228,8 @@ calibR_R6 <- R6::R6Class(
                                    .MCMC_burnIn = 10000,
                                    .MCMC_samples = 50000,
                                    .MCMC_thin = 5,
-                                   .MCMC_rerun = TRUE) {
+                                   .MCMC_rerun = TRUE,
+                                   .diag_ = FALSE) {
       private$calibrateR_bayesian_(
         .b_methods = .b_methods,
         .n_resample = .n_resample,
@@ -235,7 +238,8 @@ calibR_R6 <- R6::R6Class(
         .MCMC_burnIn = .MCMC_burnIn,
         .MCMC_samples = .MCMC_samples,
         .MCMC_thin = .MCMC_thin,
-        .MCMC_rerun = .MCMC_rerun)
+        .MCMC_rerun = .MCMC_rerun,
+        .diag_ = .diag_)
     },
 
     #' @description
@@ -306,14 +310,14 @@ calibR_R6 <- R6::R6Class(
                           print_pair_correlations = FALSE) {
       private$draw_priors_posteriors(
         prior_sample_method = prior_sample_method)
-      private$draw_pair_correlations()
-      if(isTRUE(print_pair_correlations))
-        private$print_pair_correlations()
+      # private$draw_pair_correlations()
+      # if(isTRUE(print_pair_correlations))
+      #   private$print_pair_correlations()
       private$draw_targets()
 
     },
 
-    #' Plot log likelihood
+    #' Plot Goodness of fit function(s)
     #'
     #' @param .engine_ Plotting engine, currently c("plotly", "ggplot2")
     #' @param .maximise_ Boolean for whether the function is maximising
@@ -395,6 +399,31 @@ calibR_R6 <- R6::R6Class(
         .x_axis_ub_ = .x_axis_ub_,
         .y_axis_lb_ = .y_axis_lb_,
         .y_axis_ub_ = .y_axis_ub_)
+
+      invisible(self)
+    },
+
+    #' Plot Targets
+    #'
+    #' @param .engine_ Plotting engine, currently c("plotly", "ggplot2")
+    #'
+    #' @return
+    #' @export
+    #'
+    #' @examples
+    draw_targets_plots = function(.engine_ = "ggplot2",
+                                  .sim_targets_ = FALSE,
+                                  .calibration_methods_ = c("random", "directed",
+                                                            "bayesian"),
+                                  .PSA_samples_ = NULL,
+                                  .PSA_unCalib_values_ = NULL) {
+      # Call private function:
+      private$plot_targets(
+        .engine_ = .engine_,
+        .sim_targets_ = .sim_targets_,
+        .calibration_methods_ = .calibration_methods_,
+        .PSA_samples_ = .PSA_samples_,
+        .PSA_unCalib_values_ = .PSA_unCalib_values_)
 
       invisible(self)
     }
@@ -1180,12 +1209,14 @@ calibR_R6 <- R6::R6Class(
                                     .MCMC_burnIn = 10000,
                                     .MCMC_samples = 50000,
                                     .MCMC_thin = 5,
-                                    .MCMC_rerun = TRUE) {
+                                    .MCMC_rerun = TRUE,
+                                    .diag_ = FALSE) {
       #### SIR:----
       if('SIR' %in% .b_methods) {
+        cat(paste("Running SIR...", Sys.time(), "\n"))
         samples_ = private$sample_prior_IMIS(.n_samples = .n_resample)
         self$calibration_results$bayesian[["SIR"]] <-
-          private$calibrateModel_beyesian(
+          calibR::calibrateModel_beyesian(
             .b_method = 'SIR',
             .func = self$calibration_model,
             .args = self$calibration_model_args,
@@ -1196,8 +1227,9 @@ calibR_R6 <- R6::R6Class(
       }
       #### IMIS:----
       if('IMIS' %in% .b_methods) {
+        cat(paste("Running IMIS...", Sys.time(), "\n"))
         self$calibration_results$bayesian[["IMIS"]] <-
-          private$calibrateModel_beyesian(
+          calibR::calibrateModel_beyesian(
             .b_method = 'IMIS',
             .func = self$calibration_model,
             .args = self$calibration_model_args,
@@ -1210,8 +1242,9 @@ calibR_R6 <- R6::R6Class(
       }
       #### MCMC:----
       if('MCMC' %in% .b_methods) {
+        cat(paste("Running MCMC...", Sys.time(), "\n"))
         self$calibration_results$bayesian[["MCMC"]] <-
-          private$calibrateModel_beyesian(
+          calibR::calibrateModel_beyesian(
             .b_method = 'MCMC',
             .func = self$calibration_model,
             .args = self$calibration_model_args,
@@ -1222,7 +1255,8 @@ calibR_R6 <- R6::R6Class(
             .MCMC_burnIn = .MCMC_burnIn,
             .MCMC_samples = .MCMC_samples,
             .MCMC_thin = .MCMC_thin,
-            .MCMC_rerun = .MCMC_rerun)
+            .MCMC_rerun = .MCMC_rerun,
+            .diag_ = .diag_)
       }
     },
     ### Bayesian helper functions:----
@@ -1898,6 +1932,8 @@ calibR_R6 <- R6::R6Class(
         guess <- private$sample_prior_RGS_(
           .n_samples = 1,
           .l_params = .l_params)
+        if(.diag_)
+          cat(paste0(guess, "\n"))
         ## Run the Metropolis-Hastings algorithm
         fit_MCMC <- MHadaptive::Metro_Hastings(
           li_func = private$log_posterior,
@@ -1915,6 +1951,8 @@ calibR_R6 <- R6::R6Class(
           guess <- private$sample_prior_RGS_(
             .n_samples = 1,
             .l_params = .l_params)
+          if(.diag_)
+            cat(paste0(guess, "\n"))
           fit_MCMC <- MHadaptive::Metro_Hastings(
             li_func = private$log_posterior,
             pars = guess,
@@ -2024,7 +2062,7 @@ calibR_R6 <- R6::R6Class(
     .PSA_unCalib_values_) {
       self$PSA_results <-
         # if the model supports parameter transformation:
-        if(!is.null(self$transform_parameters)) {
+        if(!is.null(self$transform_parameters) & self$transform_parameters) {
           calibR::run_PSA(
             .func_ = self$calibration_model,
             .PSA_calib_values_ = c(self$PSA_samples$random,
@@ -2032,9 +2070,8 @@ calibR_R6 <- R6::R6Class(
                                    self$PSA_samples$bayesian),
             .args_ = c(self$calibration_model_args,
                        "calibrate_" = FALSE,
-                       "transform_" = FALSE),
-            .PSA_unCalib_values_ = .PSA_unCalib_values_
-          )
+                       "transform_" = self$transform_parameters),
+            .PSA_unCalib_values_ = .PSA_unCalib_values_)
         } else {
           calibR::run_PSA(
             .func_ = self$calibration_model,
@@ -2043,8 +2080,7 @@ calibR_R6 <- R6::R6Class(
                                    self$PSA_samples$bayesian),
             .args_ = c(self$calibration_model_args,
                        "calibrate_" = FALSE),
-            .PSA_unCalib_values_ = .PSA_unCalib_values_
-          )
+            .PSA_unCalib_values_ = .PSA_unCalib_values_)
         }
     },
     ### Summarise PSA:----
@@ -3006,7 +3042,6 @@ calibR_R6 <- R6::R6Class(
         psych::pairs.panels()
     },
     ### Fitness function plots:----
-    #### Blank fineness plots:----
     plot_GOF_measure = function(.engine_ = "plotly",
                                 .maximise_ = TRUE,
                                 .gof_ = "LLK",
@@ -3041,6 +3076,7 @@ calibR_R6 <- R6::R6Class(
               plots_list_ <- purrr::map(
                 .x = other_params_names,
                 .f = function(.param_y) {
+                  ###### Create plot only if different parameters are used:----
                   if(.param_x != .param_y) {
                     if(is.null(.x_axis_lb_))
                       .x_axis_lb_ <- self$calibration_parameters$
@@ -3076,6 +3112,7 @@ calibR_R6 <- R6::R6Class(
                           x = ifelse(
                             .legend_,
                             "1.02",
+                            # Adjust legend if true points are used:
                             ifelse(
                               .true_points_,
                               "0.15",
@@ -3275,6 +3312,115 @@ calibR_R6 <- R6::R6Class(
               })
         }
 
+    },
+    ### Target plots:----
+    plot_targets = function(.engine_ = "ggplot2",
+                            .sim_targets_ = FALSE,
+                            .calibration_methods_ = c("random", "directed",
+                                                      "bayesian"),
+                            .PSA_samples_ = NULL,
+                            .PSA_unCalib_values_) {
+      #### Plot targets:----
+      self$plots$targets$blank <-
+        if(.engine_ == "ggplot2") {
+          purrr::map(
+            ##### Loop over all targets:----
+            .x = self$calibration_targets$v_targets_names,
+            .f = function(.target_ = .x) {
+              ###### Create line plots:----
+              self$calibration_targets[[.target_]] %>%
+                ggplot2::ggplot(
+                  data = .,
+                  ggplot2::aes(
+                    x = .data[[self$calibration_targets$
+                                 v_targets_axis[[.target_]]$x]],
+                    y = .data[[self$calibration_targets$
+                                 v_targets_axis[[.target_]]$y]])) +
+                ggplot2::geom_errorbar(
+                  ggplot2::aes(
+                    ymin = lb,
+                    ymax = ub)) +
+                ggplot2::geom_point() +
+                ggplot2::theme(
+                  panel.border = ggplot2::element_rect(
+                    fill = NA,
+                    color = 'black')) +
+                ggplot2::labs(
+                  x = self$calibration_targets$
+                    v_targets_axis_labels[[.target_]]$x,
+                  y = self$calibration_targets$
+                    v_targets_axis_labels[[.target_]]$y)
+            })
+        }
+      #### Plot targets with calibration results:----
+      if(.sim_targets_) {
+        ##### Sample PSA values if unavailable:----
+        if(is.null(self$PSA_samples)) {
+          self$PSA_samples <- self$sample_PSA_values(
+            .calibration_methods = .calibration_methods_,
+            .PSA_samples = .PSA_samples_)
+        }
+        ##### Get simulated targets from PSA samples:----
+        if(is.null(self$simulated_targets) &
+           !is.null(self$PSA_samples)) {
+          names(.calibration_methods_) <- .calibration_methods_
+          ###### Loop through methods:----
+          self$simulated_targets <- purrr::map(
+            .x = .calibration_methods_,
+            .f = function(.calib_method) {
+              # if the model supports parameter transformation:
+              if(!is.null(self$transform_parameters) & self$transform_parameters) {
+                calibR::run_PSA(
+                  .func_ = self$calibration_model,
+                  .PSA_calib_values_ = self$PSA_samples[[.calib_method]],
+                  .args_ = c(self$calibration_model_args,
+                             "calibrate_" = TRUE,
+                             "transform_" = self$transform_parameters),
+                  .PSA_unCalib_values_ = .PSA_unCalib_values_)
+              } else {
+                calibR::run_PSA(
+                  .func_ = self$calibration_model,
+                  .PSA_calib_values_ = self$PSA_samples[[.calib_method]],
+                  .args_ = c(self$calibration_model_args,
+                             "calibrate_" = TRUE),
+                  .PSA_unCalib_values_ = .PSA_unCalib_values_)
+              }
+            })
+        }
+      ##### Un-directed calibration results targets plots:----
+      self$plots$targets$random <-
+        if(.engine_ == "ggplot2") {
+          self$simulated_targets %>%
+          purrr::map(
+            .x = .,
+            .f = function(.calib_targets_random) {
+              purrr::map(
+                ##### Loop over all targets:----
+                .x = self$calibration_targets$v_targets_names,
+                .f = function(.target_ = .x) {
+                  ###### Create line plots:----
+                  # self$plots$targets$blank[[.target_]] +
+                  #   ggplot2::geom_line(
+                  #     ggplot2::aes(
+                  #       x =
+                  #     )
+                  #   )
+                }
+              )
+            }
+          )
+        }
+      ##### Directed calibration results targets plots:----
+      self$plots$targets$random <-
+        if(.engine_ == "ggplot2") {
+
+        }
+      ##### Bayesian calibration results targets plots:----
+      self$plots$targets$random <-
+        if(.engine_ == "ggplot2") {
+
+        }
+      }
     },
     ## Helper functions:----
     # Get Maximum a-posteriori (MAP) values from calibration methods

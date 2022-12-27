@@ -66,6 +66,9 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
                                                    repair = "unique",
                                                    quiet = TRUE)) %>%
             `colnames<-`(.list_[[1]][["Params"]]) %>%
+            dplyr::mutate(
+              Label =
+                .list_[[1]][["Calibration method"]]) %>%
             dplyr::bind_rows(
               .list_[[1]][["Estimate"]] %>%
                 t() %>%
@@ -74,10 +77,11 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
                                                        quiet = TRUE)) %>%
                 `colnames<-`(.list_[[1]][["Params"]])) %>%
             dplyr::mutate(
+              Overall_fit = dplyr::case_when(
+                is.na(Label) ~ round(.list_[[1]][["GOF value"]], 2),
+                TRUE ~ NA_real_),
               Label =
-                .list_[[1]][["Calibration method"]],
-              Overall_fit =
-                round(.list_[[1]][["GOF value"]], 2)) %>%
+                .list_[[1]][["Calibration method"]]) %>%
             dplyr::select(Label, Overall_fit, dplyr::everything())
           # Back transform sampled parameters if any:
           if(.transform_) {

@@ -505,6 +505,7 @@ calculate_posterior <- function(.samples, .func = .func_, .args = .args_,
 #' first run to re-run the MCMC chain.
 #' @param .transform Logical for whether to back-transform parameters to
 #' their original scale.
+#' @param .diag_ Boolean for whether to print diagnostics
 #'
 #' @return
 #' @export
@@ -521,7 +522,8 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
                                     .MCMC_samples = 50000,
                                     .MCMC_thin = 5,
                                     .MCMC_rerun = TRUE,
-                                    .transform = FALSE) {
+                                    .transform = FALSE,
+                                    .diag_ = FALSE) {
   # Ensure that .b_method is supported by the function:
   stopifnot(".b_method is not supported by the function" =
               any(.b_method %in% c('SIR', 'IMIS', 'MCMC')))
@@ -560,17 +562,21 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
     SIR_results <- cbind(posterior_SIR,
                          "Overall_fit" = llik[SIR_resample],
                          "Posterior_prob" = weight[SIR_resample]) %>%
+      dplyr::as_tibble(
+        ~ vctrs::vec_as_names(...,
+                              repair = "unique",
+                              quiet = TRUE)) %>%
       dplyr::arrange(dplyr::desc(Overall_fit))
 
     return(list('Results' = SIR_results, 'Method' = "SIR"))
 
   } else if(.b_method == 'IMIS') { # IMIS:
     ## Define function inputs:
-    .l_params_ <<- .l_params # prior/sample.prior
-    .func_ <<- .func # calculate_likelihood
-    .args_ <<- .args # calculate_likelihood
-    .l_targets_ <<- .l_targets # calculate_likelihood
-    .transform_ <<- .transform # prior
+    .l_params_ <- .l_params # prior/sample.prior
+    .func_ <- .func # calculate_likelihood
+    .args_ <- .args # calculate_likelihood
+    .l_targets_ <- .l_targets # calculate_likelihood
+    .transform_ <- .transform # prior
     ## Run IMIS:
     fit_IMIS <- calibR::IMIS_(
       B = .IMIS_sample, # the incremental sample size at each IMIS iteration
@@ -615,34 +621,87 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
     guess <- calibR::sample_prior_RGS_(
       .n_samples = 1,
       .l_params = .l_params)
-    ## Run the Metropolis-Hastings algorithm
-    fit_MCMC <- MHadaptive::Metro_Hastings(
-      li_func = calibR::log_posterior,
-      pars = guess,
-      par_names = .l_params[["v_params_names"]],
-      iterations = .MCMC_samples,
-      burn_in = .MCMC_burnIn,
-      .func = .func,
-      .l_targets = .l_targets,
-      .l_params = .l_params,
-      .args = .args,
-      .transform = .transform)
+    if(.diag_)
+      cat(paste0(guess, "\n"))
+    ## Run the Metropolis-Hastings algorithm:
+    fit_MCMC <- tryCatch(
+      expr = {
+        MHadaptive::Metro_Hastings(
+          li_func = calibR::log_posterior,
+          pars = guess,
+          par_names = .l_params[["v_params_names"]],
+          iterations = .MCMC_samples,
+          burn_in = .MCMC_burnIn,
+          .func = .func,
+          .l_targets = .l_targets,
+          .l_params = .l_params,
+          .args = .args,
+          .transform = .transform)
+      }, error = function(e) {
+        message(paste0("\r", e))
+        ### Sample new values:
+        guess <- calibR::sample_prior_RGS_(
+          .n_samples = 1,
+          .l_params = .l_params)
+        if(.diag_)
+          cat(paste0(guess, "\n"))
+        ### Run MH again:
+        MHadaptive::Metro_Hastings(
+          li_func = calibR::log_posterior,
+          pars = guess,
+          par_names = .l_params[["v_params_names"]],
+          iterations = .MCMC_samples,
+          burn_in = .MCMC_burnIn,
+          .func = .func,
+          .l_targets = .l_targets,
+          .l_params = .l_params,
+          .args = .args,
+          .transform = .transform)
+      })
+
+    # If MCMC was to be rerun:
     if(.MCMC_rerun){
       guess <- calibR::sample_prior_RGS_(
         .n_samples = 1,
         .l_params = .l_params)
-      fit_MCMC <- MHadaptive::Metro_Hastings(
-        li_func = calibR::log_posterior,
-        pars = guess,
-        prop_sigma = fit_MCMC$prop_sigma,
-        par_names = .l_params[["v_params_names"]],
-        iterations = .MCMC_samples,
-        burn_in = .MCMC_burnIn,
-        .func = .func,
-        .l_targets = .l_targets,
-        .l_params = .l_params,
-        .args = .args,
-        .transform = .transform)}
+      if(.diag_)
+        cat(paste0(guess, "\n"))
+      fit_MCMC <- tryCatch(
+        expr = {
+          MHadaptive::Metro_Hastings(
+            li_func = calibR::log_posterior,
+            pars = guess,
+            prop_sigma = fit_MCMC$prop_sigma,
+            par_names = .l_params[["v_params_names"]],
+            iterations = .MCMC_samples,
+            burn_in = .MCMC_burnIn,
+            .func = .func,
+            .l_targets = .l_targets,
+            .l_params = .l_params,
+            .args = .args,
+            .transform = .transform)
+        }, error = function(e) {
+          message(paste0("\r", e))
+          ### Sample new values:
+          guess <- calibR::sample_prior_RGS_(
+            .n_samples = 1,
+            .l_params = .l_params)
+          if(.diag_)
+            cat(paste0(guess, "\n"))
+          ### Run MH again:
+          MHadaptive::Metro_Hastings(
+            li_func = calibR::log_posterior,
+            pars = guess,
+            prop_sigma = fit_MCMC$prop_sigma,
+            par_names = .l_params[["v_params_names"]],
+            iterations = .MCMC_samples,
+            burn_in = .MCMC_burnIn,
+            .func = .func,
+            .l_targets = .l_targets,
+            .l_params = .l_params,
+            .args = .args,
+            .transform = .transform)
+          })}
     ## Estimate 95% credible interval:
     cred_int_95 <- MHadaptive::BCI(
       mcmc_object = fit_MCMC,

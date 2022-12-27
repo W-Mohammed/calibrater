@@ -10,8 +10,19 @@ v_targets_labels <- c(
   'Surv' = "Survival",
   'PropSick' = "Prevalence")
 v_targets_axis <- list(
-  'Surv' = list('x' = "value", 'y' = "Year"),
-  'PropSick' = list('x' = "value", 'y' = "Year"))
+  'Surv' = list(
+    'x' = "time",
+    'y' = "value"),
+  'PropSick' = list(
+    'x' = "time",
+    'y' = "value"))
+v_targets_axis_labels <- list(
+  'Surv' = list(
+    'x' = "Time in years",
+    'y' = "Proportion of cohort survived"),
+  'PropSick' = list(
+    'x' = "Time in years",
+    'y' = "Proportion of cohort with cancer"))
 v_targets_weights <- c(
   'Surv' = 1,
   'PropSick' = 1)
@@ -28,6 +39,7 @@ l_targets <-
        'Surv' = CRS_targets_2$Surv,
        'PropSick' = CRS_targets_2$PropSick,
        'v_targets_axis' = v_targets_axis,
+       'v_targets_axis_labels' = v_targets_axis_labels,
        'v_targets_dists' = v_targets_dists,
        'v_targets_weights' = v_targets_weights)
 
