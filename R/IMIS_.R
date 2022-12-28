@@ -10,6 +10,11 @@
 #' @param prior Function that calculates prior densities (one set of
 #' parameters at a time)
 #' @param likelihood Function that calculates the likelihood
+#' @param .l_params_
+#' @param .func_
+#' @param .args_
+#' @param .l_targets_
+#' @param .transform_
 #'
 #' @return
 #' @export
@@ -19,10 +24,15 @@
 #' }
 IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                   sample.prior = .sample.prior_, priors = .priors_,
-                  prior = .prior_, likelihood = .likelihood_) {
+                  prior = .prior_, likelihood = .likelihood_,
+                  .l_params_, # prior/sample.prior
+                  .func_, # calculate_likelihood
+                  .args_, # calculate_likelihood
+                  .l_targets_, # calculate_likelihood
+                  .transform_) { # prior
   # The IMIS function, from the IMIS package: ----
   B0 = B*10
-  X_all = X_k = sample.prior(B0)				# Draw initial samples from the prior distribution
+  X_all = X_k = sample.prior(B0, .l_params = .l_params_) # Draw initial samples from the prior distribution
   if (is.vector(X_all))	Sig2_global = stats::var(X_all)	# the prior covariance
   if (is.matrix(X_all))	Sig2_global = stats::cov(X_all)	# the prior covariance
   stat_all = matrix(NA, 6, number_k)				# 6 diagnostic statistics at each iteration
@@ -34,9 +44,12 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
   for (k in 1:number_k ){
 
     ptm.like = proc.time()
-    prior_x =  priors(X_k)	# Calculate the prior densities
+    # Calculate the prior densities
+    prior_x =  priors(X_k, .l_params = .l_params_, .transform = .transform_)
     prior_all = c(prior_all, prior_x)
-    like_x = likelihood(X_k) # Calculate the likelihoods
+    # Calculate the likelihoods
+    like_x = likelihood(X_k, .func = .func_, .args = .args_,
+                        .l_targets = .l_targets_)
     like_all = c(like_all, like_x)
     ptm.use = (proc.time() - ptm.like)[3]
     if (k==1)
@@ -83,7 +96,10 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
         which_exclude = union( which_exclude, important )
         which_remain = setdiff(which_remain, which_exclude)
         posterior = function(theta) {
-          -log(prior(theta))-log(likelihood(theta))
+          -log(prior(theta, .l_params = .l_params_,
+                     .transform = .transform_))
+          -log(likelihood(theta, .func = .func_, .args = .args_,
+                          .l_targets = .l_targets_))
         }
 
         if (is.vector(X_all)){
@@ -102,9 +118,12 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
           print(paste("maximum posterior=",
                       round(-optimizer$value,2),
                       ", likelihood=",
-                      round(log(likelihood(optimizer$par)),2),
+                      round(log(likelihood(optimizer$par, .func = .func_,
+                                           .args = .args_,
+                                           .l_targets = .l_targets_)),2),
                       ", prior=",
-                      round(log(prior(optimizer$par)),2),
+                      round(log(prior(optimizer$par, .l_params = .l_params_,
+                                      .transform = .transform_)),2),
                       ", time used=",
                       round(ptm.use/60,2),
                       "minutes, convergence=",
@@ -230,9 +249,11 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
             "maximum posterior=",
             round(-optimizer$value, 2),
             ", likelihood=",
-            round(log(likelihood(optimizer$par)), 2),
+            round(log(likelihood(optimizer$par, .func = .func_, .args = .args_,
+                                 .l_targets = .l_targets_)), 2),
             ", prior=",
-            round(log(prior(optimizer$par)),2),
+            round(log(prior(optimizer$par, .l_params = .l_params_,
+                            .transform = .transform_)),2),
             ", time used=",
             round(ptm.use/60,2),
             "minutes, convergence=",

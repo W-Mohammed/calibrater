@@ -572,11 +572,11 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
 
   } else if(.b_method == 'IMIS') { # IMIS:
     ## Define function inputs:
-    .l_params_ <- .l_params # prior/sample.prior
-    .func_ <- .func # calculate_likelihood
-    .args_ <- .args # calculate_likelihood
-    .l_targets_ <- .l_targets # calculate_likelihood
-    .transform_ <- .transform # prior
+    # .l_params_ <- .l_params # prior/sample.prior
+    # .func_ <- .func # calculate_likelihood
+    # .args_ <- .args # calculate_likelihood
+    # .l_targets_ <- .l_targets # calculate_likelihood
+    # .transform_ <- .transform # prior
     ## Run IMIS:
     fit_IMIS <- calibR::IMIS_(
       B = .IMIS_sample, # the incremental sample size at each IMIS iteration
@@ -586,7 +586,12 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
       sample.prior = calibR::sample_prior_IMIS,
       prior = calibR::calculate_prior,
       priors = calibR::calculate_priors,
-      likelihood = calibR::calculate_likelihood)
+      likelihood = calibR::calculate_likelihood,
+      .l_params_ = .l_params, # prior/sample.prior
+      .func_ = .func, # calculate_likelihood
+      .args_ = .args, # calculate_likelihood
+      .l_targets_ = .l_targets, # calculate_likelihood
+      .transform_ = .transform) # prior
     ## Calculate log-likelihood (overall fit) and posterior probability:
     m_calib_res <- fit_IMIS$resample
     Overall_fit <- calibR::log_likelihood(
