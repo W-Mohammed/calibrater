@@ -55,7 +55,7 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
            } else FALSE) {
           # Sample from a multivariate normal distribution:
           PSA_calib_draws <- tmvtnorm::rtmvnorm(
-            n = .PSA_samples,
+            n = (.PSA_samples - 1),
             mean = .list_[[1]][["Estimate"]],
             sigma = Sigma_,
             lower = lb,
@@ -81,8 +81,11 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
                 is.na(Label) ~ round(.list_[[1]][["GOF value"]], 2),
                 TRUE ~ NA_real_),
               Label =
-                .list_[[1]][["Calibration method"]]) %>%
-            dplyr::select(Label, Overall_fit, dplyr::everything())
+                .list_[[1]][["Calibration method"]],
+              Plot_label = dplyr::case_when(
+                is.na(Overall_fit) ~ "PSA sets",
+                TRUE ~ "Identified set")) %>%
+            dplyr::select(Label, Plot_label, Overall_fit, dplyr::everything())
           # Back transform sampled parameters if any:
           if(.transform_) {
             PSA_calib_draws <- PSA_calib_draws %>%
@@ -133,32 +136,57 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
       .x = .l_calib_res_lists,
       .f = function(.data_ = .x) {
         PSA_calib_draws = .data_ %>%
+          dplyr::arrange(dplyr::desc(Overall_fit)) %>%
+          dplyr::mutate(
+            Plot_label = dplyr::case_when(
+              dplyr::row_number() == 1 ~ "Identified set",
+              TRUE ~ "PSA sets")) %>%
           dplyr::slice_head(n = .PSA_samples) %>%
-          dplyr::select(Label, Overall_fit, dplyr::everything())
+          dplyr::select(Label, Plot_label, Overall_fit, dplyr::everything())
         # Back transform sampled parameters if any:
         if(.transform_) {
           PSA_calib_draws <- PSA_calib_draws %>%
             calibR::backTransform(
               .t_data_ = .,
-              .l_params_ = .l_params
-            )
-        }
+              .l_params_ = .l_params)}
         # Prepare outputs list:
         list(
           'Calib_results' = .data_$Overall_fit[1:.PSA_samples],
-          'PSA_calib_draws' = PSA_calib_draws
-        )
-      }
-    )
+          'PSA_calib_draws' = PSA_calib_draws)})
   } else {
     results <- purrr::map(
       .x = .l_calib_res_lists,
       .f = function(.list_ = .x) {
         PSA_calib_draws <- .list_[["Results"]] %>%
-          dplyr::mutate(Label = .list_[["Method"]]) %>%
-          dplyr::select(-Posterior_prob) %>%
+          dplyr::arrange(dplyr::desc(Posterior_prob)) %>%
+          dplyr::mutate(
+            Label = .list_[["Method"]],
+            Plot_label = dplyr::case_when(
+              dplyr::row_number() == 1 ~ "Maximum-a-posteriori",
+              TRUE ~ "Distribution samples")) %>%
+          {if(!is.null(.list_[["Cred_int_95"]])) {
+            dplyr::bind_rows(
+              .list_[["Cred_int_95"]] %>%
+                t() %>%
+                dplyr::as_tibble() %>%
+                dplyr::mutate(
+                  Plot_label = .list_[["Cred_int_95"]] %>%
+                    t() %>%
+                    rownames(),
+                  Label = .list_[["Method"]]),
+              .)
+          } else {
+            .}} %>%
+          dplyr::mutate(
+            .data = .,
+            Plot_label = dplyr::case_when(
+              Plot_label == "0.025" ~ "Credible interval - LB",
+              Plot_label == "0.975" ~ "Credible interval - UB",
+              Plot_label == "post_mean" ~ "Posterior mean",
+              TRUE ~ Plot_label)) %>%
+          dplyr::select(.data = ., ... = -Posterior_prob) %>%
           dplyr::slice_head(n = .PSA_samples) %>%
-          dplyr::select(Label, Overall_fit, dplyr::everything())
+          dplyr::select(.data = ., Label, Plot_label, Overall_fit, dplyr::everything())
         # Back transform sampled parameters if any:
         if(.transform_) {
           PSA_calib_draws <- PSA_calib_draws %>%
@@ -226,14 +254,10 @@ run_PSA <- function(.func_, .args_, .PSA_calib_values_,
         }
       )
       dplyr::bind_rows(PSA_runs) %>%
-        dplyr::mutate(
-          Label = method_draws %>%
-            dplyr::select(Label) %>%
-            .[[1]],
-          Overall_fit = method_draws %>%
-            dplyr::select(Overall_fit) %>%
-            .[[1]]
-        )
+        dplyr::bind_cols(
+          method_draws %>%
+            dplyr::select(
+              Label, Plot_label, Overall_fit))
     }
   )
 
