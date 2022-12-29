@@ -3387,39 +3387,70 @@ calibR_R6 <- R6::R6Class(
               }
             })
         }
-      ##### Un-directed calibration results targets plots:----
-      self$plots$targets$random <-
+      ##### Calibration targets plots including simulated results:----
+      plots_lists <-
         if(.engine_ == "ggplot2") {
-          self$simulated_targets %>%
+          ###### Loop through calibration methods categories:----
           purrr::map(
-            .x = .,
-            .f = function(.calib_targets_random) {
+            .x = self$simulated_targets,
+            .f = function(.calib_category_) {
+              ####### Loop through calibration methods:----
               purrr::map(
-                ##### Loop over all targets:----
-                .x = self$calibration_targets$v_targets_names,
-                .f = function(.target_ = .x) {
-                  ###### Create line plots:----
-                  # self$plots$targets$blank[[.target_]] +
-                  #   ggplot2::geom_line(
-                  #     ggplot2::aes(
-                  #       x =
-                  #     )
-                  #   )
-                }
-              )
-            }
-          )
+                .x = .calib_category_,
+                .f = function(.calib_method_) {
+                  ######## Loop through calibration targets:----
+                  purrr::map(
+                    .x = self$calibration_targets$v_targets_names,
+                    .f = function(.target_) {
+                      ######### Grab axis names from targets list:----
+                      x_axis_name_ <- self$calibration_targets$
+                        v_targets_axis[[.target_]]$x
+                      y_axis_name_ <- self$calibration_targets$
+                        v_targets_axis[[.target_]]$y
+                      ######### Prepare plotting data:----
+                      plotting_df <-  .calib_method_ %>%
+                        ######## Select one target at a time:----
+                      dplyr::select(dplyr::contains(.target_)) %>%
+                        t() %>%
+                        dplyr::as_tibble() %>%
+                        ######## Name columns as numbers for grouping:----
+                      `names<-`(paste0(1:ncol(.))) %>%
+                        ######## Generate x axis name:----
+                      dplyr::mutate(
+                        {{x_axis_name_}} := 2:(nrow(.) + 1)) %>%
+                        tidyr::pivot_longer(
+                          cols = -{{x_axis_name_}},
+                          names_to = "id",
+                          values_to = "value") %>%
+                        dplyr::select(id, {{x_axis_name_}}, value) %>%
+                        dplyr::mutate(
+                          id = as.numeric(id)) %>%
+                        dplyr::left_join(
+                          x = .,
+                          y = .calib_method_ %>%
+                            dplyr::select(
+                              !dplyr::contains(
+                                self$calibration_targets$v_targets_names)) %>%
+                            dplyr::mutate(
+                              id = dplyr::row_number()),
+                          by = "id") %>%
+                        ######## Generate plot and add lines:-----
+                      {self$plots$targets$blank[[.target_]] +
+                          ggplot2::geom_line(
+                            inherit.aes = FALSE,
+                            data = .,
+                            ggplot2::aes(
+                              x = .data[[x_axis_name_]],
+                              y = .data[[y_axis_name_]],
+                              color = Plot_label,
+                              group = id))}
+                    })
+                })
+            })
         }
-      ##### Directed calibration results targets plots:----
-      self$plots$targets$random <-
-        if(.engine_ == "ggplot2") {
-
-        }
-      ##### Bayesian calibration results targets plots:----
-      self$plots$targets$random <-
-        if(.engine_ == "ggplot2") {
-
-        }
+      ######
+      if(!is.null(plots_lists))
+        self$plots$targets <- c(self$plots$targets, plots_lists)
       }
     },
     ## Helper functions:----

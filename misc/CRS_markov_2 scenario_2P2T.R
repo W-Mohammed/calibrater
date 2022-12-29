@@ -452,7 +452,7 @@ CR_CRS_2P1T$
 #### Plots:----
 CR_CRS_2P1T$draw_log_likelihood(.points_ = F)
 
-## Effects of using more calibration targets on CRS_markov_2 model:----
+## * Effects of using more calibration targets on CRS_markov_2 model:----
 ### One target testing:----
 seed_no <- 1
 set.seed(seed = seed_no)
@@ -483,7 +483,7 @@ CR_CRS_2P2T$
   calibrateR_directed(
     .gof = 'LLK',
     .n_samples = 1e1,
-    .calibration_method = c("NM", "BFGS"),
+    .calibration_method = c("NM", "BFGS", "SANN"),
     .sample_method = "RGS",
     .max_iterations = 1e3,
     temp = 1,
@@ -505,12 +505,12 @@ CR_CRS_2P2T$
   sample_PSA_values(
     .calibration_methods = c("Random", "Directed", "Bayesian"),
     .PSA_samples = 1e2)
-# #### Run PSA:----
-# CR_CRS_2P2T$run_PSA(
-#   .PSA_unCalib_values_ = NULL)
-# #### Plots:----
-# ##### Plot fitness function:----
-# CR_CRS_2P2T$draw_GOF_measure(.points_ = F)
+#### Run PSA:----
+CR_CRS_2P2T$run_PSA(
+  .PSA_unCalib_values_ = NULL)
+#### Plots:----
+##### Plot fitness function:----
+CR_CRS_2P2T$draw_GOF_measure(.points_ = F)
 ##### Plot targets:----
 CR_CRS_2P2T$draw_targets_plots(
   .sim_targets_ = TRUE,

@@ -205,6 +205,8 @@ CRS_markov_2 <- function(.v_params_ = NULL, p_Mets = 0.10, p_DieMets = 0.05,
       ### Overall Survival (OS):----
       # calculate the overall survival (OS) probability
       v_os <- 1 - m_M[, "Death"]
+      # force values below zero (e.g. -4.440892e-16) to remain zero:
+      ifelse(v_os < 0, 0, v_os)
       v_prop <- m_M[, "Mets"] / v_os
 
       ### Return outputs:----
