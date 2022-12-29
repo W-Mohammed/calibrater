@@ -415,6 +415,7 @@ calibR_R6 <- R6::R6Class(
                                   .sim_targets_ = FALSE,
                                   .calibration_methods_ = c("random", "directed",
                                                             "bayesian"),
+                                  .legend_pos_ = "bottom",
                                   .PSA_samples_ = NULL,
                                   .PSA_unCalib_values_ = NULL) {
       # Call private function:
@@ -422,6 +423,7 @@ calibR_R6 <- R6::R6Class(
         .engine_ = .engine_,
         .sim_targets_ = .sim_targets_,
         .calibration_methods_ = .calibration_methods_,
+        .legend_pos_ = .legend_pos_,
         .PSA_samples_ = .PSA_samples_,
         .PSA_unCalib_values_ = .PSA_unCalib_values_)
 
@@ -3318,6 +3320,7 @@ calibR_R6 <- R6::R6Class(
                             .sim_targets_ = FALSE,
                             .calibration_methods_ = c("random", "directed",
                                                       "bayesian"),
+                            .legend_pos_ = "bottom",
                             .PSA_samples_ = NULL,
                             .PSA_unCalib_values_) {
       #### Plot targets:----
@@ -3352,7 +3355,7 @@ calibR_R6 <- R6::R6Class(
                     v_targets_axis_labels[[.target_]]$y)
             })
         }
-      #### Plot targets with calibration results:----
+      #### Plot targets showing targets simulated using calibration results:----
       if(.sim_targets_) {
         ##### Sample PSA values if unavailable:----
         if(is.null(self$PSA_samples)) {
@@ -3388,6 +3391,7 @@ calibR_R6 <- R6::R6Class(
             })
         }
       ##### Calibration targets plots including simulated results:----
+        ###### Generate plots:----
       plots_lists <-
         if(.engine_ == "ggplot2") {
           ###### Loop through calibration methods categories:----
@@ -3408,7 +3412,7 @@ calibR_R6 <- R6::R6Class(
                       y_axis_name_ <- self$calibration_targets$
                         v_targets_axis[[.target_]]$y
                       ######### Prepare plotting data:----
-                      plotting_df <-  .calib_method_ %>%
+                      plotting_df <- .calib_method_ %>%
                         ######## Select one target at a time:----
                       dplyr::select(dplyr::contains(.target_)) %>%
                         t() %>%
@@ -3433,8 +3437,48 @@ calibR_R6 <- R6::R6Class(
                                 self$calibration_targets$v_targets_names)) %>%
                             dplyr::mutate(
                               id = dplyr::row_number()),
-                          by = "id") %>%
-                        ######## Generate plot and add lines:-----
+                          by = "id")
+
+                      ######## Prepare lines' colours and opacity:-----
+                      color_options <- c(
+                        'Credible interval - LB' = "red",
+                        'Credible interval - UB' = "brown",
+                        'Posterior mean' = "darkgreen",
+                        'Identified set' = "green",
+                        'Maximum-a-posteriori' = "green",
+                        'Distribution samples' = "skyblue",
+                        'PSA sets' = "skyblue")
+
+                      alpha_options <- c(
+                        'Credible interval - LB' = 0.8,
+                        'Credible interval - UB' = 0.8,
+                        'Posterior mean' = 1,
+                        'Identified set' = 1,
+                        'Maximum-a-posteriori' = 1,
+                        'Distribution samples' = 0.3,
+                        'PSA sets' = 0.3)
+
+                      size_options <- c(
+                        'Credible interval - LB' = 1,
+                        'Credible interval - UB' = 1,
+                        'Posterior mean' = 1.5,
+                        'Identified set' = 1.5,
+                        'Maximum-a-posteriori' = 1.5,
+                        'Distribution samples' = 0.5,
+                        'PSA sets' = 0.5)
+
+                      scale_names <- plotting_df %>%
+                        dplyr::pull(Plot_label) %>%
+                        unique()
+
+                      scale_colors <- color_options[scale_names]
+                      scale_alphas <- alpha_options[scale_names]
+                      scale_sizes <- size_options[scale_names]
+                      names(scale_colors) <- names(scale_alphas) <-
+                        names(scale_sizes) <- NULL
+
+                      plot_lists <- plotting_df %>%
+                        ######## Add lines to target plot:-----
                       {self$plots$targets$blank[[.target_]] +
                           ggplot2::geom_line(
                             inherit.aes = FALSE,
@@ -3442,13 +3486,63 @@ calibR_R6 <- R6::R6Class(
                             ggplot2::aes(
                               x = .data[[x_axis_name_]],
                               y = .data[[y_axis_name_]],
+                              group = id,
                               color = Plot_label,
-                              group = id))}
+                              alpha = Plot_label,
+                              size = Plot_label)) +
+                          ggplot2::scale_color_manual(
+                            limits = scale_names,
+                            values = scale_colors) +
+                          ggplot2::scale_alpha_manual(
+                            limits = scale_names,
+                            values = scale_alphas) +
+                          ggplot2::scale_size_manual(
+                            limits = scale_names,
+                            values = scale_sizes) +
+                          ggplot2::guides(
+                            # Increase the size of the colour area in the legend:
+                            color = ggplot2::guide_legend(
+                              ncol = 3,
+                              override.aes = list(
+                                size = 2,
+                                alpha = 2,
+                                stroke = 2))) +
+                          ggplot2::theme(
+                            # Start title from near the margin
+                            plot.title.position = "plot",
+                            legend.position = .legend_pos_,
+                            legend.title = ggplot2::element_blank(),
+                            # Control legend text alignment:
+                            legend.text.align = 0, # 0 left (default), 1 right
+                            # Remove background and box around the legend:
+                            legend.background = ggplot2::element_rect(
+                              fill = NA,
+                              color = NA),
+                            # spacing between legend items:
+                            legend.spacing = ggplot2::unit(0, "cm"),
+                            # bring legends closer:
+                            legend.spacing.y = ggplot2::unit(-0.195, "cm"),
+                            # remove legend padding:
+                            # legend.box.margin = ggplot2::margin(c(0, 0, 0, 0)),
+                            legend.margin = ggplot2::margin(c(0, 0, 0, 0)),
+                            # Add a box around the keys:
+                            legend.key = ggplot2::element_rect(
+                              fill = "white",
+                              colour = "grey"),
+                            legend.key.size = ggplot2::unit(0.35, "cm"),
+                            # Add a border and space around the plot:
+                            panel.border = ggplot2::element_rect(
+                              colour = 'black',
+                              fill = NA)#,
+                            # plot.margin = ggplot2::unit(
+                            #   c(5.5, 1, 5.5, 5.5), # more space LHS
+                            #   c("points", "cm", "points", "points"))
+                            )}
                     })
                 })
             })
         }
-      ######
+      ###### Bind simulated and observed targets:----
       if(!is.null(plots_lists))
         self$plots$targets <- c(self$plots$targets, plots_lists)
       }

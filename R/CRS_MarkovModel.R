@@ -206,8 +206,11 @@ CRS_markov_2 <- function(.v_params_ = NULL, p_Mets = 0.10, p_DieMets = 0.05,
       # calculate the overall survival (OS) probability
       v_os <- 1 - m_M[, "Death"]
       # force values below zero (e.g. -4.440892e-16) to remain zero:
-      ifelse(v_os < 0, 0, v_os)
-      v_prop <- m_M[, "Mets"] / v_os
+      v_os <- ifelse(v_os < 0, 0, v_os)
+      # calculate the overall proportion of cohort who are sick:
+      v_prop <- m_M[, "Mets"] / (m_M[, "Mets"] + m_M[, "NED"])
+      # force values where v_os is zero to be zero:
+      v_prop <- ifelse(v_os == 0, 0, v_prop)
 
       ### Return outputs:----
       out <- list(Surv = v_os[-c(1:2)],

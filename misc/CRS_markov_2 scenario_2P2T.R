@@ -455,7 +455,6 @@ CR_CRS_2P1T$draw_log_likelihood(.points_ = F)
 ## * Effects of using more calibration targets on CRS_markov_2 model:----
 ### One target testing:----
 seed_no <- 1
-set.seed(seed = seed_no)
 #### Initiate CalibR R6 object:----
 CR_CRS_2P2T = calibR_R6$
   new(
@@ -465,12 +464,14 @@ CR_CRS_2P2T = calibR_R6$
     .args = NULL,
     .transform = FALSE)
 #### Generate samples using Random Grid Search:----
+set.seed(seed = seed_no)
 CR_CRS_2P2T$
   sampleR(
     .n_samples = 1e2,
     .sampling_method = c("RGS", "FGS", "LHS"))
 #### Parameter exploration calibration methods:----
 ##### Unguided searching methods:----
+set.seed(seed = seed_no)
 CR_CRS_2P2T$
   calibrateR_random(
     .optim = FALSE,
@@ -479,6 +480,7 @@ CR_CRS_2P2T$
     .sample_method = c("RGS", "FGS", "LHS"),
     .calibration_method = "LLK")
 ##### Guided searching methods:----
+set.seed(seed = seed_no)
 CR_CRS_2P2T$
   calibrateR_directed(
     .gof = 'LLK',
@@ -489,6 +491,7 @@ CR_CRS_2P2T$
     temp = 1,
     trace = FALSE)
 #### Bayesian methods:----
+set.seed(seed = seed_no)
 CR_CRS_2P2T$
   calibrateR_bayesian(
     .b_method = c("SIR", "IMIS", "MCMC"),
@@ -501,6 +504,7 @@ CR_CRS_2P2T$
     .MCMC_rerun = TRUE,
     .diag_ = TRUE)
 #### Sample PSA values:----
+set.seed(seed = seed_no)
 CR_CRS_2P2T$
   sample_PSA_values(
     .calibration_methods = c("Random", "Directed", "Bayesian"),
@@ -508,68 +512,63 @@ CR_CRS_2P2T$
 #### Run PSA:----
 CR_CRS_2P2T$run_PSA(
   .PSA_unCalib_values_ = NULL)
+#### Extract PSA results for post processing:----
+CR_CRS_2P2T_PSA_list <- CR_CRS_2P2T$PSA_results %>%
+  purrr::map(
+    .x = .,
+    .f = function(.res_) {
+      c(purrr::map(
+        .x = CR_CRS_data_2t$l_intervs$v_interv_outcomes,
+        .f = function(.outcome_) {
+          #### Consequences table
+          conseq_df <- .res_ %>%
+            dplyr::select(dplyr::contains(.outcome_)) %>%
+            dplyr::rename_with(.fn = function(.x) {
+              stringr::str_remove(
+                string = .x,
+                pattern = paste0(".", .outcome_))},
+              .cols = dplyr::everything())
+        }),
+        "Calibration_data" = list(
+          .res_ %>%
+            dplyr::select(
+              -dplyr::contains(CR_CRS_data_2t$l_intervs$
+                                 v_interv_outcomes))),
+        "Interventions" = list(CR_CRS_data_2t$l_intervs$v_interv_names))
+    })
+
+#### Generate summary tables from the PSA list:----
+CR_CRS_2P2T_PSA_summary_tables <- CR_CRS_2P2T_PSA_list %>%
+  purrr::map(
+    .x = .,
+    .f = function(.calib_method) {
+      PSA_summary <- ShinyPSA::summarise_PSA_(
+        .effs = .calib_method[["effects"]],
+        .costs = .calib_method[["costs"]],
+        .params = .calib_method[["params"]],
+        .interventions = .calib_method[["Interventions"]],
+        .plot = FALSE)
+      PSA_table <- PSA_summary %>%
+        ShinyPSA::draw_summary_table_(
+          .PSA_data = .,
+          .latex_ = TRUE,
+          .latex_code_ = FALSE)
+    })
+
 #### Plots:----
 ##### Plot fitness function:----
-CR_CRS_2P2T$draw_GOF_measure(.points_ = F)
+set.seed(seed = seed_no)
+CR_CRS_2P2T$draw_GOF_measure(
+  .points_ = FALSE)
 ##### Plot targets:----
 CR_CRS_2P2T$draw_targets_plots(
   .sim_targets_ = TRUE,
   .calibration_methods_ = c("random", "directed", "bayesian"))
-
-plotly::plot_ly(
-  x = test[["p_Mets"]],
-  y = test[["p_DieMets"]],
-  z = test$Overall_fit,
-  type = "contour")
-
-test2 %>%
-  ggplot2::ggplot(
-    ggplot2::aes(
-      x = p_Mets,
-      y = p_DieMets,
-      color = Overall_fit)) +
-  ggplot2::geom_density_2d_filled() +
-  ggplot2::theme(axis.title.y = ggplot2::element_text(
-    angle = 0,
-    vjust = 0.5))
-
-
-CR_CRS_2P2T = calibR_R6$
-  new(
-    .model = CRS_markov_2,
-    .params = CR_CRS_data_2t$l_params,
-    .targets = CR_CRS_data_2t$l_targets,
-    .args = NULL,
-    .transform = FALSE)
-CR_CRS_2P2T$
-  draw_log_likelihood(.legend_ = TRUE, .greys_ = TRUE, .scale_ = "YlOrRd")
-tmpfile = CR_CRS_2P2T$
-  draw_log_likelihood(.legend_ = TRUE, .greys_ = TRUE)
-
-Sys.setenv(RETICULATE_PYTHON = "C:\\ProgramData\\Anaconda3")
-library(reticulate)
-# py_install("pandas")
-# py_install("kaleido")
-# library(reticulate)
-# path_to_python <- "C:/Program Files/Python311/python.exe"
-# use_python(path_to_python)
-#
-# reticulate::install_miniconda()
-# reticulate::conda_install('r-reticulate-test', 'python-kaleido')
-# reticulate::conda_install('r-reticulate-test', 'plotly', channel = 'plotly')
-# reticulate::use_miniconda('r-reticulate-test')
-
-plotly::export(p = tmpfile[["p_Mets"]][["p_DieMets"]], file = "../../2. Confirmation Review/CR_data/Case_study_1/log_likelihood.pdf")
-reticulate::py_run_string("import sys")
-plotly::save_image(p = tmpfile[["p_Mets"]][["p_DieMets"]], file = "../../2. Confirmation Review/CR_data/Case_study_1/log_likelihood5.jpeg", scale = 5)
-plotly::save_image(p = tmpfile[["p_Mets"]][["p_DieMets"]], file = "images/tmp.pdf")
-plotly::kaleido(p = tmpfile[["p_Mets"]][["p_DieMets"]], file = "../../2. Confirmation Review/CR_data/Case_study_1/log_likelihood5.jpeg", scale = 5)
-# plotly::kaleido(p = tmpfile[["p_Mets"]][["p_DieMets"]], file = "../../2. Confirmation Review/CR_data/Case_study_1/log_likelihood.png")
-# plotly::kaleido(p = tmpfile[["p_Mets"]][["p_DieMets"]], file = "images/tmp.pdf")
-
-# saveRDS(object = tmpfile, file = "../../2. Confirmation Review/CR_data/Case_study_1/log_likelihood.rds")
-#
-# CRS_true_CE = readRDS(file = "../../2. Confirmation Review/CR_data/Case_study_1/CRS_true_PSA.rds")
+###### Save plots:----
+# ggplot2::ggsave(
+#   filename = "../../2. Confirmation Review/CR_data/Case_study_1/chap_3_prop_25_.jpeg",
+#   plot = CR_CRS_2P2T[["plots"]][["targets"]][["bayesian"]][["MCMC"]][["PropSick"]],
+#   scale = 2.5)
 
 ## Initial and identified values:----
 devtools::load_all()

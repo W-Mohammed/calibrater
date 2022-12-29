@@ -78,10 +78,27 @@ l_params <- list(
   'v_params_dists' = v_params_dists,
   'args' = args,
   'Xargs' = extra_args)
+
+## Interventions:----
+v_interv_names <- c(
+  'None' = "None",
+  'Medication' = "Medication",
+  'Screening' = "Screening",
+  'Both' = "Both")
+v_interv_outcomes <- c(
+  'costs' = "costs",
+  'effects' = "Effects")
+### Pack interventions information together:----
+l_intervs <- list(
+  'v_interv_names' = v_interv_names,
+  'v_interv_outcomes' = v_interv_outcomes)
+
 ## Pack targets and parameters together:----
 CR_CRS_data_2t_lp <- list(
   'l_params' = l_params,
-  'l_targets' = l_targets)
+  'l_targets' = l_targets,
+  'l_intervs' = l_intervs)
+
 ## Save calibration data internally:----
 usethis::use_data(
   CR_CRS_data_2t_lp,
