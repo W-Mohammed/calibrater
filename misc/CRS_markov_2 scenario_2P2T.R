@@ -538,6 +538,7 @@ CR_CRS_2P2T_PSA_list <- CR_CRS_2P2T$PSA_results %>%
     })
 
 #### Generate summary tables from the PSA list:----
+##### Tables list:----
 CR_CRS_2P2T_PSA_summary_tables <- CR_CRS_2P2T_PSA_list %>%
   purrr::map(
     .x = .,
@@ -549,11 +550,81 @@ CR_CRS_2P2T_PSA_summary_tables <- CR_CRS_2P2T_PSA_list %>%
         .interventions = .calib_method[["Interventions"]],
         .plot = FALSE)
       PSA_table <- PSA_summary %>%
+      ShinyPSA::draw_summary_table_(
+        .PSA_data = .,
+        .latex_subtitle_ = .calib_method[["Calibration_data"]]$Label[[1]],
+        .latex_ = TRUE,
+        .latex_code_ = FALSE,
+        .dominance_footnote_ = FALSE,
+        .footnotes_sourcenotes_ = TRUE,
+        .all_sourcenotes_ = T,
+        .subset_tab_ = TRUE,
+        .subset_group_ = c("NetBenefit", "ProbabilityCE")) %>%
+        dplyr::mutate(
+          Method = .calib_method[["Calibration_data"]]$Label[[1]])
+    })
+##### Table:----
+CR_CRS_2P2T_PSA_summary_table <- CR_CRS_2P2T_PSA_list %>%
+  purrr::map_df(
+    .x = .,
+    .f = function(.calib_method) {
+      PSA_summary <- ShinyPSA::summarise_PSA_(
+        .effs = .calib_method[["effects"]],
+        .costs = .calib_method[["costs"]],
+        .params = .calib_method[["params"]],
+        .interventions = .calib_method[["Interventions"]],
+        .plot = FALSE)
+      PSA_table <- PSA_summary %>%
         ShinyPSA::draw_summary_table_(
           .PSA_data = .,
+          .latex_subtitle_ = .calib_method[["Calibration_data"]]$Label[[1]],
           .latex_ = TRUE,
-          .latex_code_ = FALSE)
+          .latex_code_ = FALSE,
+          .dominance_footnote_ = FALSE,
+          .footnotes_sourcenotes_ = TRUE,
+          .all_sourcenotes_ = T,
+          .subset_tab_ = TRUE,
+          .subset_group_ = c("NetBenefit", "ProbabilityCE")) %>%
+        dplyr::mutate(
+          Method = .calib_method[["Calibration_data"]]$Label[[1]])
     })
+##### Beautified table:----
+CR_CRS_2P2T_PSA_summary_beutified_table <- CR_CRS_2P2T_PSA_summary_table %>%
+  dplyr::group_by(Method, RowGroup_) %>%
+  gt::gt() %>%
+  gt::tab_style(
+    style = gt::cell_text(
+      weight = "bold"),
+    locations = list(
+      gt::cells_column_labels(),
+      gt::cells_row_groups())) %>%
+  gt::tab_footnote(
+    data = .,
+    footnote = gt::md(
+      "_The ICER threshold values used in computing the results are
+        preceeded by the \"@\" symbol in the corresponding rows._"),
+    locations = gt::cells_row_groups(
+      groups = gt::contains(c(
+        glue::glue("Expected Value of Perfect Information (£)"),
+        glue::glue("Net Benefit (£)"),
+        "Probability Cost-Effective")
+      ))) %>%
+  gt::tab_footnote(
+    data = .,
+    footnote = gt::md(
+      "_The ICER threshold values used in computing the results are
+        preceeded by the \"@\" symbol in the corresponding rows._"),
+    locations = gt::cells_row_groups(
+      groups = gt::contains(c(
+        glue::glue("Expected Value of Perfect Information (£)"),
+        glue::glue("Net Benefit (£)"),
+        "Probability Cost-Effective")
+      )))
+##### Save final table:----
+saveRDS(
+  object = CR_CRS_2P2T_PSA_summary_beutified_table,
+  file = "../../2. Confirmation Review/CR_data/Case_study_1/Chap_3/data/sample.rds")
+
 
 #### Plots:----
 ##### Plot fitness function:----
