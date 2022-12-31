@@ -331,6 +331,8 @@ calibR_R6 <- R6::R6Class(
     #' @param .scale_ The colour bar colour-scale. Available options are Greys,
     #' YlGnBu, Greens, YlOrRd, Bluered, RdBu, Reds, Blues, Picnic, Rainbow,
     #' Portland, Jet, Hot, Blackbody, Earth, Electric, Viridis, Cividis.
+    #' @param .coloring_ Which contouring is required (default fill) and options
+    #' are "fill" | "heatmap" | "lines" | "none"
     #' @param .legend_ Boolean for whether to show a legend (default is FALSE).
     #' This parameter also controls text labels in the opposite way.
     #' @param .x_axis_lb_ Lower bound of the plot's x axis.
@@ -352,6 +354,7 @@ calibR_R6 <- R6::R6Class(
                                 .true_points_ = FALSE,
                                 .greys_ = FALSE,
                                 .scale_ = NULL,
+                                .coloring_ = "fill",
                                 .legend_ = FALSE,
                                 .x_axis_lb_ = NULL,
                                 .x_axis_ub_ = NULL,
@@ -394,6 +397,7 @@ calibR_R6 <- R6::R6Class(
         .true_points_ = .true_points_,
         .greys_ = .greys_,
         .scale_ = .scale_,
+        .coloring_ = .coloring_,
         .legend_ = .legend_,
         .x_axis_lb_ = .x_axis_lb_,
         .x_axis_ub_ = .x_axis_ub_,
@@ -3044,6 +3048,26 @@ calibR_R6 <- R6::R6Class(
         psych::pairs.panels()
     },
     ### Fitness function plots:----
+    #
+    # @param .engine_
+    # @param .maximise_
+    # @param .gof_
+    # @param .points_
+    # @param .true_points_
+    # @param .greys_
+    # @param .scale_ possible fill colors
+    # @param .coloring_ Which contouring is required (default fill) and options
+    # are "fill" | "heatmap" | "lines" | "none"
+    # @param .legend_
+    # @param .x_axis_lb_
+    # @param .x_axis_ub_
+    # @param .y_axis_lb_
+    # @param .y_axis_ub_
+    #
+    # @return
+    # @examples
+    # \dontrun{
+    # }
     plot_GOF_measure = function(.engine_ = "plotly",
                                 .maximise_ = TRUE,
                                 .gof_ = "LLK",
@@ -3051,6 +3075,7 @@ calibR_R6 <- R6::R6Class(
                                 .true_points_ = FALSE,
                                 .greys_ = FALSE,
                                 .scale_ = NULL,
+                                .coloring_ = "fill",
                                 .legend_ = FALSE,
                                 .x_axis_lb_ = NULL,
                                 .x_axis_ub_ = NULL,
@@ -3093,6 +3118,10 @@ calibR_R6 <- R6::R6Class(
                       .y_axis_ub_ <- self$calibration_parameters$
                         Xargs[[.param_y]]$max
                     plotly::plot_ly(
+                      name = ifelse(
+                        .gof_ == "LLK",
+                        "Log likelihood",
+                        "Sum of Squared Errors"),
                       x = self$GOF_measure_plot$Results[[.param_x]],
                       y = self$GOF_measure_plot$Results[[.param_y]],
                       z = self$GOF_measure_plot$Results$Overall_fit,
@@ -3108,7 +3137,8 @@ calibR_R6 <- R6::R6Class(
                       },
                       contours = list(
                         showlabels = ifelse(
-                          .legend_, FALSE, TRUE))) %>%
+                          .legend_, FALSE, TRUE),
+                        coloring = .coloring_)) %>%
                       plotly::layout(
                         legend = list(
                           x = ifelse(
@@ -3117,8 +3147,13 @@ calibR_R6 <- R6::R6Class(
                             # Adjust legend if true points are used:
                             ifelse(
                               .true_points_,
-                              "0.15",
-                              "0.25")),
+                              # Adjust legend if LLK is used:
+                              ifelse(.gof_ == "LLK",
+                                     "0.05",
+                                     "0"),
+                              ifelse(.gof_ == "LLK",
+                                     "0.15",
+                                     "0.05"))),
                           y = ifelse(
                             .legend_,
                             "1",
@@ -3177,77 +3212,27 @@ calibR_R6 <- R6::R6Class(
             })
         }
 
-      ##### Directed plots:----
-      self$plots$GOF_plots$directed <-
-        if(.engine_ == "plotly") {
-          self$calibration_results$directed %>%
-            purrr::map(
-              .x = .,
-              .f = function(.calib_res_algorithm) {
-                ###### Transpose the list to group outputs together:----
-                transposed_calib_res <- .calib_res_algorithm %>%
-                  purrr::transpose()
-                ###### Extract "Starting values":----
-                calib_res <- transposed_calib_res[["Guess"]] %>%
-                  purrr::map_dfr(
-                    .x = .,
-                    .f = function(.x) {
-                      .x}) %>%
-                  dplyr::mutate(Points = "Starting values") %>%
-                  ###### Join "Identified values":----
-                dplyr::bind_rows(
-                  ###### Extract identified values:----
-                  transposed_calib_res[["Estimate"]] %>%
-                    purrr::map_dfr(
-                      .x = .,
-                      .f = function(.x) {
-                        .x}) %>%
-                    dplyr::mutate(Points = "Identified values")) %>%
-                  ###### Add true values:----
-                {if(.true_points_) {
-                  dplyr::bind_rows(
-                    .,
-                    self$calibration_parameters$v_params_true_values) %>%
-                    dplyr::mutate(Points = dplyr::case_when(
-                      is.na(Points) ~ "True values",
-                      TRUE ~ Points))
-                } else {
-                  .
-                }}
-                ###### Add points to the plots:----
-                purrr::map(
-                  .x = self$calibration_parameters$v_params_names,
-                  .f = function(.param_x) {
-                    ####### Prepare parameter names:----
-                    other_params_names <- self$calibration_parameters$
-                      v_params_names[-which(self$calibration_parameters$
-                                              v_params_names == .param_x)]
-                    ####### Plots list:----
-                    plots_list_ <- purrr::map(
-                      .x = other_params_names,
-                      .f = function(.param_y) {
-                        self$plots$GOF_plots$blank[[.param_x]][[.param_y]] %>%
-                          plotly::add_trace(
-                            p = .,
-                            inherit = FALSE,
-                            x = calib_res[[.param_x]],
-                            y = calib_res[[.param_y]],
-                            type = 'scatter',
-                            mode = 'markers',
-                            marker = list(size = 5),
-                            symbol = ~ calib_res[["Points"]],
-                            symbols = c(
-                              "triangle-up",
-                              "circle-open",
-                              "circle-dot"))
-                      })
-                  })
-              })
-        }
-
       ##### Un-directed plots:----
       self$plots$GOF_plots$random <-
         if(.engine_ == "plotly") {
+          ###### Points shapes and colours:----
+          symbols_ <- c(
+            "Sampling values" = "x-thin-open", #"x-dot",
+            "Identified values" = "circle-open")
+          colors_ <- c(
+            "Sampling values" = "black",
+            "Identified values" = "red")
+          if(.true_points_) {
+            symbols_ <- c(
+              "Sampling values" = "x-thin-open", #"x-dot",
+              "Identified values" = "circle-open",
+              "True values" = "circle-dot")
+            colors_ <- c(
+              "Sampling values" = "black",
+              "Identified values" = "red",
+              "True values" = "green")
+          }
+          ###### Generate plots:----
           self$calibration_results$random %>%
             purrr::map(
               .x = .,
@@ -3280,8 +3265,26 @@ calibR_R6 <- R6::R6Class(
                       is.na(Points) ~ "True values",
                       TRUE ~ Points))
                 } else {
-                  .
-                }}
+                  .}}
+                ###### Ensure colours and groups share same levels:----
+                calib_res <- calib_res %>%
+                  {if(!.true_points_) {
+                    dplyr::mutate(
+                      .data = .,
+                      Points = factor(
+                        x = Points,
+                        levels = c("Sampling values",
+                                   "Identified values")))
+                  } else {
+                    dplyr::mutate(
+                      .data = .,
+                      Points = factor(
+                        x = Points,
+                        levels = c("Sampling values",
+                                   "Identified values",
+                                   "True values")))
+                  }}
+
 
                 ###### Add points to the plots:----
                 purrr::map(
@@ -3303,17 +3306,122 @@ calibR_R6 <- R6::R6Class(
                             y = calib_res[[.param_y]],
                             type = 'scatter',
                             mode = 'markers',
-                            marker = list(size = 4),
+                            marker = list(
+                              size = 5),
                             symbol = ~ calib_res[["Points"]],
-                            symbols = c(
-                              "triangle-up",
-                              "circle-open",
-                              "circle-dot"))
+                            symbols = symbols_,
+                            color = ~ calib_res[["Points"]],
+                            colors = colors_)
                       })
                   })
               })
         }
 
+      ##### Directed plots:----
+      self$plots$GOF_plots$directed <-
+        if(.engine_ == "plotly") {
+          ###### Points shapes and colours:----
+          symbols_ <- c(
+            "Starting values" = "x-thin-open", #"x-dot",
+            "Identified values" = "circle-open")
+          colors_ <- c(
+            "Starting values" = "black",
+            "Identified values" = "red")
+          if(.true_points_) {
+            symbols_ <- c(
+              "Starting values" = "x-thin-open", #"x-dot",
+              "Identified values" = "circle-open",
+              "True values" = "circle-dot")
+            colors_ <- c(
+              "Starting values" = "black",
+              "Identified values" = "red",
+              "True values" = "green")
+          }
+          ###### Generate plots:----
+          self$calibration_results$directed %>%
+            purrr::map(
+              .x = .,
+              .f = function(.calib_res_algorithm) {
+                ###### Transpose the list to group outputs together:----
+                transposed_calib_res <- .calib_res_algorithm %>%
+                  purrr::transpose()
+                ###### Extract "Starting values":----
+                calib_res <- transposed_calib_res[["Guess"]] %>%
+                  purrr::map_dfr(
+                    .x = .,
+                    .f = function(.x) {
+                      .x}) %>%
+                  dplyr::mutate(Points = "Starting values") %>%
+                  ###### Join "Identified values":----
+                dplyr::bind_rows(
+                  ###### Extract identified values:----
+                  transposed_calib_res[["Estimate"]] %>%
+                    purrr::map_dfr(
+                      .x = .,
+                      .f = function(.x) {
+                        .x
+                        }) %>%
+                    dplyr::mutate(Points = "Identified values")) %>%
+                  ###### Add true values:----
+                {if(.true_points_) {
+                  dplyr::bind_rows(
+                    .,
+                    self$calibration_parameters$v_params_true_values) %>%
+                    dplyr::mutate(Points = dplyr::case_when(
+                      is.na(Points) ~ "True values",
+                      TRUE ~ Points))
+                } else {
+                  .
+                }}
+                ###### Ensure colours and groups share same levels:----
+                calib_res <- calib_res %>%
+                  {if(!.true_points_) {
+                    dplyr::mutate(
+                      .data = .,
+                      Points = factor(
+                        x = Points,
+                        levels = c("Starting values",
+                                   "Identified values")))
+                  } else {
+                    dplyr::mutate(
+                      .data = .,
+                      Points = factor(
+                        x = Points,
+                        levels = c("Starting values",
+                                   "Identified values",
+                                   "True values")))
+                  }}
+
+                ###### Add points to the plots:----
+                purrr::map(
+                  .x = self$calibration_parameters$v_params_names,
+                  .f = function(.param_x) {
+                    ####### Prepare parameter names:----
+                    other_params_names <- self$calibration_parameters$
+                      v_params_names[-which(self$calibration_parameters$
+                                              v_params_names == .param_x)]
+                    ####### Plots list:----
+                    plots_list_ <- purrr::map(
+                      .x = other_params_names,
+                      .f = function(.param_y) {
+                        self$plots$GOF_plots$blank[[.param_x]][[.param_y]] %>%
+                          plotly::add_trace(
+                            p = .,
+                            inherit = FALSE,
+                            x = calib_res[[.param_x]],
+                            y = calib_res[[.param_y]],
+                            type = 'scatter',
+                            mode = 'markers',
+                            marker = list(
+                              size = 5),
+                            symbol = ~ calib_res[["Points"]],
+                            symbols = symbols_,
+                            color = ~ calib_res[["Points"]],
+                            colors = colors_)
+                        })
+                  })
+              })
+        }
     },
     ### Target plots:----
     plot_targets = function(.engine_ = "ggplot2",
@@ -3533,10 +3641,7 @@ calibR_R6 <- R6::R6Class(
                             # Add a border and space around the plot:
                             panel.border = ggplot2::element_rect(
                               colour = 'black',
-                              fill = NA)#,
-                            # plot.margin = ggplot2::unit(
-                            #   c(5.5, 1, 5.5, 5.5), # more space LHS
-                            #   c("points", "cm", "points", "points"))
+                              fill = NA)
                             )}
                     })
                 })
