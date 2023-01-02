@@ -335,6 +335,8 @@ calibR_R6 <- R6::R6Class(
     #' are "fill" | "heatmap" | "lines" | "none"
     #' @param .legend_ Boolean for whether to show a legend (default is FALSE).
     #' This parameter also controls text labels in the opposite way.
+    #' @param .zoom_ Boolean (default FALSE) for whether to limit the resulting
+    #' plot to the min() and max() of the two dimensional contour plots.
     #' @param .x_axis_lb_ Lower bound of the plot's x axis.
     #' @param .x_axis_ub_ Upper bound of the plot's x axis.
     #' @param .y_axis_lb_ Lower bound of the plot's y axis.
@@ -356,6 +358,7 @@ calibR_R6 <- R6::R6Class(
                                 .scale_ = NULL,
                                 .coloring_ = "fill",
                                 .legend_ = FALSE,
+                                .zoom_ = FALSE,
                                 .x_axis_lb_ = NULL,
                                 .x_axis_ub_ = NULL,
                                 .y_axis_lb_ = NULL,
@@ -369,24 +372,33 @@ calibR_R6 <- R6::R6Class(
           .n_samples = .n_samples_,
           .l_params = self$calibration_parameters)
       ## Estimate GOF measure:----
-      if(is.null(self$GOF_measure_plot[["Results"]]))
-        self$GOF_measure_plot[["Results"]] <- if(.gof_ == "LLK"){
-          calibR::LLK_GOF(
-            .samples = self$GOF_measure_plot$Samples,
-            .sample_method = "FGS",
-            .func = self$calibration_model,
-            .args = self$calibration_model_args,
-            .maximise = TRUE,
-            .l_targets = self$calibration_targets)
-        } else {
-          calibR::wSSE_GOF(
-            .samples = self$GOF_measure_plot$Samples,
-            .sample_method = "FGS",
-            .func = self$calibration_model,
-            .args = self$calibration_model_args,
-            .maximise = FALSE,
-            .l_targets = self$calibration_targets)
+      self$GOF_measure_plot[["Results"]] <- purrr::map(
+        .x = .gof_ %>%
+          `names<-`(.gof_),
+        .f = function(.gof_name_) {
+          if(is.null(self$GOF_measure_plot[["Results"]][[.gof_name_]])) {
+            if(.gof_name_ == "LLK"){
+              calibR::LLK_GOF(
+                .samples = self$GOF_measure_plot$Samples,
+                .sample_method = "FGS",
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .maximise = TRUE,
+                .l_targets = self$calibration_targets)
+            } else {
+              calibR::wSSE_GOF(
+                .samples = self$GOF_measure_plot$Samples,
+                .sample_method = "FGS",
+                .func = self$calibration_model,
+                .args = self$calibration_model_args,
+                .maximise = FALSE,
+                .l_targets = self$calibration_targets)
+            }
+          } else {
+            self$GOF_measure_plot[["Results"]][[.gof_name_]]
+          }
         }
+      )
 
       ## Plot the fitness function:----
       private$plot_GOF_measure(
@@ -399,6 +411,7 @@ calibR_R6 <- R6::R6Class(
         .scale_ = .scale_,
         .coloring_ = .coloring_,
         .legend_ = .legend_,
+        .zoom_ = .zoom_,
         .x_axis_lb_ = .x_axis_lb_,
         .x_axis_ub_ = .x_axis_ub_,
         .y_axis_lb_ = .y_axis_lb_,
@@ -584,7 +597,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("NM_", .gof, "_RGS")]] <-
             calibR::calibrateModel_directed(
@@ -637,7 +650,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("BFGS_", .gof, "_RGS")]] <-
             calibR::calibrateModel_directed(
@@ -694,7 +707,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("SANN_", .gof, "_RGS")]] <-
             calibR::calibrateModel_directed(
@@ -749,7 +762,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("GA_", .gof, "_RGS")]] <-
             calibR::calibrateModel_directed(
@@ -804,7 +817,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("NM_", .gof, "_FGS")]] <-
             calibR::calibrateModel_directed(
@@ -857,7 +870,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("BFGS_", .gof, "_FGS")]] <-
             calibR::calibrateModel_directed(
@@ -914,7 +927,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("SANN_", .gof, "_FGS")]] <-
             calibR::calibrateModel_directed(
@@ -969,7 +982,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("GA_", .gof, "_FGS")]] <-
             calibR::calibrateModel_directed(
@@ -1024,7 +1037,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("NM_", .gof, "_LHS")]] <-
             calibR::calibrateModel_directed(
@@ -1077,7 +1090,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("BFGS_", .gof, "_LHS")]] <-
             calibR::calibrateModel_directed(
@@ -1134,7 +1147,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("SANN_", .gof, "_LHS")]] <-
             calibR::calibrateModel_directed(
@@ -1189,7 +1202,7 @@ calibR_R6 <- R6::R6Class(
               .l_targets = self$calibration_targets
             )
           ##### others:----
-          if(!.gof %in% c("LLK", "SSE"))
+          if(!any(.gof %in% c("LLK", "SSE")))
             self$calibration_results$
             directed[[paste0("GA_", .gof, "_LHS")]] <-
             calibR::calibrateModel_directed(
@@ -3050,6 +3063,9 @@ calibR_R6 <- R6::R6Class(
     ### Fitness function plots:----
     #
     # @param .engine_
+    # @param .prior_samples_ The number of samples to generate from the prior.
+    # Only effective when prior samples were missing, the function will generate
+    # prior samples.
     # @param .maximise_
     # @param .gof_
     # @param .points_
@@ -3059,6 +3075,8 @@ calibR_R6 <- R6::R6Class(
     # @param .coloring_ Which contouring is required (default fill) and options
     # are "fill" | "heatmap" | "lines" | "none"
     # @param .legend_
+    # @param .zoom_ Boolean (default FALSE) for whether to limit the resulting
+    # plot to the min() and max() of the two dimensional contour plots.
     # @param .x_axis_lb_
     # @param .x_axis_ub_
     # @param .y_axis_lb_
@@ -3069,6 +3087,7 @@ calibR_R6 <- R6::R6Class(
     # \dontrun{
     # }
     plot_GOF_measure = function(.engine_ = "plotly",
+                                .prior_samples_ = 1e3,
                                 .maximise_ = TRUE,
                                 .gof_ = "LLK",
                                 .points_ = FALSE,
@@ -3077,137 +3096,162 @@ calibR_R6 <- R6::R6Class(
                                 .scale_ = NULL,
                                 .coloring_ = "fill",
                                 .legend_ = FALSE,
+                                .zoom_ = FALSE,
                                 .x_axis_lb_ = NULL,
                                 .x_axis_ub_ = NULL,
                                 .y_axis_lb_ = NULL,
                                 .y_axis_ub_ = NULL) {
       #### Remove extreme values or plotly will trip:----
       self$GOF_measure_plot$Results <- self$GOF_measure_plot$Results %>%
-        dplyr::as_tibble() %>%
-        dplyr::filter(!is.na(Overall_fit)) %>%
-        dplyr::filter(Overall_fit != Inf) %>%
-        dplyr::filter(Overall_fit != -Inf)
+        purrr::map(
+          .x = .,
+          .f = function(.gof_data) {
+            .gof_data %>%
+              dplyr::as_tibble() %>%
+              dplyr::filter(!is.na(Overall_fit)) %>%
+              dplyr::filter(Overall_fit != Inf) %>%
+              dplyr::filter(Overall_fit != -Inf)
+          })
+
       #### Generate plots:----
       ##### Blank plots:----
       self$plots$GOF_plots$blank <-
         if(.engine_ == "plotly") {
           ###### Plotly GOF plots:----
           plots_list <- purrr::map(
-            .x = self$calibration_parameters$v_params_names,
-            .f = function(.param_x) {
-              ###### Prepare parameter names:----
-              other_params_names <- self$calibration_parameters$
-                v_params_names[-which(self$calibration_parameters$
-                    v_params_names == .param_x)]
-              ###### Plots lists':----
-              plots_list_ <- purrr::map(
-                .x = other_params_names,
-                .f = function(.param_y) {
-                  ###### Create plot only if different parameters are used:----
-                  if(.param_x != .param_y) {
-                    if(is.null(.x_axis_lb_))
-                      .x_axis_lb_ <- self$calibration_parameters$
-                        Xargs[[.param_x]]$min
-                    if(is.null(.x_axis_ub_))
-                      .x_axis_ub_ <- self$calibration_parameters$
-                        Xargs[[.param_x]]$max
-                    if(is.null(.y_axis_lb_))
-                      .y_axis_lb_ <- self$calibration_parameters$
-                        Xargs[[.param_y]]$min
-                    if(is.null(.y_axis_ub_))
-                      .y_axis_ub_ <- self$calibration_parameters$
-                        Xargs[[.param_y]]$max
-                    plotly::plot_ly(
-                      name = ifelse(
-                        .gof_ == "LLK",
-                        "Log likelihood",
-                        "Sum of Squared Errors"),
-                      x = self$GOF_measure_plot$Results[[.param_x]],
-                      y = self$GOF_measure_plot$Results[[.param_y]],
-                      z = self$GOF_measure_plot$Results$Overall_fit,
-                      type = "contour",
-                      colorscale = if(is.null(.scale_) & .greys_){
-                        "Greys"
-                      } else if(is.null(.scale_) & !.greys_) {
-                        "Viridis"
-                      } else if(is.null(.scale_) & is.null(.greys_)){
-                        "Viridis"
-                      } else {
-                        .scale_
-                      },
-                      contours = list(
-                        showlabels = ifelse(
-                          .legend_, FALSE, TRUE),
-                        coloring = .coloring_)) %>%
-                      plotly::layout(
-                        legend = list(
-                          x = ifelse(
-                            .legend_,
-                            "1.02",
-                            # Adjust legend if true points are used:
-                            ifelse(
-                              .true_points_,
-                              # Adjust legend if LLK is used:
-                              ifelse(.gof_ == "LLK",
-                                     "0.05",
-                                     "0"),
-                              ifelse(.gof_ == "LLK",
-                                     "0.15",
-                                     "0.05"))),
-                          y = ifelse(
-                            .legend_,
-                            "1",
-                            "-0.15"),
-                          orientation = ifelse(
-                            .legend_, 'v', 'h')),
-                        xaxis = list(
-                          title = self$calibration_parameters$
-                            v_params_labels[[.param_x]],
-                          range = list(.x_axis_lb_, .x_axis_ub_)),
-                        yaxis = list(
-                          title = self$calibration_parameters$
-                            v_params_labels[[.param_y]],
-                          range = list(.y_axis_lb_, .y_axis_ub_))) %>%
-                      {if(.legend_) {
-                        plotly::colorbar(
-                          p = .,
-                          title = ifelse(
-                            .gof_ == "LLK",
-                            "Log\nlikelihood",
-                            "Sum of\nSquared Errors"))
-                      } else {
-                        # plotly::hide_legend(p = .) %>%
-                        plotly::hide_colorbar(p = .)
-                      }} %>%
-                      {if(.points_) {
-                        plotly::add_trace(
-                          p = .,
-                          inherit = FALSE,
-                          x = self$GOF_measure_plot$Results[[.param_x]],
-                          y = self$GOF_measure_plot$Results[[.param_y]],
-                          type = 'scatter',
-                          mode = 'markers',
-                          marker = list(size = 1),
-                          symbols = 'o') %>%
-                          {if(.true_points_) {
+            .x = .gof_ %>%
+              `names<-`(.gof_),
+            .f = function(.gof_name_) {
+              purrr::map(
+                .x = self$calibration_parameters$v_params_names,
+                .f = function(.param_x) {
+                  ###### Prepare parameter names:----
+                  other_params_names <- self$calibration_parameters$
+                    v_params_names[-which(self$calibration_parameters$
+                                            v_params_names == .param_x)]
+                  ###### Plots lists':----
+                  plots_list_ <- purrr::map(
+                    .x = other_params_names,
+                    .f = function(.param_y) {
+                      ###### Create plot only if different parameters are used:----
+                      if(.param_x != .param_y) {
+                        if(is.null(.x_axis_lb_))
+                          .x_axis_lb_ <- self$calibration_parameters$
+                            Xargs[[.param_x]]$min
+                        if(is.null(.x_axis_ub_))
+                          .x_axis_ub_ <- self$calibration_parameters$
+                            Xargs[[.param_x]]$max
+                        if(is.null(.y_axis_lb_))
+                          .y_axis_lb_ <- self$calibration_parameters$
+                            Xargs[[.param_y]]$min
+                        if(is.null(.y_axis_ub_))
+                          .y_axis_ub_ <- self$calibration_parameters$
+                            Xargs[[.param_y]]$max
+                        plotly::plot_ly(
+                          name = ifelse(
+                            .gof_name_ == "LLK",
+                            "Log likelihood",
+                            "Sum of Squared Errors"),
+                          x = self$GOF_measure_plot$
+                            Results[[.gof_name_]][[.param_x]],
+                          y = self$GOF_measure_plot$
+                            Results[[.gof_name_]][[.param_y]],
+                          z = self$GOF_measure_plot$
+                            Results[[.gof_name_]][["Overall_fit"]],
+                          type = "contour",
+                          colorscale = if(is.null(.scale_) & .greys_){
+                            "Greys"
+                          } else if(is.null(.scale_) & !.greys_) {
+                            "Viridis"
+                          } else if(is.null(.scale_) & is.null(.greys_)){
+                            "Viridis"
+                          } else {
+                            .scale_
+                          },
+                          contours = list(
+                            showlabels = ifelse(
+                              .legend_, FALSE, TRUE),
+                            coloring = .coloring_)) %>%
+                          plotly::layout(
+                            legend = list(
+                              x = ifelse(
+                                .legend_,
+                                "1.02",
+                                # Adjust legend if true points are used:
+                                ifelse(
+                                  .true_points_,
+                                  # Adjust legend if LLK is used:
+                                  ifelse(.gof_name_ == "LLK",
+                                         "0.05",
+                                         "0"),
+                                  ifelse(.gof_name_ == "LLK",
+                                         "0.15",
+                                         "0.05"))),
+                              y = ifelse(
+                                .legend_,
+                                "1",
+                                "-0.15"),
+                              orientation = ifelse(
+                                .legend_, 'v', 'h')),
+                            xaxis = list(
+                              title = self$calibration_parameters$
+                                v_params_labels[[.param_x]],
+                              range = list(.x_axis_lb_, .x_axis_ub_),
+                              showline = TRUE,
+                              linewidth = 1,
+                              linecolor = "grey",
+                              mirror = TRUE),
+                            yaxis = list(
+                              title = self$calibration_parameters$
+                                v_params_labels[[.param_y]],
+                              range = list(.y_axis_lb_, .y_axis_ub_),
+                              showline = TRUE,
+                              linewidth = 1,
+                              linecolor = "grey",
+                              mirror = TRUE)) %>%
+                          {if(.legend_) {
+                            plotly::colorbar(
+                              p = .,
+                              title = ifelse(
+                                .gof_name_ == "LLK",
+                                "Log\nlikelihood",
+                                "Sum of\nSquared Errors"))
+                          } else {
+                            # plotly::hide_legend(p = .) %>%
+                            plotly::hide_colorbar(p = .)
+                          }} %>%
+                          {if(.points_) {
                             plotly::add_trace(
                               p = .,
                               inherit = FALSE,
-                              x = self$calibration_parameters$
-                                v_params_true_values[[.param_x]],
-                              y = self$calibration_parameters$
-                                v_params_true_values[[.param_y]],
+                              x = self$GOF_measure_plot$
+                                Results[[.gof_name_]][[.param_x]],
+                              y = self$GOF_measure_plot$
+                                Results[[.gof_name_]][[.param_y]],
                               type = 'scatter',
                               mode = 'markers',
                               marker = list(size = 1),
-                              symbols = 'x')
+                              symbols = 'o') %>%
+                              {if(.true_points_) {
+                                plotly::add_trace(
+                                  p = .,
+                                  inherit = FALSE,
+                                  x = self$calibration_parameters$
+                                    v_params_true_values[[.param_x]],
+                                  y = self$calibration_parameters$
+                                    v_params_true_values[[.param_y]],
+                                  type = 'scatter',
+                                  mode = 'markers',
+                                  marker = list(size = 1),
+                                  symbols = 'x')
+                              } else {
+                                .
+                              }}
                           } else {
                             .
                           }}
-                      } else {
-                        .
-                      }}
-                  }
+                      }
+                    })
                 })
             })
         }
@@ -3233,88 +3277,245 @@ calibR_R6 <- R6::R6Class(
               "True values" = "green")
           }
           ###### Generate plots:----
-          self$calibration_results$random %>%
-            purrr::map(
-              .x = .,
-              .f = function(.calib_res_random) {
-                ###### Sort calibration results:----
-                sorted_calib_res <- .calib_res_random %>%
-                  {if(.maximise_){
-                    dplyr::arrange(
-                      .data = .,
-                      dplyr::desc(Overall_fit))
+          purrr::map(
+            .x = .gof_ %>%
+              `names<-`(.gof_),
+            .f = function(.gof_name_) {
+              ####### Grab those files that are related to the .gof used:----
+              calib_res_objs_names <- grep(
+                pattern = .gof_name_,
+                x = names(self$calibration_results$random),
+                value = TRUE)
+              ####### Loop through identified calibration results objects:----
+              purrr::map(
+                .x = calib_res_objs_names %>%
+                  `names<-`(calib_res_objs_names),
+                .f = function(.calib_res_random) {
+                  ###### Sort calibration results:----
+                  sorted_calib_res <- self$calibration_results$
+                    random[[.calib_res_random]] %>%
+                    {if(.gof_name_ == "LLK") {
+                      dplyr::arrange(
+                        .data = .,
+                        dplyr::desc(Overall_fit))
+                    } else {
+                      dplyr::arrange(
+                        .data = .,
+                        Overall_fit)}}
+                  calib_res <- sorted_calib_res %>%
+                    dplyr::mutate(
+                      Points = "Sampling values") %>%
+                    dplyr::bind_rows(
+                      sorted_calib_res %>%
+                        dplyr::slice_head(
+                          n = nrow(.)/10) %>%
+                        dplyr::mutate(
+                          Points = "Identified values")) %>%
+                    ###### Add true values:----
+                  {if(.true_points_) {
+                    dplyr::bind_rows(
+                      .,
+                      self$calibration_parameters$v_params_true_values) %>%
+                      dplyr::mutate(Points = dplyr::case_when(
+                        is.na(Points) ~ "True values",
+                        TRUE ~ Points))
                   } else {
-                    dplyr::arrange(
-                      .data = .,
-                      Overall_fit)}}
-                calib_res <- sorted_calib_res %>%
-                  dplyr::mutate(
-                    Points = "Sampling values") %>%
-                  dplyr::bind_rows(
-                    sorted_calib_res %>%
-                      dplyr::slice_head(
-                        n = nrow(.)/10) %>%
+                    .}}
+                  ###### Ensure colours and groups share same levels:----
+                  calib_res <- calib_res %>%
+                    {if(!.true_points_) {
                       dplyr::mutate(
-                        Points = "Identified values")) %>%
-                  ###### Add true values:----
-                {if(.true_points_) {
-                  dplyr::bind_rows(
-                    .,
-                    self$calibration_parameters$v_params_true_values) %>%
-                    dplyr::mutate(Points = dplyr::case_when(
-                      is.na(Points) ~ "True values",
-                      TRUE ~ Points))
-                } else {
-                  .}}
-                ###### Ensure colours and groups share same levels:----
-                calib_res <- calib_res %>%
-                  {if(!.true_points_) {
-                    dplyr::mutate(
-                      .data = .,
-                      Points = factor(
-                        x = Points,
-                        levels = c("Sampling values",
-                                   "Identified values")))
-                  } else {
-                    dplyr::mutate(
-                      .data = .,
-                      Points = factor(
-                        x = Points,
-                        levels = c("Sampling values",
-                                   "Identified values",
-                                   "True values")))
-                  }}
+                        .data = .,
+                        Points = factor(
+                          x = Points,
+                          levels = c("Sampling values",
+                                     "Identified values")))
+                    } else {
+                      dplyr::mutate(
+                        .data = .,
+                        Points = factor(
+                          x = Points,
+                          levels = c("Sampling values",
+                                     "Identified values",
+                                     "True values")))
+                    }}
 
+                  ####### Change colour if too many points in plot:----
+                  colors_["Sampling values"] <- ifelse(
+                    calib_res %>%
+                      dplyr::filter(
+                        Points == "Sampling values") %>%
+                      nrow(.) > 100,
+                    "grey",
+                    colors_["Sampling values"])
 
-                ###### Add points to the plots:----
-                purrr::map(
-                  .x = self$calibration_parameters$v_params_names,
-                  .f = function(.param_x) {
-                    ####### Prepare parameter names:----
-                    other_params_names <- self$calibration_parameters$
-                      v_params_names[-which(self$calibration_parameters$
-                                              v_params_names == .param_x)]
-                    ####### Plots list:----
-                    plots_list_ <- purrr::map(
-                      .x = other_params_names,
-                      .f = function(.param_y) {
-                        self$plots$GOF_plots$blank[[.param_x]][[.param_y]] %>%
-                          plotly::add_trace(
-                            p = .,
-                            inherit = FALSE,
-                            x = calib_res[[.param_x]],
-                            y = calib_res[[.param_y]],
-                            type = 'scatter',
-                            mode = 'markers',
-                            marker = list(
-                              size = 5),
-                            symbol = ~ calib_res[["Points"]],
-                            symbols = symbols_,
-                            color = ~ calib_res[["Points"]],
-                            colors = colors_)
-                      })
-                  })
-              })
+                  ###### Add points to the plots:----
+                  purrr::map(
+                    .x = self$calibration_parameters$v_params_names,
+                    .f = function(.param_x) {
+                      ####### Prepare parameter names:----
+                      other_params_names <- self$calibration_parameters$
+                        v_params_names[-which(self$calibration_parameters$
+                                                v_params_names == .param_x)]
+                      ####### Plots list:----
+                      plots_list_ <- purrr::map(
+                        .x = other_params_names,
+                        .f = function(.param_y) {
+                          ####### Dynamically get axis coordinates to zoom in:----
+                          if(.zoom_) {
+                            zoom_calib_res <- calib_res %>%
+                              dplyr::filter(
+                                Points != "Sampling values")
+                          }
+                          if(is.null(.x_axis_lb_)) {
+                            .x_axis_lb_ <- if(.zoom_) {
+                              min(zoom_calib_res[[.param_x]]) -
+                                (diff(range(zoom_calib_res[[.param_x]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_x]]$min
+                            }
+                          }
+                          if(is.null(.x_axis_ub_)) {
+                            .x_axis_ub_ <- if(.zoom_) {
+                              max(zoom_calib_res[[.param_x]]) +
+                                (diff(range(zoom_calib_res[[.param_x]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_x]]$max
+                            }
+                          }
+                          if(is.null(.y_axis_lb_)) {
+                            .y_axis_lb_ <- if(.zoom_) {
+                              min(zoom_calib_res[[.param_y]]) -
+                                (diff(range(zoom_calib_res[[.param_y]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_y]]$min
+                            }
+                          }
+                          if(is.null(.y_axis_ub_)) {
+                            .y_axis_ub_ <- if(.zoom_) {
+                              max(zoom_calib_res[[.param_y]]) +
+                                (diff(range(zoom_calib_res[[.param_y]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_y]]$max
+                            }
+                          }
+                          ####### Add points to plot:----
+                          plot <- if(!.zoom_) {
+                            self$plots$GOF_plots$
+                              blank[[.gof_name_]][[.param_x]][[.param_y]] %>%
+                              plotly::add_trace(
+                                p = .,
+                                inherit = FALSE,
+                                x = calib_res[[.param_x]],
+                                y = calib_res[[.param_y]],
+                                type = 'scatter',
+                                mode = 'markers',
+                                marker = list(
+                                  size = 5),
+                                symbol = ~ calib_res[["Points"]],
+                                symbols = symbols_,
+                                color = ~ calib_res[["Points"]],
+                                colors = colors_)
+                          } else {
+                            plotly::plot_ly(
+                              name = ifelse(
+                                .gof_name_ == "LLK",
+                                "Log likelihood",
+                                "Sum of Squared Errors"),
+                              x = self$GOF_measure_plot$
+                                Results[[.gof_name_]][[.param_x]],
+                              y = self$GOF_measure_plot$
+                                Results[[.gof_name_]][[.param_y]],
+                              z = self$GOF_measure_plot$
+                                Results[[.gof_name_]][["Overall_fit"]],
+                              type = "contour",
+                              colorscale = if(is.null(.scale_) & .greys_){
+                                "Greys"
+                              } else if(is.null(.scale_) & !.greys_) {
+                                "Viridis"
+                              } else if(is.null(.scale_) & is.null(.greys_)){
+                                "Viridis"
+                              } else {
+                                .scale_
+                              },
+                              contours = list(
+                                showlabels = ifelse(
+                                  .legend_, FALSE, TRUE),
+                                coloring = .coloring_)) %>%
+                              plotly::layout(
+                                legend = list(
+                                  x = ifelse(
+                                    .legend_,
+                                    "1.02",
+                                    # Adjust legend if true points are used:
+                                    ifelse(
+                                      .true_points_,
+                                      # Adjust legend if LLK is used:
+                                      ifelse(.gof_name_ == "LLK",
+                                             "0.05",
+                                             "0"),
+                                      ifelse(.gof_name_ == "LLK",
+                                             "0.15",
+                                             "0.05"))),
+                                  y = ifelse(
+                                    .legend_,
+                                    "1",
+                                    "-0.15"),
+                                  orientation = ifelse(
+                                    .legend_, 'v', 'h')),
+                                xaxis = list(
+                                  title = self$calibration_parameters$
+                                    v_params_labels[[.param_x]],
+                                  range = list(.x_axis_lb_, .x_axis_ub_),
+                                  showline = TRUE,
+                                  linewidth = 1,
+                                  linecolor = "grey",
+                                  mirror = TRUE),
+                                yaxis = list(
+                                  title = self$calibration_parameters$
+                                    v_params_labels[[.param_y]],
+                                  range = list(.y_axis_lb_, .y_axis_ub_),
+                                  showline = TRUE,
+                                  linewidth = 1,
+                                  linecolor = "grey",
+                                  mirror = TRUE)) %>%
+                              {if(.legend_) {
+                                plotly::colorbar(
+                                  p = .,
+                                  title = ifelse(
+                                    .gof_name_ == "LLK",
+                                    "Log\nlikelihood",
+                                    "Sum of\nSquared Errors"))
+                              } else {
+                                # plotly::hide_legend(p = .) %>%
+                                plotly::hide_colorbar(p = .)
+                              }} %>%
+                              plotly::add_trace(
+                                p = .,
+                                inherit = FALSE,
+                                x = calib_res[[.param_x]],
+                                y = calib_res[[.param_y]],
+                                type = 'scatter',
+                                mode = 'markers',
+                                marker = list(
+                                  size = 5),
+                                symbol = ~ calib_res[["Points"]],
+                                symbols = symbols_,
+                                color = ~ calib_res[["Points"]],
+                                colors = colors_)
+                          }
+                        })
+                    })
+                })
+            })
         }
 
       ##### Directed plots:----
@@ -3338,89 +3539,569 @@ calibR_R6 <- R6::R6Class(
               "True values" = "green")
           }
           ###### Generate plots:----
-          self$calibration_results$directed %>%
-            purrr::map(
-              .x = .,
-              .f = function(.calib_res_algorithm) {
-                ###### Transpose the list to group outputs together:----
-                transposed_calib_res <- .calib_res_algorithm %>%
-                  purrr::transpose()
-                ###### Extract "Starting values":----
-                calib_res <- transposed_calib_res[["Guess"]] %>%
-                  purrr::map_dfr(
-                    .x = .,
-                    .f = function(.x) {
-                      .x}) %>%
-                  dplyr::mutate(Points = "Starting values") %>%
-                  ###### Join "Identified values":----
-                dplyr::bind_rows(
-                  ###### Extract identified values:----
-                  transposed_calib_res[["Estimate"]] %>%
+          purrr::map(
+            .x = .gof_ %>%
+              `names<-`(.gof_),
+            .f = function(.gof_name_) {
+              ####### Grab those files that are related to the .gof used:----
+              calib_res_objs_names <- grep(
+                pattern = .gof_name_,
+                x = names(self$calibration_results$directed),
+                value = TRUE)
+              ####### Loop through identified calibration results objects:----
+              purrr::map(
+                .x = calib_res_objs_names %>%
+                  `names<-`(calib_res_objs_names),
+                .f = function(.calib_res_algorithm) {
+                  ###### Transpose the list to group outputs together:----
+                  transposed_calib_res <- self$calibration_results$
+                    directed[[.calib_res_algorithm]] %>%
+                    purrr::transpose()
+                  ###### Extract "Starting values":----
+                  calib_res <- transposed_calib_res[["Guess"]] %>%
                     purrr::map_dfr(
                       .x = .,
                       .f = function(.x) {
-                        .x
-                        }) %>%
-                    dplyr::mutate(Points = "Identified values")) %>%
-                  ###### Add true values:----
-                {if(.true_points_) {
+                        .x}) %>%
+                    dplyr::mutate(Points = "Starting values") %>%
+                    ###### Join "Identified values":----
                   dplyr::bind_rows(
-                    .,
-                    self$calibration_parameters$v_params_true_values) %>%
-                    dplyr::mutate(Points = dplyr::case_when(
-                      is.na(Points) ~ "True values",
-                      TRUE ~ Points))
-                } else {
-                  .
-                }}
-                ###### Ensure colours and groups share same levels:----
-                calib_res <- calib_res %>%
-                  {if(!.true_points_) {
-                    dplyr::mutate(
-                      .data = .,
-                      Points = factor(
-                        x = Points,
-                        levels = c("Starting values",
-                                   "Identified values")))
+                    ###### Extract identified values:----
+                    transposed_calib_res[["Estimate"]] %>%
+                      purrr::map_dfr(
+                        .x = .,
+                        .f = function(.x) {
+                          .x
+                        }) %>%
+                      dplyr::mutate(Points = "Identified values")) %>%
+                    ###### Add true values:----
+                  {if(.true_points_) {
+                    dplyr::bind_rows(
+                      .,
+                      self$calibration_parameters$v_params_true_values) %>%
+                      dplyr::mutate(Points = dplyr::case_when(
+                        is.na(Points) ~ "True values",
+                        TRUE ~ Points))
                   } else {
-                    dplyr::mutate(
-                      .data = .,
-                      Points = factor(
-                        x = Points,
-                        levels = c("Starting values",
-                                   "Identified values",
-                                   "True values")))
+                    .
                   }}
+                  ###### Ensure colours and groups share same levels:----
+                  calib_res <- calib_res %>%
+                    {if(!.true_points_) {
+                      dplyr::mutate(
+                        .data = .,
+                        Points = factor(
+                          x = Points,
+                          levels = c("Starting values",
+                                     "Identified values")))
+                    } else {
+                      dplyr::mutate(
+                        .data = .,
+                        Points = factor(
+                          x = Points,
+                          levels = c("Starting values",
+                                     "Identified values",
+                                     "True values")))
+                    }}
 
-                ###### Add points to the plots:----
-                purrr::map(
-                  .x = self$calibration_parameters$v_params_names,
-                  .f = function(.param_x) {
-                    ####### Prepare parameter names:----
-                    other_params_names <- self$calibration_parameters$
-                      v_params_names[-which(self$calibration_parameters$
-                                              v_params_names == .param_x)]
-                    ####### Plots list:----
-                    plots_list_ <- purrr::map(
-                      .x = other_params_names,
-                      .f = function(.param_y) {
-                        self$plots$GOF_plots$blank[[.param_x]][[.param_y]] %>%
-                          plotly::add_trace(
-                            p = .,
-                            inherit = FALSE,
-                            x = calib_res[[.param_x]],
-                            y = calib_res[[.param_y]],
-                            type = 'scatter',
-                            mode = 'markers',
-                            marker = list(
-                              size = 5),
-                            symbol = ~ calib_res[["Points"]],
-                            symbols = symbols_,
-                            color = ~ calib_res[["Points"]],
-                            colors = colors_)
+                  ####### Change colour if too many points in plot:----
+                  colors_["Starting values"] <- ifelse(
+                    calib_res %>%
+                      dplyr::filter(
+                        Points == "Starting values") %>%
+                      nrow(.) > 100,
+                    "grey",
+                    colors_["Starting values"])
+
+                  ###### Add points to the plots:----
+                  purrr::map(
+                    .x = self$calibration_parameters$v_params_names,
+                    .f = function(.param_x) {
+                      ####### Prepare parameter names:----
+                      other_params_names <- self$calibration_parameters$
+                        v_params_names[-which(self$calibration_parameters$
+                                                v_params_names == .param_x)]
+                      ####### Plots list:----
+                      plots_list_ <- purrr::map(
+                        .x = other_params_names,
+                        .f = function(.param_y) {
+                          ####### Dynamically get axis coordinates to zoom in:----
+                          if(.zoom_) {
+                            zoom_calib_res <- calib_res %>%
+                              dplyr::filter(
+                                Points != "Starting values")
+                          }
+                          if(is.null(.x_axis_lb_)) {
+                            .x_axis_lb_ <- if(.zoom_) {
+                              min(zoom_calib_res[[.param_x]]) -
+                                (diff(range(zoom_calib_res[[.param_x]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_x]]$min
+                            }
+                          }
+                          if(is.null(.x_axis_ub_)) {
+                            .x_axis_ub_ <- if(.zoom_) {
+                              max(zoom_calib_res[[.param_x]]) +
+                                (diff(range(zoom_calib_res[[.param_x]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_x]]$max
+                            }
+                          }
+                          if(is.null(.y_axis_lb_)) {
+                            .y_axis_lb_ <- if(.zoom_) {
+                              min(zoom_calib_res[[.param_y]]) -
+                                (diff(range(zoom_calib_res[[.param_y]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_y]]$min
+                            }
+                          }
+                          if(is.null(.y_axis_ub_)) {
+                            .y_axis_ub_ <- if(.zoom_) {
+                              max(zoom_calib_res[[.param_y]]) +
+                                (diff(range(zoom_calib_res[[.param_y]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_y]]$max
+                            }
+                          }
+                          ####### Add points to plot:----
+                          plot <- if(!.zoom_) {
+                            self$plots$GOF_plots$
+                              blank[[.gof_name_]][[.param_x]][[.param_y]] %>%
+                              plotly::add_trace(
+                                p = .,
+                                inherit = FALSE,
+                                x = calib_res[[.param_x]],
+                                y = calib_res[[.param_y]],
+                                type = 'scatter',
+                                mode = 'markers',
+                                marker = list(
+                                  size = 5),
+                                symbol = ~ calib_res[["Points"]],
+                                symbols = symbols_,
+                                color = ~ calib_res[["Points"]],
+                                colors = colors_)
+                          } else {
+                            plotly::plot_ly(
+                              name = ifelse(
+                                .gof_name_ == "LLK",
+                                "Log likelihood",
+                                "Sum of Squared Errors"),
+                              x = self$GOF_measure_plot$
+                                Results[[.gof_name_]][[.param_x]],
+                              y = self$GOF_measure_plot$
+                                Results[[.gof_name_]][[.param_y]],
+                              z = self$GOF_measure_plot$
+                                Results[[.gof_name_]][["Overall_fit"]],
+                              type = "contour",
+                              colorscale = if(is.null(.scale_) & .greys_){
+                                "Greys"
+                              } else if(is.null(.scale_) & !.greys_) {
+                                "Viridis"
+                              } else if(is.null(.scale_) & is.null(.greys_)){
+                                "Viridis"
+                              } else {
+                                .scale_
+                              },
+                              contours = list(
+                                showlabels = ifelse(
+                                  .legend_, FALSE, TRUE),
+                                coloring = .coloring_)) %>%
+                              plotly::layout(
+                                legend = list(
+                                  x = ifelse(
+                                    .legend_,
+                                    "1.02",
+                                    # Adjust legend if true points are used:
+                                    ifelse(
+                                      .true_points_,
+                                      # Adjust legend if LLK is used:
+                                      ifelse(.gof_name_ == "LLK",
+                                             "0.05",
+                                             "0"),
+                                      ifelse(.gof_name_ == "LLK",
+                                             "0.15",
+                                             "0.05"))),
+                                  y = ifelse(
+                                    .legend_,
+                                    "1",
+                                    "-0.15"),
+                                  orientation = ifelse(
+                                    .legend_, 'v', 'h')),
+                                xaxis = list(
+                                  title = self$calibration_parameters$
+                                    v_params_labels[[.param_x]],
+                                  range = list(.x_axis_lb_, .x_axis_ub_),
+                                  showline = TRUE,
+                                  linewidth = 1,
+                                  linecolor = "grey",
+                                  mirror = TRUE),
+                                yaxis = list(
+                                  title = self$calibration_parameters$
+                                    v_params_labels[[.param_y]],
+                                  range = list(.y_axis_lb_, .y_axis_ub_),
+                                  showline = TRUE,
+                                  linewidth = 1,
+                                  linecolor = "grey",
+                                  mirror = TRUE)) %>%
+                              {if(.legend_) {
+                                plotly::colorbar(
+                                  p = .,
+                                  title = ifelse(
+                                    .gof_name_ == "LLK",
+                                    "Log\nlikelihood",
+                                    "Sum of\nSquared Errors"))
+                              } else {
+                                # plotly::hide_legend(p = .) %>%
+                                plotly::hide_colorbar(p = .)
+                              }} %>%
+                              plotly::add_trace(
+                                p = .,
+                                inherit = FALSE,
+                                x = calib_res[[.param_x]],
+                                y = calib_res[[.param_y]],
+                                type = 'scatter',
+                                mode = 'markers',
+                                marker = list(
+                                  size = 5),
+                                symbol = ~ calib_res[["Points"]],
+                                symbols = symbols_,
+                                color = ~ calib_res[["Points"]],
+                                colors = colors_)
+                          }
                         })
-                  })
-              })
+                    })
+                })
+            })
+        }
+
+      ##### Bayesian plots:----
+      self$plots$GOF_plots$bayesian <-
+        if(.engine_ == "plotly") {
+          ###### Points shapes and colours:----
+          symbols_ <- c(
+            "Prior samples" = "x-thin-open", #"x-dot",
+            "Posterior samples" = "circle-open",
+            "Posterior centres" = "circle-dot")
+          colors_ <- c(
+            "Prior samples" = "black",
+            "Posterior samples" = "red",
+            "Posterior centres" = "yellow")
+          if(.true_points_) {
+            symbols_ <- c(
+              "Prior samples" = "x-thin-open", #"x-dot",
+              "Posterior samples" = "circle-open",
+              "Posterior centres" = "circle-dot",
+              "True values" = "circle-dot")
+            colors_ <- c(
+              "Prior samples" = "black",
+              "Posterior samples" = "red",
+              "Posterior centres" = "yellow",
+              "True values" = "green")
+          }
+          ###### Generate plots:----
+          ####### Ensure Priors samples exist:----
+          if(is.null(self$prior_samples["LHS"])) {
+            self$prior_samples$LHS <- calibR::sample_prior_LHS(
+              .n_samples = .prior_samples_,
+              .l_params = self$calibration_parameters)
+          }
+          ###### Generate plots:----
+          purrr::map(
+            .x = .gof_ %>%
+              `names<-`(.gof_),
+            .f = function(.gof_name_) {
+              ####### Loop through identified calibration results objects:----
+              purrr::map(
+                .x = self$PSA_samples$bayesian,
+                .f = function(.calib_res_) {
+                  calib_res <- .calib_res_$PSA_calib_draws %>%
+                    dplyr::mutate(
+                      Points = dplyr::case_when(
+                        Plot_label %in% c("Maximum-a-posteriori",
+                                          "Posterior mean") ~ "Posterior centres",
+                        TRUE ~ "Posterior samples")) %>%
+                    dplyr::bind_rows(
+                      .,
+                      self$prior_samples$LHS %>%
+                        dplyr::mutate(
+                          Points = "Prior samples")) %>%
+                    ###### Add true values:----
+                  {if(.true_points_) {
+                    dplyr::bind_rows(
+                      .,
+                      self$calibration_parameters$v_params_true_values) %>%
+                      dplyr::mutate(Points = dplyr::case_when(
+                        is.na(Points) ~ "True values",
+                        TRUE ~ Points))
+                  } else {
+                    .
+                  }}
+                  ###### Ensure colours and groups share same levels:----
+                  calib_res <- calib_res %>%
+                    {if(calib_res %>%
+                        dplyr::filter(
+                          Points == "Posterior centres") %>%
+                        nrow(.) > 0) {
+                      {if(!.true_points_) {
+                        dplyr::mutate(
+                          .data = .,
+                          Points = factor(
+                            x = Points,
+                            levels = c("Prior samples",
+                                       "Posterior samples",
+                                       "Posterior centres")))
+                      } else {
+                        dplyr::mutate(
+                          .data = .,
+                          Points = factor(
+                            x = Points,
+                            levels = c("Prior samples",
+                                       "Posterior samples",
+                                       "Posterior centres",
+                                       "True values")))
+                      }}
+                    } else {
+                      {if(!.true_points_) {
+                        dplyr::mutate(
+                          .data = .,
+                          Points = factor(
+                            x = Points,
+                            levels = c("Prior samples",
+                                       "Posterior samples")))
+                      } else {
+                        dplyr::mutate(
+                          .data = .,
+                          Points = factor(
+                            x = Points,
+                            levels = c("Prior samples",
+                                       "Posterior samples",
+                                       "True values")))
+                      }}
+                    }}
+
+                  ####### Change colour if too many points in plot:----
+                  colors_["Prior samples"] <- ifelse(
+                    calib_res %>%
+                      dplyr::filter(
+                        Points == "Prior samples") %>%
+                      nrow(.) > 100,
+                    "grey",
+                    colors_["Prior samples"])
+                  ####### Assign colour and symbol for posterior centres:----
+                  colors_["Posterior centres"] <- ifelse(
+                    calib_res %>%
+                      dplyr::filter(
+                        Points == "Posterior centres") %>%
+                      nrow(.) > 0,
+                    colors_["Posterior centres"],
+                    NULL)
+
+                  symbols_["Posterior centres"] <- ifelse(
+                    calib_res %>%
+                      dplyr::filter(
+                        Points == "Posterior centres") %>%
+                      nrow(.) > 0,
+                    symbols_["Posterior centres"],
+                    NULL)
+
+                  ###### Add points to the plots:----
+                  purrr::map(
+                    .x = self$calibration_parameters$v_params_names,
+                    .f = function(.param_x) {
+                      ####### Prepare parameter names:----
+                      other_params_names <- self$calibration_parameters$
+                        v_params_names[-which(self$calibration_parameters$
+                                                v_params_names == .param_x)]
+
+                      ####### Plots list:----
+                      plots_list_ <- purrr::map(
+                        .x = other_params_names,
+                        .f = function(.param_y) {
+                          ####### Dynamically get axis coordinates to zoom in:----
+                          if(.zoom_) {
+                            zoom_calib_res <- calib_res %>%
+                              dplyr::filter(
+                                Points != "Prior samples")
+                          }
+                          if(is.null(.x_axis_lb_)) {
+                            .x_axis_lb_ <- if(.zoom_) {
+                              min(zoom_calib_res[[.param_x]]) -
+                                (diff(range(zoom_calib_res[[.param_x]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_x]]$min
+                            }
+                          }
+                          if(is.null(.x_axis_ub_)) {
+                            .x_axis_ub_ <- if(.zoom_) {
+                              max(zoom_calib_res[[.param_x]]) +
+                                (diff(range(zoom_calib_res[[.param_x]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_x]]$max
+                            }
+                          }
+                          if(is.null(.y_axis_lb_)) {
+                            .y_axis_lb_ <- if(.zoom_) {
+                              min(zoom_calib_res[[.param_y]]) -
+                                (diff(range(zoom_calib_res[[.param_y]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_y]]$min
+                            }
+                          }
+                          if(is.null(.y_axis_ub_)) {
+                            .y_axis_ub_ <- if(.zoom_) {
+                              max(zoom_calib_res[[.param_y]]) +
+                                (diff(range(zoom_calib_res[[.param_y]])) *
+                                   0.05)
+                            } else {
+                              self$calibration_parameters$
+                                Xargs[[.param_y]]$max
+                            }
+                          }
+                          ####### Add points to plot:----
+                          plot <- if(!.zoom_) {
+                            self$plots$GOF_plots$
+                              blank[[.gof_name_]][[.param_x]][[.param_y]] %>%
+                              plotly::add_trace(
+                                p = .,
+                                inherit = FALSE,
+                                x = calib_res[[.param_x]],
+                                y = calib_res[[.param_y]],
+                                type = 'scatter',
+                                mode = 'markers',
+                                marker = list(
+                                  size = 5),
+                                symbol = ~ calib_res[["Points"]],
+                                symbols = symbols_,
+                                color = ~ calib_res[["Points"]],
+                                colors = colors_) %>%
+                              plotly::layout(
+                                legend = list(
+                                  x = ifelse(
+                                    .legend_,
+                                    "1.02",
+                                    # Adjust legend if true points are used:
+                                    ifelse(
+                                      .true_points_,
+                                      # Adjust legend if LLK is used:
+                                      ifelse(.gof_name_ == "LLK",
+                                             "-0.10",#"0.05",
+                                             "-0.10"),
+                                      ifelse(.gof_name_ == "LLK",
+                                             "0", #"0.15",
+                                             "-0.02"))), # "0.05"
+                                  y = ifelse(
+                                    .legend_,
+                                    "1",
+                                    "-0.15"),
+                                  orientation = ifelse(
+                                    .legend_, 'v', 'h')))
+                          } else {
+                            plotly::plot_ly(
+                              name = ifelse(
+                                .gof_name_ == "LLK",
+                                "Log likelihood",
+                                "Sum of Squared Errors"),
+                              x = self$GOF_measure_plot$
+                                Results[[.gof_name_]][[.param_x]],
+                              y = self$GOF_measure_plot$
+                                Results[[.gof_name_]][[.param_y]],
+                              z = self$GOF_measure_plot$
+                                Results[[.gof_name_]][["Overall_fit"]],
+                              type = "contour",
+                              colorscale = if(is.null(.scale_) & .greys_){
+                                "Greys"
+                              } else if(is.null(.scale_) & !.greys_) {
+                                "Viridis"
+                              } else if(is.null(.scale_) & is.null(.greys_)){
+                                "Viridis"
+                              } else {
+                                .scale_
+                              },
+                              contours = list(
+                                showlabels = ifelse(
+                                  .legend_, FALSE, TRUE),
+                                coloring = .coloring_)) %>%
+                              plotly::layout(
+                                xaxis = list(
+                                  title = self$calibration_parameters$
+                                    v_params_labels[[.param_x]],
+                                  range = list(.x_axis_lb_, .x_axis_ub_),
+                                  showline = TRUE,
+                                  linewidth = 1,
+                                  linecolor = "grey",
+                                  mirror = TRUE),
+                                yaxis = list(
+                                  title = self$calibration_parameters$
+                                    v_params_labels[[.param_y]],
+                                  range = list(.y_axis_lb_, .y_axis_ub_),
+                                  showline = TRUE,
+                                  linewidth = 1,
+                                  linecolor = "grey",
+                                  mirror = TRUE)) %>%
+                              {if(.legend_) {
+                                plotly::colorbar(
+                                  p = .,
+                                  title = ifelse(
+                                    .gof_name_ == "LLK",
+                                    "Log\nlikelihood",
+                                    "Sum of\nSquared Errors"))
+                              } else {
+                                # plotly::hide_legend(p = .) %>%
+                                plotly::hide_colorbar(p = .)
+                              }} %>%
+                              plotly::add_trace(
+                                p = .,
+                                inherit = FALSE,
+                                x = calib_res[[.param_x]],
+                                y = calib_res[[.param_y]],
+                                type = 'scatter',
+                                mode = 'markers',
+                                marker = list(
+                                  size = 5),
+                                symbol = ~ calib_res[["Points"]],
+                                symbols = symbols_,
+                                color = ~ calib_res[["Points"]],
+                                colors = colors_) %>%
+                              plotly::layout(
+                                legend = list(
+                                  x = ifelse(
+                                    .legend_,
+                                    "1.02",
+                                    # Adjust legend if true points are used:
+                                    ifelse(
+                                      .true_points_,
+                                      # Adjust legend if LLK is used:
+                                      ifelse(.gof_name_ == "LLK",
+                                             "-0.10",#"0.05",
+                                             "-0.10"),
+                                      ifelse(.gof_name_ == "LLK",
+                                             "0", #"0.15",
+                                             "-0.02"))), # "0.05"
+                                  y = ifelse(
+                                    .legend_,
+                                    "1",
+                                    "-0.15"),
+                                  orientation = ifelse(
+                                    .legend_, 'v', 'h')))
+                          }
+                        })
+                    })
+                })
+            })
         }
     },
     ### Target plots:----
@@ -3548,44 +4229,67 @@ calibR_R6 <- R6::R6Class(
                           by = "id")
 
                       ######## Prepare lines' colours and opacity:-----
+                      expected_labels <- c(
+                        'Posterior mean' = "Posterior mean",
+                        'Identified set' = "Identified set",
+                        'Maximum-a-posteriori' = "Maximum-a-posteriori",
+                        'Credible interval - LB' = "Credible interval - LB",
+                        'Credible interval - UB' = "Credible interval - UB",
+                        'PSA sets' = "PSA sets",
+                        'Distribution samples' = "Distribution samples")
+
                       color_options <- c(
-                        'Credible interval - LB' = "red",
-                        'Credible interval - UB' = "brown",
                         'Posterior mean' = "darkgreen",
                         'Identified set' = "green",
                         'Maximum-a-posteriori' = "green",
-                        'Distribution samples' = "skyblue",
-                        'PSA sets' = "skyblue")
+                        'Credible interval - LB' = "red",
+                        'Credible interval - UB' = "brown",
+                        'PSA sets' = "skyblue",
+                        'Distribution samples' = "skyblue")
 
                       alpha_options <- c(
-                        'Credible interval - LB' = 0.8,
-                        'Credible interval - UB' = 0.8,
                         'Posterior mean' = 1,
                         'Identified set' = 1,
                         'Maximum-a-posteriori' = 1,
-                        'Distribution samples' = 0.3,
-                        'PSA sets' = 0.3)
+                        'Credible interval - LB' = 0.8,
+                        'Credible interval - UB' = 0.8,
+                        'PSA sets' = 0.4,
+                        'Distribution samples' = 0.4)
 
                       size_options <- c(
-                        'Credible interval - LB' = 1,
-                        'Credible interval - UB' = 1,
-                        'Posterior mean' = 1.5,
-                        'Identified set' = 1.5,
-                        'Maximum-a-posteriori' = 1.5,
-                        'Distribution samples' = 0.5,
-                        'PSA sets' = 0.5)
+                        'Posterior mean' = 1.3,
+                        'Identified set' = 1.3,
+                        'Maximum-a-posteriori' = 1.2,
+                        'Credible interval - LB' = 1.2,
+                        'Credible interval - UB' = 1.2,
+                        'PSA sets' = 0.6,
+                        'Distribution samples' = 0.6)
 
                       scale_names <- plotting_df %>%
                         dplyr::pull(Plot_label) %>%
                         unique()
 
-                      scale_colors <- color_options[scale_names]
-                      scale_alphas <- alpha_options[scale_names]
-                      scale_sizes <- size_options[scale_names]
-                      names(scale_colors) <- names(scale_alphas) <-
-                        names(scale_sizes) <- NULL
+                      existing_labels <- expected_labels[expected_labels %in%
+                                                           scale_names]
+                      scale_colors <- color_options[existing_labels]
+                      scale_alphas <- alpha_options[existing_labels]
+                      scale_sizes <- size_options[existing_labels]
 
-                      plot_lists <- plotting_df %>%
+                      ######## Reorder rows in dataset for plotting:-----
+                      # plotting_df <- purrr::map_dfr(
+                      #   .x = existing_labels,
+                      #   .f = function(.label_) {
+                      #     plotting_df %>%
+                      #       dplyr::filter(Plot_label == .label_)
+                      #   })
+
+                      plot_lists <- purrr::map_dfr(
+                        .x = existing_labels,
+                        .f = function(.label_) {
+                          plotting_df %>%
+                            dplyr::filter(Plot_label == .label_)}) %>%
+                        dplyr::mutate(
+                          Plot_label = as.factor(Plot_label)) %>%
                         ######## Add lines to target plot:-----
                       {self$plots$targets$blank[[.target_]] +
                           ggplot2::geom_line(

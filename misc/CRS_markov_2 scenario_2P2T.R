@@ -23,10 +23,10 @@ image_dir <- "images/"
 data_dir <- "data/"
 image_saving_path <- glue::glue("{path}{chapter_dir}{image_dir}")
 data_saving_path <- glue::glue("{path}{chapter_dir}{data_dir}")
-### Parameter space:----
+### 1. Parameter space:----
 seed_no <- 1
 set.seed(seed = seed_no)
-#### Unbounded parameter space:----
+#### 1.1. Full parameter space:----
 parameters_list <- calibR::CR_CRS_data_2t$l_params
 parameters_list$v_params_labels <- c(
   'p_Mets' = "Parameter 1",
@@ -46,12 +46,20 @@ param_space_plot <- plotly::plot_ly(
       title = parameters_list$v_params_labels[["p_Mets"]],
       range = list(
         parameters_list$Xargs[["p_Mets"]]$min,
-        parameters_list$Xargs[["p_Mets"]]$max)),
+        parameters_list$Xargs[["p_Mets"]]$max),
+      showline = TRUE,
+      linewidth = 1,
+      linecolor = "grey",
+      mirror = TRUE),
     yaxis = list(
       title = parameters_list$v_params_labels[["p_DieMets"]],
       range = list(
         parameters_list$Xargs[["p_DieMets"]]$min,
-        parameters_list$Xargs[["p_DieMets"]]$max)))
+        parameters_list$Xargs[["p_DieMets"]]$max),
+      showline = TRUE,
+      linewidth = 1,
+      linecolor = "grey",
+      mirror = TRUE))
 ##### Save plot:----
 image_name = "parameter_space.jpeg"
 reticulate::py_run_string("import sys")
@@ -60,7 +68,7 @@ plotly::save_image(
   file = glue::glue("{image_saving_path}{image_name}"),
   scale = 5)
 
-#### Explored parameter space:----
+#### 1.2. Explored parameter space:----
 parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
 parameters_list$v_params_labels <- c(
   'p_Mets' = "Parameter 1",
@@ -80,12 +88,20 @@ param_space_plot <- plotly::plot_ly(
       title = parameters_list$v_params_labels[["p_Mets"]],
       range = list(
         parameters_list$Xargs[["p_Mets"]]$min,
-        parameters_list$Xargs[["p_Mets"]]$max)),
+        parameters_list$Xargs[["p_Mets"]]$max),
+      showline = TRUE,
+      linewidth = 1,
+      linecolor = "grey",
+      mirror = TRUE),
     yaxis = list(
       title = parameters_list$v_params_labels[["p_DieMets"]],
       range = list(
         parameters_list$Xargs[["p_DieMets"]]$min,
-        parameters_list$Xargs[["p_DieMets"]]$max)))
+        parameters_list$Xargs[["p_DieMets"]]$max),
+      showline = TRUE,
+      linewidth = 1,
+      linecolor = "grey",
+      mirror = TRUE))
 ##### Save plot:----
 image_name = "parameter_space_lp.jpeg"
 reticulate::py_run_string("import sys")
@@ -94,26 +110,28 @@ plotly::save_image(
   file = glue::glue("{image_saving_path}{image_name}"),
   scale = 5)
 
-### SSE fitness plot:----
+### 2. SSE fitness plot:----
+#### 2.1. Full parameter space:----
 seed_no <- 1
 set.seed(seed = seed_no)
-parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
+parameters_list <- calibR::CR_CRS_data_2t$l_params
 parameters_list$v_params_labels <- c(
   'p_Mets' = "Parameter 1",
   'p_DieMets' = "Parameter 2")
-targets_list <- calibR::CR_CRS_data_2t_lp$l_targets
+targets_list <- calibR::CR_CRS_data_2t$l_targets
 gof_measure <- "SSE"
-#### Initiate CalibR R6 object:----
+##### Initiate CalibR R6 object:----
 CR_CRS_2P2T <- calibR_R6$new(
   .model = CRS_markov_2,
   .params = parameters_list,
   .targets = targets_list,
   .args = NULL,
   .transform = FALSE)
-#### SSE fitness function without True values:----
+##### SSE fitness function without True values:----
 sse_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .legend_ = FALSE,
   .greys_ = TRUE,
+  .coloring_ = "fill",
   .scale_ = NULL,
   .gof_ = gof_measure)$
   plots$
@@ -126,8 +144,7 @@ plotly::save_image(
   p = sse_GOF_measure[[1]][[1]],
   file = glue::glue("{image_saving_path}{image_name}"),
   scale = 5)
-
-### LLK fitness plot:----
+#### 2.2. Explored parameter space:----
 seed_no <- 1
 set.seed(seed = seed_no)
 parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
@@ -135,32 +152,67 @@ parameters_list$v_params_labels <- c(
   'p_Mets' = "Parameter 1",
   'p_DieMets' = "Parameter 2")
 targets_list <- calibR::CR_CRS_data_2t_lp$l_targets
-gof_measure <- "LLK"
-#### Initiate CalibR R6 object:----
+gof_measure <- "SSE"
+##### Initiate CalibR R6 object:----
 CR_CRS_2P2T <- calibR_R6$new(
   .model = CRS_markov_2,
   .params = parameters_list,
   .targets = targets_list,
   .args = NULL,
   .transform = FALSE)
-#### LLK function without True values:----
-llk_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+##### SSE fitness function without True values:----
+sse_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .legend_ = FALSE,
   .greys_ = TRUE,
+  .coloring_ = "fill",
   .scale_ = NULL,
   .gof_ = gof_measure)$
   plots$
   GOF_plots$
   blank
 ##### Save plot:----
-image_name = glue::glue("{gof_measure}_GOF_measure_ln.jpeg")
+image_name = glue::glue("{gof_measure}_GOF_measure_lp.jpeg")
+reticulate::py_run_string("import sys")
+plotly::save_image(
+  p = sse_GOF_measure[[1]][[1]],
+  file = glue::glue("{image_saving_path}{image_name}"),
+  scale = 5)
+
+### 3. LLK fitness plot:----
+#### 3.1. Full parameter space:----
+seed_no <- 1
+set.seed(seed = seed_no)
+parameters_list <- calibR::CR_CRS_data_2t$l_params
+parameters_list$v_params_labels <- c(
+  'p_Mets' = "Parameter 1",
+  'p_DieMets' = "Parameter 2")
+targets_list <- calibR::CR_CRS_data_2t$l_targets
+gof_measure <- "LLK"
+##### Initiate CalibR R6 object:----
+CR_CRS_2P2T <- calibR_R6$new(
+  .model = CRS_markov_2,
+  .params = parameters_list,
+  .targets = targets_list,
+  .args = NULL,
+  .transform = FALSE)
+##### LLK function without True values:----
+llk_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+  .legend_ = FALSE,
+  .greys_ = TRUE,
+  .coloring_ = "fill",
+  .scale_ = NULL,
+  .gof_ = gof_measure)$
+  plots$
+  GOF_plots$
+  blank
+##### Save plot:----
+image_name = glue::glue("{gof_measure}_GOF_measure.jpeg")
 reticulate::py_run_string("import sys")
 plotly::save_image(
   p = llk_GOF_measure[[1]][[1]],
   file = glue::glue("{image_saving_path}{image_name}"),
   scale = 5)
-
-### RGS, FGS and LHS with SSE fitness plot:----
+#### 3.2. Explored parameter space:----
 seed_no <- 1
 set.seed(seed = seed_no)
 parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
@@ -169,6 +221,40 @@ parameters_list$v_params_labels <- c(
   'p_DieMets' = "Parameter 2")
 targets_list <- calibR::CR_CRS_data_2t_lp$l_targets
 gof_measure <- "LLK"
+##### Initiate CalibR R6 object:----
+CR_CRS_2P2T <- calibR_R6$new(
+  .model = CRS_markov_2,
+  .params = parameters_list,
+  .targets = targets_list,
+  .args = NULL,
+  .transform = FALSE)
+##### LLK function without True values:----
+llk_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
+  .legend_ = FALSE,
+  .greys_ = TRUE,
+  .coloring_ = "fill",
+  .scale_ = NULL,
+  .gof_ = gof_measure)$
+  plots$
+  GOF_plots$
+  blank
+##### Save plot:----
+image_name = glue::glue("{gof_measure}_GOF_measure_lp.jpeg")
+reticulate::py_run_string("import sys")
+plotly::save_image(
+  p = llk_GOF_measure[[1]][[1]],
+  file = glue::glue("{image_saving_path}{image_name}"),
+  scale = 5)
+
+### 4. Undirected methods (RGS, FGS and LHS) with fitness plot:----
+seed_no <- 1
+set.seed(seed = seed_no)
+parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
+parameters_list$v_params_labels <- c(
+  'p_Mets' = "Parameter 1",
+  'p_DieMets' = "Parameter 2")
+targets_list <- calibR::CR_CRS_data_2t_lp$l_targets
+gof_measure <- c("SSE", "LLK")
 sample_method <- c("RGS", "FGS", "LHS")
 #### Initiate CalibR R6 object:----
 CR_CRS_2P2T <- calibR_R6$new(
@@ -195,7 +281,7 @@ CR_CRS_2P2T$
     .sample_method = sample_method,
     .calibration_method = gof_measure)
 ###### Fitness function without True values:----
-random_SSE_measure <- CR_CRS_2P2T$draw_GOF_measure(
+random_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .true_points_ = FALSE,
   .maximise_ = FALSE,
   .legend_ = FALSE,
@@ -209,20 +295,24 @@ random_SSE_measure <- CR_CRS_2P2T$draw_GOF_measure(
 ####### Save plot:----
 ######## Walk through and save files:----
 purrr::walk(
-  .x = random_SSE_measure %>%
-    names(.) %>%
-    `names<-`(names(random_SSE_measure)),
-  .f = function(.gof_name) {
-    image_name = glue::glue("{.gof_name}.jpeg")
-    reticulate::py_run_string("import sys")
-    plotly::save_image(
-      p = random_SSE_measure[[.gof_name]][[1]][[1]],
-      file = glue::glue("{image_saving_path}{image_name}"),
-      scale = 5)
+  .x = gof_measure,
+  .f = function(.gof_measure_) {
+    purrr::walk(
+      .x = random_GOF_measure[[.gof_measure_]] %>%
+        names(.) %>%
+        `names<-`(names(random_GOF_measure[[.gof_measure_]])),
+      .f = function(.gof_name) {
+        image_name = glue::glue("{.gof_name}.jpeg")
+        reticulate::py_run_string("import sys")
+        plotly::save_image(
+          p = random_GOF_measure[[.gof_measure_]][[.gof_name]][[1]][[1]],
+          file = glue::glue("{image_saving_path}{image_name}"),
+          scale = 5)
+      })
   })
 
 ###### Fitness function with True values:----
-random_SSE_measure <- CR_CRS_2P2T$draw_GOF_measure(
+random_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
   .true_points_ = TRUE,
   .maximise_ = FALSE,
   .legend_ = FALSE,
@@ -233,23 +323,27 @@ random_SSE_measure <- CR_CRS_2P2T$draw_GOF_measure(
   plots$
   GOF_plots$
   random
-
 ####### Save plot:----
 ######## Walk through and save files:----
 purrr::walk(
-  .x = random_SSE_measure %>%
-    names(.) %>%
-    `names<-`(names(random_SSE_measure)),
-  .f = function(.gof_name) {
-    image_name = glue::glue("{.gof_name}_w_true.jpeg")
-    reticulate::py_run_string("import sys")
-    plotly::save_image(
-      p = random_SSE_measure[[.gof_name]][[1]][[1]],
-      file = glue::glue("{image_saving_path}{image_name}"),
-      scale = 5)
+  .x = gof_measure,
+  .f = function(.gof_measure_) {
+    purrr::walk(
+      .x = random_GOF_measure[[.gof_measure_]] %>%
+        names(.) %>%
+        `names<-`(names(random_GOF_measure[[.gof_measure_]])),
+      .f = function(.gof_name) {
+
+        image_name = glue::glue("{.gof_name}_w_true.jpeg")
+        reticulate::py_run_string("import sys")
+        plotly::save_image(
+          p = random_GOF_measure[[.gof_measure_]][[.gof_name]][[1]][[1]],
+          file = glue::glue("{image_saving_path}{image_name}"),
+          scale = 5)
+      })
   })
 
-### BFGS, NM, and SANN with SEE fitness plot:----
+### 5. Directed methods (BFGS, NM, and SANN) with fitness plot:----
 seed_no <- 1
 set.seed(seed = seed_no)
 parameters_list <- calibR::CR_CRS_data_2t_lp$l_params
@@ -257,7 +351,7 @@ parameters_list$v_params_labels <- c(
   'p_Mets' = "Parameter 1",
   'p_DieMets' = "Parameter 2")
 targets_list <- calibR::CR_CRS_data_2t_lp$l_targets
-gof_measure <- "LLK"
+gof_measure <- c("SSE", "LLK")
 sample_method <- "RGS"
 directed_method <- c("NM", "BFGS", "SANN")
 #### Initiate CalibR R6 object:----
@@ -299,138 +393,77 @@ directed_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
 ######## Walk through and save files:----
 ######### Save original view:----
 purrr::walk(
-  .x = directed_GOF_measure %>%
-    names(.) %>%
-    `names<-`(names(directed_GOF_measure)),
-  .f = function(.gof_name) {
-    image_name = glue::glue("{.gof_name}.jpeg")
-    reticulate::py_run_string("import sys")
-    plotly::save_image(
-      p = directed_GOF_measure[[.gof_name]][[1]][[1]],
-      file = glue::glue("{image_saving_path}{image_name}"),
-      scale = 5)
+  .x = gof_measure,
+  .f = function(.gof_measure_) {
+    purrr::walk(
+      .x = directed_GOF_measure[[.gof_measure_]] %>%
+        names(.) %>%
+        `names<-`(names(directed_GOF_measure[[.gof_measure_]])),
+      .f = function(.gof_name) {
+        image_name = glue::glue("{.gof_name}.jpeg")
+        reticulate::py_run_string("import sys")
+        plotly::save_image(
+          p = directed_GOF_measure[[.gof_measure_]][[.gof_name]][[1]][[1]],
+          file = glue::glue("{image_saving_path}{image_name}"),
+          scale = 5)
+      })
   })
 ######### Save zoomed view:----
-list_names <- paste0(directed_method, "_", gof_measure, "_", sample_method)
-if(gof_measure == "SSE") {
-#(NM, BFGS, SANN)
-  v_.x_axis_lb_ <- c(0.098576, 0.098578, 0.098580995)
-  v_.x_axis_ub_ <- c(0.098588, 0.098592, 0.098581003)
-  v_.y_axis_lb_ <- c(0.0496, 0.04986, 0.049885)
-  v_.y_axis_ub_ <- c(0.0502, 0.0499, 0.04988515)
-} else {
-  v_.x_axis_lb_ <- c(0.098578, 0.098576, 0.098580995)
-  v_.x_axis_ub_ <- c(0.098584, 0.098594, 0.098581003)
-  v_.y_axis_lb_ <- c(0.0496, 0.04987, 0.049885)
-  v_.y_axis_ub_ <- c(0.0502, 0.04991, 0.04988515)
-}
-
-names(v_.x_axis_lb_) <- names(v_.x_axis_ub_) <- names(v_.y_axis_lb_) <-
-  names(v_.y_axis_ub_) <- names(list_names) <- list_names
-
 purrr::walk(
-  .x = list_names,
-  .f = function(.calib_name) {
-    directed_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
-      .true_points_ = FALSE,
-      .maximise_ = FALSE,
-      .legend_ = FALSE,
-      .coloring_ = "none",
-      .greys_ = FALSE,
-      .scale_ = NULL,
-      .gof_ = gof_measure,
-      .x_axis_lb_ = v_.x_axis_lb_[.calib_name],
-      .x_axis_ub_ = v_.x_axis_ub_[.calib_name],
-      .y_axis_lb_ = v_.y_axis_lb_[.calib_name],
-      .y_axis_ub_ = v_.y_axis_ub_[.calib_name])$
-      plots$
-      GOF_plots$
-      directed
+  .x = gof_measure,
+  .f = function(.gof_measure_) {
 
-    image_name = glue::glue("{.calib_name}_zoomed.jpeg")
-    reticulate::py_run_string("import sys")
-    plotly::save_image(
-      p = directed_GOF_measure[[.calib_name]][[1]][[1]],
-      file = glue::glue("{image_saving_path}{image_name}"),
-      scale = 5)
+    list_names <- paste0(directed_method, "_", .gof_measure_, "_", sample_method)
+
+    if(.gof_measure_ == "SSE") {
+      #(NM, BFGS, SANN)
+      v_.x_axis_lb_ <- c(0.098576, 0.098578, 0.098580995)
+      v_.x_axis_ub_ <- c(0.098588, 0.098592, 0.098581003)
+      v_.y_axis_lb_ <- c(0.0496, 0.04986, 0.049885)
+      v_.y_axis_ub_ <- c(0.0502, 0.0499, 0.04988515)
+    } else {
+      v_.x_axis_lb_ <- c(0.098578, 0.098576, 0.098580995)
+      v_.x_axis_ub_ <- c(0.098584, 0.098594, 0.098581003)
+      v_.y_axis_lb_ <- c(0.0496, 0.04987, 0.049885)
+      v_.y_axis_ub_ <- c(0.0502, 0.04991, 0.04988515)
+    }
+
+    names(v_.x_axis_lb_) <- names(v_.x_axis_ub_) <- names(v_.y_axis_lb_) <-
+      names(v_.y_axis_ub_) <- names(list_names) <- list_names
+
+    # purrr::map
+    purrr::walk(
+      .x = list_names,
+      .f = function(.list_names_) {
+
+        image_name = glue::glue("{.list_names_}_zoomed.jpeg")
+        reticulate::py_run_string("import sys")
+
+        directed_GOF_measure_zoomed <- CR_CRS_2P2T$draw_GOF_measure(
+          .true_points_ = FALSE,
+          .maximise_ = FALSE,
+          .legend_ = FALSE,
+          .coloring_ = "none",
+          .greys_ = FALSE,
+          .scale_ = NULL,
+          .gof_ = .gof_measure_,
+          .x_axis_lb_ = v_.x_axis_lb_[.list_names_],
+          .x_axis_ub_ = v_.x_axis_ub_[.list_names_],
+          .y_axis_lb_ = v_.y_axis_lb_[.list_names_],
+          .y_axis_ub_ = v_.y_axis_ub_[.list_names_])$
+          plots$
+          GOF_plots$
+          directed
+
+        plotly::save_image(
+          p = directed_GOF_measure_zoomed[[.gof_measure_]][[.list_names_]][[1]][[1]],
+          file = glue::glue("{image_saving_path}{image_name}"),
+          scale = 5)
+      })
   })
 
-##### Fitness function with True values:----
-SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
-  .true_points_ = TRUE,
-  .maximise_ = FALSE,
-  .legend_ = FALSE,
-  .greys_ = TRUE,
-  .scale_ = NULL,
-  .gof_ = "SSE")$
-  plots$
-  GOF_plots$
-  directed
-
-reticulate::py_run_string("import sys")
-plotly::save_image(
-  p = SSE_GOF_measure[[1]][[1]][[1]],
-  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_NM2.jpeg",
-  scale = 5)
-plotly::save_image(
-  p = SSE_GOF_measure[[2]][[1]][[1]],
-  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_BFGS2.jpeg",
-  scale = 5)
-plotly::save_image(
-  p = SSE_GOF_measure[[3]][[1]][[1]],
-  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_SNN2.jpeg",
-  scale = 5)
-SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
-  .legend_ = FALSE,
-  .greys_ = TRUE,
-  .scale_ = NULL,
-  .gof_ = "SSE",
-  .x_axis_lb_ = 0.098578,
-  .x_axis_ub_ = 0.098588,
-  .y_axis_lb_ = 0.0496,
-  .y_axis_ub_ = 0.0502)$
-  plots$
-  GOF_plots$
-  directed
-plotly::save_image(
-  p = SSE_GOF_measure[[1]][[1]][[1]],
-  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_NM_z2.jpeg",
-  scale = 5)
-SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
-  .legend_ = FALSE,
-  .greys_ = TRUE,
-  .scale_ = NULL,
-  .gof_ = "SSE",
-  .x_axis_lb_ = 0.098578,
-  .x_axis_ub_ = 0.098592,
-  .y_axis_lb_ = 0.04986,
-  .y_axis_ub_ = 0.0499)$
-  plots$
-  GOF_plots$
-  directed
-plotly::save_image(
-  p = SSE_GOF_measure[[2]][[1]][[1]],
-  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_BFGS_z2.jpeg",
-  scale = 5)
-SSE_GOF_measure <- CR_CRS_2P2T$draw_GOF_measure(
-  .legend_ = FALSE,
-  .greys_ = TRUE,
-  .scale_ = NULL,
-  .gof_ = "SSE",
-  .x_axis_lb_ = 0.098580995,
-  .x_axis_ub_ = 0.098581003,
-  .y_axis_lb_ = 0.049885,
-  .y_axis_ub_ = 0.04988515)$
-  plots$
-  GOF_plots$
-  directed
-plotly::save_image(
-  p = SSE_GOF_measure[[3]][[1]][[1]],
-  file = "../../2. Confirmation Review/CR_data/Case_study_1/chap_2_SSE_SNN_z2.jpeg",
-  scale = 5)
-
 ## Chapter 3 plots:----
-### Case study 1: Two target - two parameters:----
+### 1. Case study 1: Two target - two parameters:----
 #### Saving path:----
 path = "../../2. Confirmation Review/CR_data/"
 case_study_dir <- "Case_study_1/"
@@ -461,7 +494,7 @@ CR_CRS_2P2T = calibR_R6$
 set.seed(seed = seed_no)
 CR_CRS_2P2T$
   sampleR(
-    .n_samples = 1e2,
+    .n_samples = 1e3,
     .sampling_method = sampling_methods)
 #### Parameter exploration calibration methods:----
 ##### Unguided searching methods:----
@@ -489,7 +522,7 @@ set.seed(seed = seed_no)
 CR_CRS_2P2T$
   calibrateR_bayesian(
     .b_method = bayesian_methods,
-    .n_resample = 1e2,
+    .n_resample = 1e3,
     .IMIS_iterations = 200,
     .IMIS_sample = 1e3,
     .MCMC_burnIn = 1e4,
@@ -502,7 +535,7 @@ set.seed(seed = seed_no)
 CR_CRS_2P2T$
   sample_PSA_values(
     .calibration_methods = c("Random", "Directed", "Bayesian"),
-    .PSA_samples = 1e)
+    .PSA_samples = 1e3)
 #### Run PSA:----
 CR_CRS_2P2T$run_PSA(
   .PSA_unCalib_values_ = NULL)
@@ -585,7 +618,7 @@ CR_CRS_2P2T_PSA_summary_table <- CR_CRS_2P2T_PSA_list %>%
     })
 ####### Join true CE data:----
 true_CE_object <- readRDS(
-  file = "../../{path}{chapter_dir}{data_dir}CRS_true_PSA.rds")
+  file = glue::glue("{path}{chapter_dir}{data_dir}CRS_true_PSA.rds"))
 true_CE_tab <- ShinyPSA::summarise_PSA_(
   .effs = true_CE_object[["e"]],
   .costs = true_CE_object[["c"]],
@@ -664,27 +697,139 @@ CR_CRS_2P2T_PSA_summary_beutified_table <- CR_CRS_2P2T_PSA_summary_table %>%
         glue::glue("Expected Value of Perfect Information (£)"),
         glue::glue("Net Benefit (£)"),
         "Probability Cost-Effective"))))
-##### Save final table:----
+##### Save beautified table:----
 table_name <- "calibration_CE_PSA.rds"
-saveRDS(
-  object = CR_CRS_2P2T_PSA_summary_beutified_table,
-  file = "{data_saving_path}{table_name}")
+# saveRDS(
+#   object = CR_CRS_2P2T_PSA_summary_beutified_table,
+#   file = "{data_saving_path}{table_name}")
 #### Plots:----
 ##### Plot fitness function:----
+###### Full view plots:----
 set.seed(seed = seed_no)
 CR_CRS_2P2T$draw_GOF_measure(
-  .true_points_ = FALSE,
-  .maximise_ = FALSE,
+  .true_points_ = TRUE,
+  .maximise_ = TRUE,
+  .coloring_ = "none",
   .legend_ = FALSE,
   .greys_ = TRUE,
   .scale_ = NULL,
   .gof_ = gof_measure)
+###### Save full view plots:----
+purrr::walk(
+  .x = CR_CRS_2P2T$plots$GOF_plots %>%
+    names(.),
+  .f = function(.calib_category_) {
+    purrr::walk(
+      .x = CR_CRS_2P2T$plots$GOF_plots[[.calib_category_]] %>%
+        names(.),
+      .f = function(.calib_gof_) {
+        if(.calib_category_ == "blank") {
+          image_name = glue::glue("GOF_{.calib_gof_}_blank.jpeg")
+          reticulate::py_run_string("import sys")
+          plotly::save_image(
+            p = CR_CRS_2P2T$plots$GOF_plots[[.calib_category_]][[.calib_gof_]]$
+              p_Mets$p_DieMets,
+            file = glue::glue("{image_saving_path}{image_name}"),
+            scale = 5)
+        } else {
+          purrr::walk(
+            .x = CR_CRS_2P2T$plots$GOF_plots[[.calib_category_]][[.calib_gof_]] %>%
+              names(.),
+            .f = function(.calib_method_) {
+
+              image_name = glue::glue("GOF_{.calib_gof_}_{.calib_method_}.jpeg")
+              reticulate::py_run_string("import sys")
+              plotly::save_image(
+                p = CR_CRS_2P2T$plots
+                $GOF_plots[[.calib_category_]][[.calib_gof_]][[.calib_method_]]$p_Mets$p_DieMets,
+                file = glue::glue("{image_saving_path}{image_name}"),
+                scale = 5)
+            })
+        }
+      })
+  })
+###### Zoomed view plots:----
+set.seed(seed = seed_no)
+CR_CRS_2P2T$draw_GOF_measure(
+  .true_points_ = TRUE,
+  .maximise_ = TRUE,
+  .coloring_ = "none",
+  .legend_ = FALSE,
+  .greys_ = TRUE,
+  .scale_ = NULL,
+  .zoom_ = TRUE,
+  .gof_ = gof_measure)
+###### Save zoomed view plots:----
+purrr::walk(
+  .x = CR_CRS_2P2T$plots$GOF_plots %>%
+    names(.),
+  .f = function(.calib_category_) {
+    purrr::walk(
+      .x = CR_CRS_2P2T$plots$GOF_plots[[.calib_category_]] %>%
+        names(.),
+      .f = function(.calib_gof_) {
+        if(.calib_category_ == "blank") {
+          NULL
+        } else {
+          purrr::walk(
+            .x = CR_CRS_2P2T$plots$GOF_plots[[.calib_category_]][[.calib_gof_]] %>%
+              names(.),
+            .f = function(.calib_method_) {
+
+              image_name = glue::glue("GOF_{.calib_gof_}_{.calib_method_}_zm.jpeg")
+              reticulate::py_run_string("import sys")
+              plotly::save_image(
+                p = CR_CRS_2P2T$plots
+                $GOF_plots[[.calib_category_]][[.calib_gof_]][[.calib_method_]]$p_Mets$p_DieMets,
+                file = glue::glue("{image_saving_path}{image_name}"),
+                scale = 5)
+            })
+        }
+      })
+  })
 ##### Plot targets:----
 CR_CRS_2P2T$draw_targets_plots(
   .sim_targets_ = TRUE,
   .calibration_methods_ = c("random", "directed", "bayesian"))
-###### Save plots:----
-# ggplot2::ggsave(
-#   filename = "../../2. Confirmation Review/CR_data/Case_study_1/chap_3_prop_25_.jpeg",
-#   plot = CR_CRS_2P2T[["plots"]][["targets"]][["bayesian"]][["MCMC"]][["PropSick"]],
-#   scale = 2.5)
+###### Save target plots:----
+purrr::walk(
+  .x = CR_CRS_2P2T$plots$targets %>%
+    names(.),
+  .f = function(.calib_category_) {
+    if(.calib_category_ == "blank") {
+      purrr::walk(
+        .x = targets_list$v_targets_names,
+        .f = function(.target_) {
+
+          image_name = glue::glue("tar_blank_{.target_}.jpeg")
+          ggplot2::ggsave(
+            filename = glue::glue("{image_saving_path}{image_name}"),
+            plot = CR_CRS_2P2T$plots$targets[[.calib_category_]][[.target_]],
+            scale = 2.5,
+            width = 1000,
+            height = 600,
+            units = "px")
+        })
+    } else {
+      purrr::walk(
+        .x = CR_CRS_2P2T$plots$targets[[.calib_category_]] %>%
+          names(.),
+        .f = function(.calib_method_) {
+          purrr::walk(
+            .x = targets_list$v_targets_names,
+            .f = function(.target_) {
+
+              image_name = glue::glue("tar_{.calib_method_}_{.target_}.jpeg")
+              ggplot2::ggsave(
+                filename = glue::glue("{image_saving_path}{image_name}"),
+                plot = CR_CRS_2P2T$plots$
+                  targets[[.calib_category_]][[.calib_method_]][[.target_]],
+                scale = 2.5,
+                width = 1000,
+                height = 600,
+                units = "px")
+            })
+        })
+    }
+  })
+
