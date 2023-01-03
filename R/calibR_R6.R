@@ -320,10 +320,11 @@ calibR_R6 <- R6::R6Class(
     #' Plot Goodness of fit function(s)
     #'
     #' @param .engine_ Plotting engine, currently c("plotly", "ggplot2")
-    #' @param .maximise_ Boolean for whether the function is maximising
     #' @param .gof_ Goodness of fit (GOF) measure - fitness function. Either
     #' "LLK" or "SEE" for the log-likelihood and sum-of-squared-errors GOF,
     #' respectively.
+    #' @param .percent_sampled_ .percent_sampled_ The fraction of LHS, RGS, or
+    #' FGS samples to select.
     #' @param .n_samples_ Number of Grid samples to plot log likelihood
     #' @param .points_ Boolean for whether to add scatter plot
     #' @param .true_points_ Boolean for whether to add "True values" to plots.
@@ -349,8 +350,8 @@ calibR_R6 <- R6::R6Class(
     #' \dontrun{
     #' }
     draw_GOF_measure = function(.engine_ = "plotly",
-                                .maximise_ = TRUE,
                                 .gof_ = "LLK",
+                                .percent_sampled_ = 10,
                                 .n_samples_ = 1e4,
                                 .points_ = FALSE,
                                 .true_points_ = FALSE,
@@ -383,16 +384,16 @@ calibR_R6 <- R6::R6Class(
                 .sample_method = "FGS",
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
-                .maximise = TRUE,
-                .l_targets = self$calibration_targets)
+                .l_targets = self$calibration_targets,
+                .maximise = TRUE)
             } else {
               calibR::wSSE_GOF(
                 .samples = self$GOF_measure_plot$Samples,
                 .sample_method = "FGS",
                 .func = self$calibration_model,
                 .args = self$calibration_model_args,
-                .maximise = FALSE,
-                .l_targets = self$calibration_targets)
+                .l_targets = self$calibration_targets,
+                .maximise = FALSE)
             }
           } else {
             self$GOF_measure_plot[["Results"]][[.gof_name_]]
@@ -403,8 +404,8 @@ calibR_R6 <- R6::R6Class(
       ## Plot the fitness function:----
       private$plot_GOF_measure(
         .engine_ = .engine_,
-        .maximise_ = .maximise_,
         .gof_ = .gof_,
+        .percent_sampled_= .percent_sampled_,
         .points_ = .points_,
         .true_points_ = .true_points_,
         .greys_ = .greys_,
@@ -3066,8 +3067,8 @@ calibR_R6 <- R6::R6Class(
     # @param .prior_samples_ The number of samples to generate from the prior.
     # Only effective when prior samples were missing, the function will generate
     # prior samples.
-    # @param .maximise_
     # @param .gof_
+    # @param .percent_sampled_ The number of LHS, RGS, or FGS samples to select.
     # @param .points_
     # @param .true_points_
     # @param .greys_
@@ -3088,8 +3089,8 @@ calibR_R6 <- R6::R6Class(
     # }
     plot_GOF_measure = function(.engine_ = "plotly",
                                 .prior_samples_ = 1e3,
-                                .maximise_ = TRUE,
                                 .gof_ = "LLK",
+                                .percent_sampled_ = 10,
                                 .points_ = FALSE,
                                 .true_points_ = FALSE,
                                 .greys_ = FALSE,
@@ -3215,7 +3216,7 @@ calibR_R6 <- R6::R6Class(
                               title = ifelse(
                                 .gof_name_ == "LLK",
                                 "Log\nlikelihood",
-                                "Sum of\nSquared Errors"))
+                                "Sum of\nSquared\nErrors"))
                           } else {
                             # plotly::hide_legend(p = .) %>%
                             plotly::hide_colorbar(p = .)
@@ -3294,21 +3295,17 @@ calibR_R6 <- R6::R6Class(
                   ###### Sort calibration results:----
                   sorted_calib_res <- self$calibration_results$
                     random[[.calib_res_random]] %>%
-                    {if(.gof_name_ == "LLK") {
-                      dplyr::arrange(
-                        .data = .,
-                        dplyr::desc(Overall_fit))
-                    } else {
-                      dplyr::arrange(
-                        .data = .,
-                        Overall_fit)}}
+                    dplyr::arrange(
+                      .data = .,
+                      dplyr::desc(Overall_fit))
+
                   calib_res <- sorted_calib_res %>%
                     dplyr::mutate(
                       Points = "Sampling values") %>%
                     dplyr::bind_rows(
                       sorted_calib_res %>%
                         dplyr::slice_head(
-                          n = nrow(.)/10) %>%
+                          n = nrow(.)/.percent_sampled_) %>%
                         dplyr::mutate(
                           Points = "Identified values")) %>%
                     ###### Add true values:----
@@ -3493,7 +3490,7 @@ calibR_R6 <- R6::R6Class(
                                   title = ifelse(
                                     .gof_name_ == "LLK",
                                     "Log\nlikelihood",
-                                    "Sum of\nSquared Errors"))
+                                    "Sum of\nSquared\nErrors"))
                               } else {
                                 # plotly::hide_legend(p = .) %>%
                                 plotly::hide_colorbar(p = .)
@@ -3757,7 +3754,7 @@ calibR_R6 <- R6::R6Class(
                                   title = ifelse(
                                     .gof_name_ == "LLK",
                                     "Log\nlikelihood",
-                                    "Sum of\nSquared Errors"))
+                                    "Sum of\nSquared\nErrors"))
                               } else {
                                 # plotly::hide_legend(p = .) %>%
                                 plotly::hide_colorbar(p = .)
@@ -4058,7 +4055,7 @@ calibR_R6 <- R6::R6Class(
                                   title = ifelse(
                                     .gof_name_ == "LLK",
                                     "Log\nlikelihood",
-                                    "Sum of\nSquared Errors"))
+                                    "Sum of\nSquared\nErrors"))
                               } else {
                                 # plotly::hide_legend(p = .) %>%
                                 plotly::hide_colorbar(p = .)
