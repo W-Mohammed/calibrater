@@ -4583,6 +4583,7 @@ calibR_R6 <- R6::R6Class(
               ESS_ <- calibR::effective_sample_size(
                 bayes_calib_output_list = self$calibration_results$
                   bayesian[[.data_]])
+              ESS_ <- round(ESS_)
 
               ####### Log scale plots:----
               if(.log_scaled_) {

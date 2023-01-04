@@ -9,10 +9,10 @@
 devtools::load_all() # 1 parent 848d120 commit 06f2f773fc9dcb0c9729c71ba39eeccdbc5b2d6d
 
 ## Chapter 3 plots:----
-### 1. Case study 1: Two target - two parameters:----
+### 1. Case study 3: One target - two parameters:----
 #### Saving path:----
 path = "../../2. Confirmation Review/CR_data/"
-case_study_dir <- "Case_study_1/"
+case_study_dir <- "Case_study_3/"
 chapter_dir <- "Chap_3/"
 image_dir <- "images/"
 data_dir <- "data/"
@@ -21,9 +21,9 @@ data_saving_path <- glue::glue("{path}{chapter_dir}{case_study_dir}{data_dir}")
 #### Case study lists:----
 seed_no <- 1
 set.seed(seed = seed_no)
-parameters_list <- calibR::CR_CRS_data_2t$l_params
-targets_list <- calibR::CR_CRS_data_2t$l_targets
-interventions_list <- calibR::CR_CRS_data_2t$l_intervs
+parameters_list <- calibR::CR_CRS_data_1t$l_params
+targets_list <- calibR::CR_CRS_data_1t$l_targets
+interventions_list <- calibR::CR_CRS_data_1t$l_intervs
 gof_measure <- "LLK"
 sample_method <- "RGS"
 sampling_methods <- c("RGS", "FGS", "LHS")
