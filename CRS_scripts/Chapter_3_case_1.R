@@ -41,7 +41,7 @@ CR_CRS_2P2T = calibR_R6$
 set.seed(seed = seed_no)
 CR_CRS_2P2T$
   sampleR(
-    .n_samples = 1e3,
+    .n_samples = 1e4,
     .sampling_method = sampling_methods)
 #### Parameter exploration calibration methods:----
 ##### Unguided searching methods:----

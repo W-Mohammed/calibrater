@@ -1261,7 +1261,19 @@ calibR_R6 <- R6::R6Class(
       #### SIR:----
       if('SIR' %in% .b_methods) {
         cat(paste("Running SIR...", Sys.time(), "\n"))
-        samples_ = private$sample_prior_IMIS(.n_samples = .n_resample)
+        ##### Get samples:----
+        samples_ <- ifesle(
+          !is.null(self$prior_samples),
+          ifelse(
+            !is.null(self$prior_samples$LHS),
+            self$prior_samples$LHS,
+            NULL),
+          NULL)
+        if(is.null(samples_)) {
+          self$prior_samples$LHS <- samples_ <- calibR::sample_prior_LHS(
+            .n_samples = .n_resample,
+            .l_params = )
+        }
         self$calibration_results$bayesian[["SIR"]] <-
           calibR::calibrateModel_beyesian(
             .b_method = 'SIR',
