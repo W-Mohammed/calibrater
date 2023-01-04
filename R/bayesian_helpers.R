@@ -544,7 +544,7 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
 
   # SIR:
   if(.b_method == 'SIR') {
-    if(nrow(.samples) != .n_resample)
+    if(nrow(.samples) < .n_resample)
       stop(paste("Please pass", .n_resample, "samples to the function."))
     ## Calculate log-likelihood for each sample value:
     llik <- calibR::log_likelihood(.samples = .samples, .func = .func,
