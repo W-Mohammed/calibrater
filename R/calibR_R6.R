@@ -3841,7 +3841,7 @@ calibR_R6 <- R6::R6Class(
           }
           ###### Generate plots:----
           ####### Ensure Priors samples exist:----
-          if(is.null(self$prior_samples["LHS"])) {
+          if(is.null(self$prior_samples$LHS)) {
             self$prior_samples$LHS <- calibR::sample_prior_LHS(
               .n_samples = .prior_samples_,
               .l_params = self$calibration_parameters)
