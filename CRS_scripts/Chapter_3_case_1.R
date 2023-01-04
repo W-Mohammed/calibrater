@@ -418,7 +418,7 @@ CR_CRS_2P2T$draw_GOF_measure(
   .greys_ = TRUE,
   .scale_ = NULL,
   .gof_ = gof_measure)
-####### Save full view plots:----
+###### Save full view plots:----
 purrr::walk(
   .x = CR_CRS_2P2T$plots$GOF_plots %>%
     names(.),
@@ -462,7 +462,7 @@ CR_CRS_2P2T$draw_GOF_measure(
   .scale_ = NULL,
   .zoom_ = TRUE,
   .gof_ = gof_measure)
-####### Save zoomed view plots:----
+###### Save zoomed view plots:----
 purrr::walk(
   .x = CR_CRS_2P2T$plots$GOF_plots %>%
     names(.),
@@ -534,4 +534,26 @@ purrr::walk(
             })
         })
     }
+  })
+
+##### Prior posterior plot:----
+CR_CRS_2P2T$draw_distributions_plots()
+######## save post prior plot:----
+purrr::walk(
+  .x = CR_CRS_2P2T$plots$distributions %>%
+    names(.),
+  .f = function(.bayes_method_) {
+    purrr::walk(
+      .x = CR_CRS_2P2T$plots$distributions[[.bayes_method_]] %>%
+        names(.),
+      .f = function(.param_) {
+        image_name = glue::glue("dst_{.bayes_method_}{.param_}.jpeg")
+        ggplot2::ggsave(
+          filename = glue::glue("{image_saving_path}{image_name}"),
+          plot = CR_CRS_2P2T$plots$distributions[[.bayes_method_]][[.param_]],
+          scale = 1.3,
+          width = 1000,
+          height = 700,
+          units = "px")
+      })
   })

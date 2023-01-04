@@ -429,6 +429,8 @@ calibR_R6 <- R6::R6Class(
     #' @export
     #'
     #' @examples
+    #' \dontrun{
+    #' }
     draw_targets_plots = function(.engine_ = "ggplot2",
                                   .sim_targets_ = FALSE,
                                   .calibration_methods_ = c("random", "directed",
@@ -444,6 +446,31 @@ calibR_R6 <- R6::R6Class(
         .legend_pos_ = .legend_pos_,
         .PSA_samples_ = .PSA_samples_,
         .PSA_unCalib_values_ = .PSA_unCalib_values_)
+
+      invisible(self)
+    },
+
+    #' Plot prior and posterior distributions
+    #'
+    #' @param .engine_ String naming plotting package currently only supports
+    #' "ggplot2".
+    #' @param .legend_pos_ String (default bottom) setting legend position.
+    #' @param .log_scaled_ Boolean for whether to use log scale in the x axis.
+    #'
+    #' @return
+    #' @export
+    #'
+    #' @examples
+    #' \dontrun{
+    #' }
+    draw_distributions_plots = function(.engine_ = "ggplot2",
+                                        .legend_pos_ = "bottom",
+                                        .log_scaled_ = FALSE) {
+      ## Invoke the private plotting function:----
+      private$plot_distributions(
+        .engine_ = .engine_,
+        .legend_pos_ = .legend_pos_,
+        .log_scaled_ = .log_scaled_)
 
       invisible(self)
     }
@@ -4280,6 +4307,18 @@ calibR_R6 <- R6::R6Class(
                       #       dplyr::filter(Plot_label == .label_)
                       #   })
 
+                      ######## More transparent if many PSA values:-----
+                      alpha_options["PSA sets"] <- ifelse(
+                        nrow(plotting_df %>%
+                               dplyr::filter(Plot_label == "PSA sets")) > 1e3,
+                        0.2,
+                        alpha_options["PSA sets"])
+                      alpha_options["Distribution samples"] <- ifelse(
+                        nrow(plotting_df %>%
+                               dplyr::filter(Plot_label == "PSA sets")) > 1e3,
+                        0.2,
+                        alpha_options["Distribution samples"])
+
                       plot_lists <- purrr::map_dfr(
                         .x = existing_labels,
                         .f = function(.label_) {
@@ -4352,6 +4391,215 @@ calibR_R6 <- R6::R6Class(
       if(!is.null(plots_lists))
         self$plots$targets <- c(self$plots$targets, plots_lists)
       }
+    },
+    ### Prior posterior plots:----
+    # Plot posterior and prior density and histogram plots
+    #
+    # @param .engine_
+    #
+    # @return
+    #
+    # @examples
+    # \dontrun{
+    # }
+    plot_distributions = function(.engine_ = "ggplot2",
+                                  .legend_pos_ = "bottom",
+                                  .log_scaled_ = FALSE) {
+      #### Grab Bayesian data PSA samples:----
+      data_ <- self$PSA_samples$bayesian %>%
+        purrr::transpose() %>%
+        .[['PSA_calib_draws']]
+
+      #### Join Prior data:----
+      data_ <- if(self$transform_parameters) {
+        purrr::map(
+          .x = data_,
+          .f = function(.data_) {
+            .data_ %>%
+              dplyr::bind_rows(
+                self$prior_samples[["LHS"]] %>%
+                  dplyr::mutate(Label = 'Prior') %>%
+                  calibR::backTransform(
+                    .t_data_ = .,
+                    .l_params_ = self$calibration_parameters)
+                )
+          })
+      } else {
+        purrr::map(
+          .x = names(data_) %>%
+            `names<-`(names(data_)),
+          .f = function(.data_) {
+            data_[[.data_]] %>%
+              dplyr::bind_rows(
+                .,
+                self$prior_samples[["LHS"]] %>%
+                  dplyr::mutate(
+                    Label = "Prior",
+                    Plot_label = "Prior samples")
+              )
+          })
+      }
+
+      #### Prepare data for triliscope plot:----
+      data2_ <- purrr::map(
+        ##### Loop through each Bayesian method:----
+        .x = names(data_) %>%
+          `names<-`(names(data_)),
+        .f = function(.data_) {
+          data_[[.data_]] %>%
+            tidyr::pivot_longer(
+              cols = self$calibration_parameters$v_params_names,
+              names_to = "Parameter",
+              values_to = "Distribution draws")
+        })
+
+      ##### Add true values (if known):----
+      if(!is.null(self$calibration_parameters$v_params_true_values)) {
+        data2_ <- purrr::map(
+          ###### Loop through each Bayesian method:----
+          .x = names(data_) %>%
+            `names<-`(names(data_)),
+          .f = function(.data_) {
+            data2_[[.data_]] %>%
+              dplyr::bind_rows(
+                self$calibration_parameters$
+                  v_params_true_values %>%
+                  dplyr::as_tibble(rownames = "Parameter") %>%
+                  dplyr::rename(`Distribution draws` = value) %>%
+                  dplyr::mutate(
+                    Label = "True",
+                    Plot_label = "Prior samples"))
+          })
+      }
+
+      #### Create plots list:----
+      self$plots$distributions <- purrr::map(
+        ##### Loop through each Bayesian method:----
+        .x = names(data_) %>%
+          `names<-`(names(data_)),
+        .f = function(.data_) {
+          ###### Loop through calibration parameters:----
+          plot_ <- purrr::map(
+            .x = self$calibration_parameters$v_params_names,
+            .f = function(.parameter_) {
+              plot_ <-
+                ggplot2::ggplot() +
+                ggplot2::geom_histogram(
+                  data = data_[[.data_]] %>%
+                    dplyr::filter(Label %in% "Prior") %>%
+                    dplyr::rename(Method = Label),
+                  ggplot2::aes(
+                    x = .data[[.parameter_]],
+                    y = ggplot2::after_stat(count) / max(ggplot2::after_stat(count)),
+                    fill = Method,
+                    colour = Method),
+                  bins = 100,
+                  alpha = 0.2) +
+                ggplot2::geom_density(
+                  data = data_[[.data_]] %>%
+                    dplyr::filter(Label %in% "Prior") %>%
+                    dplyr::rename(Method = Label),
+                  ggplot2::aes(
+                    x = .data[[.parameter_]],
+                    y = ggplot2::after_stat(scaled),
+                    fill = Method,
+                    colour = Method,
+                    alpha = Method)) +
+                ggplot2::geom_histogram(
+                  data = data_[[.data_]] %>%
+                    dplyr::filter(!Label %in% "Prior") %>%
+                    dplyr::mutate(Label = "Posterior") %>%
+                    dplyr::rename(Method = Label),
+                  ggplot2::aes(
+                    x = .data[[.parameter_]],
+                    y = ggplot2::after_stat(count) / max(ggplot2::after_stat(count)),
+                    fill = Method,
+                    colour = Method),
+                  bins = 100,
+                  alpha = 0.5) +
+                ggplot2::geom_density(
+                  data = data_[[.data_]] %>%
+                    dplyr::filter(!Label %in% "Prior") %>%
+                    dplyr::mutate(Label = "Posterior") %>%
+                    dplyr::rename(Method = Label),
+                  ggplot2::aes(
+                    x = .data[[.parameter_]],
+                    y = ggplot2::after_stat(scaled),
+                    fill = Method,
+                    colour = Method,
+                    alpha = Method)) +
+                ggplot2::theme(
+                  panel.border = ggplot2::element_rect(
+                    colour = 'black',
+                    fill = NA),
+                  plot.title.position = "plot",
+                  plot.subtitle = ggplot2::element_text(
+                    face = "italic"),
+                  legend.position = .legend_pos_,
+                  legend.title = ggplot2::element_blank(),
+                  # Control legend text alignment:0 left (default), 1 right
+                  legend.text.align = 0,
+                  # Remove background and box around the legend:
+                  legend.background = ggplot2::element_rect(
+                    fill = NA,
+                    color = NA),
+                  legend.margin = ggplot2::margin(c(-10, 0, 0, 0)),
+                  axis.title.y = ggplot2::element_blank(),
+                  axis.title.x = ggplot2::element_blank())
+
+              color_scale <- c(
+                "Prior" = "cadetblue",
+                "Posterior" = "red")
+
+              fill_scale <- c(
+                "Prior" = "blue",
+                "Posterior" = "pink")
+
+              alpha_scale <- c(
+                "Prior" = 0.4,
+                "Posterior" = 0.3)
+
+              plot_ <- plot_ +
+                ggplot2::scale_fill_manual(
+                  name = "Distribution",
+                  values = fill_scale) +
+                ggplot2::scale_color_manual(
+                  name = "Distribution",
+                  values = color_scale) +
+                ggplot2::scale_alpha_manual(
+                  name = "Distribution",
+                  values = alpha_scale)
+
+              ####### Log scale plots:----
+              if(.log_scaled_) {
+                plot_ <- plot_ +
+                  ggplot2::scale_x_log10() +
+                  ggplot2::labs(
+                    caption = paste0(
+                      "x-axis on logarithmic scale"
+                    ))
+              }
+              ####### Add true values, if known:----
+              if(!is.null(self$calibration_parameters$
+                          v_params_true_values[[.parameter_]])) {
+                plot_ <- plot_ +
+                  ggplot2::geom_vline(
+                    xintercept = self$calibration_parameters$
+                      v_params_true_values[[.parameter_]],
+                    show.legend = TRUE) +
+                  ggplot2::labs(
+                    subtitle = paste0(
+                      "The black vertical lines represent the true value of the\n\"",
+                      self$calibration_parameters
+                      $v_params_labels[[.parameter_]],
+                      ": (",
+                      round(self$calibration_parameters$
+                              v_params_true_values[[.parameter_]], 2),
+                      ")"
+                    ))
+              }
+            })
+        })
     },
     ## Helper functions:----
     # Get Maximum a-posteriori (MAP) values from calibration methods
