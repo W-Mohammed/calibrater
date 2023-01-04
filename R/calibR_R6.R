@@ -4579,14 +4579,27 @@ calibR_R6 <- R6::R6Class(
                   name = "Distribution",
                   values = alpha_scale)
 
+              ####### Get effective size:----
+              ESS_ <- calibR::effective_sample_size(
+                bayes_calib_output_list = self$calibration_results$
+                  bayesian[[data_]])
+
               ####### Log scale plots:----
               if(.log_scaled_) {
                 plot_ <- plot_ +
                   ggplot2::scale_x_log10() +
                   ggplot2::labs(
                     caption = paste0(
-                      "x-axis on logarithmic scale"
-                    ))
+                      "Effective sample size:",
+                      ESS_,
+                      "\n",
+                      "x-axis on logarithmic scale"))
+              } else {
+                plot_ <- plot_ +
+                  ggplot2::labs(
+                    caption = paste0(
+                      "Effective sample size:",
+                      ESS_))
               }
               ####### Add true values, if known:----
               if(!is.null(self$calibration_parameters$
