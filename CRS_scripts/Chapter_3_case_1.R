@@ -6,7 +6,7 @@
 # Targets: c(Survival, PropSick)
 
 ## Load the calibR package:
-devtools::load_all()
+devtools::load_all() # 1 parent 32c763f commit 848d120af91b6d7f50b85f6c8abd2781d76120e9
 
 ## Chapter 3 plots:----
 ### 1. Case study 1: Two target - two parameters:----

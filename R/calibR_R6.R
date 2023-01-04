@@ -1262,7 +1262,7 @@ calibR_R6 <- R6::R6Class(
       if('SIR' %in% .b_methods) {
         cat(paste("Running SIR...", Sys.time(), "\n"))
         ##### Get samples:----
-        samples_ <- ifesle(
+        samples_ <- ifelse(
           !is.null(self$prior_samples),
           ifelse(
             !is.null(self$prior_samples$LHS),
