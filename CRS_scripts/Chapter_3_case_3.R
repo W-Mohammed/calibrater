@@ -547,7 +547,7 @@ purrr::walk(
       .x = CR_CRS_2P2T$plots$distributions[[.bayes_method_]] %>%
         names(.),
       .f = function(.param_) {
-        image_name = glue::glue("dst_{.bayes_method_}{.param_}.jpeg")
+        image_name = glue::glue("dst_{.bayes_method_}_{.param_}.jpeg")
         ggplot2::ggsave(
           filename = glue::glue("{image_saving_path}{image_name}"),
           plot = CR_CRS_2P2T$plots$distributions[[.bayes_method_]][[.param_]],

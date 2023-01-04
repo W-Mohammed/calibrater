@@ -21,9 +21,9 @@ data_saving_path <- glue::glue("{path}{chapter_dir}{case_study_dir}{data_dir}")
 #### Case study lists:----
 seed_no <- 1
 set.seed(seed = seed_no)
-parameters_list <- calibR::CR_CRS_data_1t_lp$l_params
-targets_list <- calibR::CR_CRS_data_1t_lp$l_targets
-interventions_list <- calibR::CR_CRS_data_1t_lp$l_intervs
+parameters_list <- calibR::CR_CRS_data_1t_2$l_params
+targets_list <- calibR::CR_CRS_data_1t_2$l_targets
+interventions_list <- calibR::CR_CRS_data_1t_2$l_intervs
 gof_measure <- "LLK"
 sample_method <- "RGS"
 sampling_methods <- c("RGS", "FGS", "LHS")
@@ -547,7 +547,7 @@ purrr::walk(
       .x = CR_CRS_2P2T$plots$distributions[[.bayes_method_]] %>%
         names(.),
       .f = function(.param_) {
-        image_name = glue::glue("dst_{.bayes_method_}{.param_}.jpeg")
+        image_name = glue::glue("dst_{.bayes_method_}_{.param_}.jpeg")
         ggplot2::ggsave(
           filename = glue::glue("{image_saving_path}{image_name}"),
           plot = CR_CRS_2P2T$plots$distributions[[.bayes_method_]][[.param_]],
