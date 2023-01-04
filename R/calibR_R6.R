@@ -1272,7 +1272,7 @@ calibR_R6 <- R6::R6Class(
         if(is.null(samples_)) {
           self$prior_samples$LHS <- samples_ <- calibR::sample_prior_LHS(
             .n_samples = .n_resample,
-            .l_params = )
+            .l_params = self$calibration_parameters)
         }
         self$calibration_results$bayesian[["SIR"]] <-
           calibR::calibrateModel_beyesian(
