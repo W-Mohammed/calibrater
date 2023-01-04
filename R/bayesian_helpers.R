@@ -556,7 +556,11 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
     # result in weights of Inf or 0.
     weight <- exp(llik - max(llik)) / sum(exp(llik - max(llik)))
     ## Re-sample from samples with wt as sampling weights:
-    SIR_resample  <- sample.int(.n_resample, replace = TRUE, prob = weight)
+    SIR_resample  <- sample.int(
+      n = length(weight),
+      size = .n_resample,
+      replace = TRUE,
+      prob = weight)
     posterior_SIR <- .samples[SIR_resample, ]
     ## Combine log-likelihood & posterior probability of each sample:
     SIR_results <- cbind(posterior_SIR,
