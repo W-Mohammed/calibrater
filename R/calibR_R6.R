@@ -3219,11 +3219,11 @@ calibR_R6 <- R6::R6Class(
                                   .true_points_,
                                   # Adjust legend if LLK is used:
                                   ifelse(.gof_name_ == "LLK",
-                                         "0.05",
-                                         "0"),
-                                  ifelse(.gof_name_ == "LLK",
                                          "0.15",
-                                         "0.05"))),
+                                         "0.15"),
+                                  ifelse(.gof_name_ == "LLK",
+                                         "0.25",
+                                         "0.25"))),
                               y = ifelse(
                                 .legend_,
                                 "1",
@@ -3251,8 +3251,8 @@ calibR_R6 <- R6::R6Class(
                               p = .,
                               title = ifelse(
                                 .gof_name_ == "LLK",
-                                "Log\nlikelihood",
-                                "Sum of\nSquared\nErrors"))
+                                "LLK",
+                                "SSE"))
                           } else {
                             # plotly::hide_legend(p = .) %>%
                             plotly::hide_colorbar(p = .)
@@ -3337,7 +3337,7 @@ calibR_R6 <- R6::R6Class(
 
                   calib_res <- sorted_calib_res %>%
                     dplyr::mutate(
-                      Points = "Sampling values") %>%
+                      Points = "Sampled values") %>%
                     dplyr::bind_rows(
                       sorted_calib_res %>%
                         dplyr::slice_head(
@@ -3361,26 +3361,26 @@ calibR_R6 <- R6::R6Class(
                         .data = .,
                         Points = factor(
                           x = Points,
-                          levels = c("Sampling values",
+                          levels = c("Sampled values",
                                      "Identified values")))
                     } else {
                       dplyr::mutate(
                         .data = .,
                         Points = factor(
                           x = Points,
-                          levels = c("Sampling values",
+                          levels = c("Sampled values",
                                      "Identified values",
                                      "True values")))
                     }}
 
                   ####### Change colour if too many points in plot:----
-                  colors_["Sampling values"] <- ifelse(
+                  colors_["Sampled values"] <- ifelse(
                     calib_res %>%
                       dplyr::filter(
-                        Points == "Sampling values") %>%
+                        Points == "Sampled values") %>%
                       nrow(.) > 100,
                     "grey",
-                    colors_["Sampling values"])
+                    colors_["Sampled values"])
 
                   ###### Add points to the plots:----
                   purrr::map(
@@ -3398,13 +3398,19 @@ calibR_R6 <- R6::R6Class(
                           if(.zoom_) {
                             zoom_calib_res <- calib_res %>%
                               dplyr::filter(
-                                Points != "Sampling values")
+                                Points != "Sampled values")
                           }
                           if(is.null(.x_axis_lb_)) {
                             .x_axis_lb_ <- if(.zoom_) {
-                              min(zoom_calib_res[[.param_x]]) -
-                                (diff(range(zoom_calib_res[[.param_x]])) *
-                                   0.05)
+                              tmp <- min(zoom_calib_res[[.param_x]]) -
+                                (min(zoom_calib_res[[.param_x]]) * 0.05)
+                              tmp <- ifelse(
+                                tmp < self$calibration_parameters$
+                                  Xargs[[.param_x]]$min,
+                                self$calibration_parameters$
+                                  Xargs[[.param_x]]$min,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_x]]$min
@@ -3412,9 +3418,15 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.x_axis_ub_)) {
                             .x_axis_ub_ <- if(.zoom_) {
-                              max(zoom_calib_res[[.param_x]]) +
-                                (diff(range(zoom_calib_res[[.param_x]])) *
-                                   0.05)
+                              tmp <- max(zoom_calib_res[[.param_x]]) +
+                                (max(zoom_calib_res[[.param_x]]) * 0.05)
+                              tmp <- ifelse(
+                                tmp > self$calibration_parameters$
+                                  Xargs[[.param_x]]$max,
+                                self$calibration_parameters$
+                                  Xargs[[.param_x]]$max,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_x]]$max
@@ -3422,9 +3434,15 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.y_axis_lb_)) {
                             .y_axis_lb_ <- if(.zoom_) {
-                              min(zoom_calib_res[[.param_y]]) -
-                                (diff(range(zoom_calib_res[[.param_y]])) *
-                                   0.05)
+                              tmp <- min(zoom_calib_res[[.param_y]]) -
+                                (min(zoom_calib_res[[.param_y]]) * 0.05)
+                              tmp <- ifelse(
+                                tmp < self$calibration_parameters$
+                                  Xargs[[.param_y]]$min,
+                                self$calibration_parameters$
+                                  Xargs[[.param_y]]$min,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_y]]$min
@@ -3432,119 +3450,107 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.y_axis_ub_)) {
                             .y_axis_ub_ <- if(.zoom_) {
-                              max(zoom_calib_res[[.param_y]]) +
-                                (diff(range(zoom_calib_res[[.param_y]])) *
-                                   0.05)
+                              tmp <- max(zoom_calib_res[[.param_y]]) +
+                                (max(zoom_calib_res[[.param_y]]) * 0.05)
+                              tmp <- ifelse(
+                                tmp > self$calibration_parameters$
+                                  Xargs[[.param_y]]$max,
+                                self$calibration_parameters$
+                                  Xargs[[.param_y]]$max,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_y]]$max
                             }
                           }
                           ####### Add points to plot:----
-                          plot <- if(!.zoom_) {
-                            self$plots$GOF_plots$
-                              blank[[.gof_name_]][[.param_x]][[.param_y]] %>%
-                              plotly::add_trace(
+                          plot <- plotly::plot_ly(
+                            name = ifelse(
+                              .gof_name_ == "LLK",
+                              "LLK",
+                              "SSE"),
+                            x = self$GOF_measure_plot$
+                              Results[[.gof_name_]][[.param_x]],
+                            y = self$GOF_measure_plot$
+                              Results[[.gof_name_]][[.param_y]],
+                            z = self$GOF_measure_plot$
+                              Results[[.gof_name_]][["Overall_fit"]],
+                            type = "contour",
+                            colorscale = if(is.null(.scale_) & .greys_){
+                              "Greys"
+                            } else if(is.null(.scale_) & !.greys_) {
+                              "Viridis"
+                            } else if(is.null(.scale_) & is.null(.greys_)){
+                              "Viridis"
+                            } else {
+                              .scale_
+                            },
+                            contours = list(
+                              showlabels = ifelse(
+                                .legend_, FALSE, TRUE),
+                              coloring = .coloring_)) %>%
+                            plotly::layout(
+                              legend = list(
+                                x = ifelse(
+                                  .legend_,
+                                  "1.02",
+                                  # Adjust legend if true points are used:
+                                  ifelse(
+                                    .true_points_,
+                                    # Adjust legend if LLK is used:
+                                    ifelse(.gof_name_ == "LLK",
+                                           "0.10",
+                                           "0.10"),
+                                    ifelse(.gof_name_ == "LLK",
+                                           "0.20",
+                                           "0.20"))),
+                                y = ifelse(
+                                  .legend_,
+                                  "1",
+                                  "-0.15"),
+                                orientation = ifelse(
+                                  .legend_, 'v', 'h')),
+                              xaxis = list(
+                                title = self$calibration_parameters$
+                                  v_params_labels[[.param_x]],
+                                range = list(.x_axis_lb_, .x_axis_ub_),
+                                showline = TRUE,
+                                linewidth = 1,
+                                linecolor = "grey",
+                                mirror = TRUE),
+                              yaxis = list(
+                                title = self$calibration_parameters$
+                                  v_params_labels[[.param_y]],
+                                range = list(.y_axis_lb_, .y_axis_ub_),
+                                showline = TRUE,
+                                linewidth = 1,
+                                linecolor = "grey",
+                                mirror = TRUE)) %>%
+                            {if(.legend_) {
+                              plotly::colorbar(
                                 p = .,
-                                inherit = FALSE,
-                                x = calib_res[[.param_x]],
-                                y = calib_res[[.param_y]],
-                                type = 'scatter',
-                                mode = 'markers',
-                                marker = list(
-                                  size = 5),
-                                symbol = ~ calib_res[["Points"]],
-                                symbols = symbols_,
-                                color = ~ calib_res[["Points"]],
-                                colors = colors_)
-                          } else {
-                            plotly::plot_ly(
-                              name = ifelse(
-                                .gof_name_ == "LLK",
-                                "Log likelihood",
-                                "Sum of Squared Errors"),
-                              x = self$GOF_measure_plot$
-                                Results[[.gof_name_]][[.param_x]],
-                              y = self$GOF_measure_plot$
-                                Results[[.gof_name_]][[.param_y]],
-                              z = self$GOF_measure_plot$
-                                Results[[.gof_name_]][["Overall_fit"]],
-                              type = "contour",
-                              colorscale = if(is.null(.scale_) & .greys_){
-                                "Greys"
-                              } else if(is.null(.scale_) & !.greys_) {
-                                "Viridis"
-                              } else if(is.null(.scale_) & is.null(.greys_)){
-                                "Viridis"
-                              } else {
-                                .scale_
-                              },
-                              contours = list(
-                                showlabels = ifelse(
-                                  .legend_, FALSE, TRUE),
-                                coloring = .coloring_)) %>%
-                              plotly::layout(
-                                legend = list(
-                                  x = ifelse(
-                                    .legend_,
-                                    "1.02",
-                                    # Adjust legend if true points are used:
-                                    ifelse(
-                                      .true_points_,
-                                      # Adjust legend if LLK is used:
-                                      ifelse(.gof_name_ == "LLK",
-                                             "0.05",
-                                             "0"),
-                                      ifelse(.gof_name_ == "LLK",
-                                             "0.15",
-                                             "0.05"))),
-                                  y = ifelse(
-                                    .legend_,
-                                    "1",
-                                    "-0.15"),
-                                  orientation = ifelse(
-                                    .legend_, 'v', 'h')),
-                                xaxis = list(
-                                  title = self$calibration_parameters$
-                                    v_params_labels[[.param_x]],
-                                  range = list(.x_axis_lb_, .x_axis_ub_),
-                                  showline = TRUE,
-                                  linewidth = 1,
-                                  linecolor = "grey",
-                                  mirror = TRUE),
-                                yaxis = list(
-                                  title = self$calibration_parameters$
-                                    v_params_labels[[.param_y]],
-                                  range = list(.y_axis_lb_, .y_axis_ub_),
-                                  showline = TRUE,
-                                  linewidth = 1,
-                                  linecolor = "grey",
-                                  mirror = TRUE)) %>%
-                              {if(.legend_) {
-                                plotly::colorbar(
-                                  p = .,
-                                  title = ifelse(
-                                    .gof_name_ == "LLK",
-                                    "Log\nlikelihood",
-                                    "Sum of\nSquared\nErrors"))
-                              } else {
-                                # plotly::hide_legend(p = .) %>%
-                                plotly::hide_colorbar(p = .)
-                              }} %>%
-                              plotly::add_trace(
-                                p = .,
-                                inherit = FALSE,
-                                x = calib_res[[.param_x]],
-                                y = calib_res[[.param_y]],
-                                type = 'scatter',
-                                mode = 'markers',
-                                marker = list(
-                                  size = 5),
-                                symbol = ~ calib_res[["Points"]],
-                                symbols = symbols_,
-                                color = ~ calib_res[["Points"]],
-                                colors = colors_)
-                          }
+                                title = ifelse(
+                                  .gof_name_ == "LLK",
+                                  "LLK",
+                                  "SSE"))
+                            } else {
+                              # plotly::hide_legend(p = .) %>%
+                              plotly::hide_colorbar(p = .)
+                            }} %>%
+                            plotly::add_trace(
+                              p = .,
+                              inherit = FALSE,
+                              x = calib_res[[.param_x]],
+                              y = calib_res[[.param_y]],
+                              type = 'scatter',
+                              mode = 'markers',
+                              marker = list(
+                                size = 5),
+                              symbol = ~ calib_res[["Points"]],
+                              symbols = symbols_,
+                              color = ~ calib_res[["Points"]],
+                              colors = colors_)
                         })
                     })
                 })
@@ -3557,18 +3563,22 @@ calibR_R6 <- R6::R6Class(
           ###### Points shapes and colours:----
           symbols_ <- c(
             "Starting values" = "x-thin-open", #"x-dot",
-            "Identified values" = "circle-open")
+            "Global extrema" = "circle-dot",
+            "Local extremas" = "circle-open")
           colors_ <- c(
             "Starting values" = "black",
-            "Identified values" = "red")
+            "Global extrema" = "red",
+            "Local extremas" = "darkorange")
           if(.true_points_) {
             symbols_ <- c(
               "Starting values" = "x-thin-open", #"x-dot",
-              "Identified values" = "circle-open",
+              "Global extrema" = "circle-dot",
+              "Local extremas" = "circle-open",
               "True values" = "circle-dot")
             colors_ <- c(
               "Starting values" = "black",
-              "Identified values" = "red",
+              "Global extrema" = "red",
+              "Local extremas" = "darkorange",
               "True values" = "green")
           }
           ###### Generate plots:----
@@ -3596,17 +3606,28 @@ calibR_R6 <- R6::R6Class(
                       .x = .,
                       .f = function(.x) {
                         .x}) %>%
-                    dplyr::mutate(Points = "Starting values") %>%
-                    ###### Join "Identified values":----
+                    dplyr::mutate(
+                      Points = "Starting values") %>%
+                    ###### Join "Local extremas":----
                   dplyr::bind_rows(
-                    ###### Extract identified values:----
+                    ###### Extract identified extremas:----
                     transposed_calib_res[["Estimate"]] %>%
                       purrr::map_dfr(
                         .x = .,
                         .f = function(.x) {
                           .x
                         }) %>%
-                      dplyr::mutate(Points = "Identified values")) %>%
+                      dplyr::mutate(
+                        Points = "Local extremas") %>%
+                      ###### Find "Global extrema":----
+                    dplyr::mutate(
+                      GOF = transposed_calib_res[["GOF value"]]) %>%
+                      dplyr::arrange(dplyr::desc(GOF)) %>%
+                      dplyr::mutate(
+                        Points = dplyr::case_when(
+                          dplyr::row_number() == 1 ~ "Global extrema",
+                          TRUE ~ Points)
+                      )) %>%
                     ###### Add true values:----
                   {if(.true_points_) {
                     dplyr::bind_rows(
@@ -3626,14 +3647,16 @@ calibR_R6 <- R6::R6Class(
                         Points = factor(
                           x = Points,
                           levels = c("Starting values",
-                                     "Identified values")))
+                                     "Global extrema",
+                                     "Local extremas")))
                     } else {
                       dplyr::mutate(
                         .data = .,
                         Points = factor(
                           x = Points,
                           levels = c("Starting values",
-                                     "Identified values",
+                                     "Global extrema",
+                                     "Local extremas",
                                      "True values")))
                     }}
 
@@ -3666,9 +3689,16 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.x_axis_lb_)) {
                             .x_axis_lb_ <- if(.zoom_) {
-                              min(zoom_calib_res[[.param_x]]) -
+                              tmp <- min(zoom_calib_res[[.param_x]]) -
                                 (diff(range(zoom_calib_res[[.param_x]])) *
                                    0.05)
+                              tmp <- ifelse(
+                                tmp < self$calibration_parameters$
+                                  Xargs[[.param_x]]$min,
+                                self$calibration_parameters$
+                                  Xargs[[.param_x]]$min,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_x]]$min
@@ -3676,9 +3706,16 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.x_axis_ub_)) {
                             .x_axis_ub_ <- if(.zoom_) {
-                              max(zoom_calib_res[[.param_x]]) +
+                              tmp <- max(zoom_calib_res[[.param_x]]) +
                                 (diff(range(zoom_calib_res[[.param_x]])) *
                                    0.05)
+                              tmp <- ifelse(
+                                tmp > self$calibration_parameters$
+                                  Xargs[[.param_x]]$max,
+                                self$calibration_parameters$
+                                  Xargs[[.param_x]]$max,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_x]]$max
@@ -3686,9 +3723,16 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.y_axis_lb_)) {
                             .y_axis_lb_ <- if(.zoom_) {
-                              min(zoom_calib_res[[.param_y]]) -
+                              tmp <- min(zoom_calib_res[[.param_y]]) -
                                 (diff(range(zoom_calib_res[[.param_y]])) *
                                    0.05)
+                              tmp <- ifelse(
+                                tmp < self$calibration_parameters$
+                                  Xargs[[.param_y]]$min,
+                                self$calibration_parameters$
+                                  Xargs[[.param_y]]$min,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_y]]$min
@@ -3696,119 +3740,108 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.y_axis_ub_)) {
                             .y_axis_ub_ <- if(.zoom_) {
-                              max(zoom_calib_res[[.param_y]]) +
+                              tmp <- max(zoom_calib_res[[.param_y]]) +
                                 (diff(range(zoom_calib_res[[.param_y]])) *
                                    0.05)
+                              tmp <- ifelse(
+                                tmp > self$calibration_parameters$
+                                  Xargs[[.param_y]]$max,
+                                self$calibration_parameters$
+                                  Xargs[[.param_y]]$max,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_y]]$max
                             }
                           }
                           ####### Add points to plot:----
-                          plot <- if(!.zoom_) {
-                            self$plots$GOF_plots$
-                              blank[[.gof_name_]][[.param_x]][[.param_y]] %>%
-                              plotly::add_trace(
+                          plot <- plotly::plot_ly(
+                            name = ifelse(
+                              .gof_name_ == "LLK",
+                              "LLK",
+                              "SSE"),
+                            x = self$GOF_measure_plot$
+                              Results[[.gof_name_]][[.param_x]],
+                            y = self$GOF_measure_plot$
+                              Results[[.gof_name_]][[.param_y]],
+                            z = self$GOF_measure_plot$
+                              Results[[.gof_name_]][["Overall_fit"]],
+                            type = "contour",
+                            colorscale = if(is.null(.scale_) & .greys_){
+                              "Greys"
+                            } else if(is.null(.scale_) & !.greys_) {
+                              "Viridis"
+                            } else if(is.null(.scale_) & is.null(.greys_)){
+                              "Viridis"
+                            } else {
+                              .scale_
+                            },
+                            contours = list(
+                              showlabels = ifelse(
+                                .legend_, FALSE, TRUE),
+                              coloring = .coloring_)) %>%
+                            plotly::layout(
+                              legend = list(
+                                x = ifelse(
+                                  .legend_,
+                                  "1.02",
+                                  # Adjust legend if true points are used:
+                                  ifelse(
+                                    .true_points_,
+                                    # Adjust legend if LLK is used:
+                                    ifelse(.gof_name_ == "LLK",
+                                           "0",
+                                           "0"),
+                                    ifelse(.gof_name_ == "LLK",
+                                           "0.05",
+                                           "0.05"))),
+                                y = ifelse(
+                                  .legend_,
+                                  "1",
+                                  "-0.15"),
+                                orientation = ifelse(
+                                  .legend_, 'v', 'h')),
+                              xaxis = list(
+                                title = self$calibration_parameters$
+                                  v_params_labels[[.param_x]],
+                                range = list(.x_axis_lb_, .x_axis_ub_),
+                                showline = TRUE,
+                                linewidth = 1,
+                                linecolor = "grey",
+                                mirror = TRUE),
+                              yaxis = list(
+                                title = self$calibration_parameters$
+                                  v_params_labels[[.param_y]],
+                                range = list(.y_axis_lb_, .y_axis_ub_),
+                                showline = TRUE,
+                                linewidth = 1,
+                                linecolor = "grey",
+                                mirror = TRUE)) %>%
+                            {if(.legend_) {
+                              plotly::colorbar(
                                 p = .,
-                                inherit = FALSE,
-                                x = calib_res[[.param_x]],
-                                y = calib_res[[.param_y]],
-                                type = 'scatter',
-                                mode = 'markers',
-                                marker = list(
-                                  size = 5),
-                                symbol = ~ calib_res[["Points"]],
-                                symbols = symbols_,
-                                color = ~ calib_res[["Points"]],
-                                colors = colors_)
-                          } else {
-                            plotly::plot_ly(
-                              name = ifelse(
-                                .gof_name_ == "LLK",
-                                "Log likelihood",
-                                "Sum of Squared Errors"),
-                              x = self$GOF_measure_plot$
-                                Results[[.gof_name_]][[.param_x]],
-                              y = self$GOF_measure_plot$
-                                Results[[.gof_name_]][[.param_y]],
-                              z = self$GOF_measure_plot$
-                                Results[[.gof_name_]][["Overall_fit"]],
-                              type = "contour",
-                              colorscale = if(is.null(.scale_) & .greys_){
-                                "Greys"
-                              } else if(is.null(.scale_) & !.greys_) {
-                                "Viridis"
-                              } else if(is.null(.scale_) & is.null(.greys_)){
-                                "Viridis"
-                              } else {
-                                .scale_
-                              },
-                              contours = list(
-                                showlabels = ifelse(
-                                  .legend_, FALSE, TRUE),
-                                coloring = .coloring_)) %>%
-                              plotly::layout(
-                                legend = list(
-                                  x = ifelse(
-                                    .legend_,
-                                    "1.02",
-                                    # Adjust legend if true points are used:
-                                    ifelse(
-                                      .true_points_,
-                                      # Adjust legend if LLK is used:
-                                      ifelse(.gof_name_ == "LLK",
-                                             "0.05",
-                                             "0"),
-                                      ifelse(.gof_name_ == "LLK",
-                                             "0.15",
-                                             "0.05"))),
-                                  y = ifelse(
-                                    .legend_,
-                                    "1",
-                                    "-0.15"),
-                                  orientation = ifelse(
-                                    .legend_, 'v', 'h')),
-                                xaxis = list(
-                                  title = self$calibration_parameters$
-                                    v_params_labels[[.param_x]],
-                                  range = list(.x_axis_lb_, .x_axis_ub_),
-                                  showline = TRUE,
-                                  linewidth = 1,
-                                  linecolor = "grey",
-                                  mirror = TRUE),
-                                yaxis = list(
-                                  title = self$calibration_parameters$
-                                    v_params_labels[[.param_y]],
-                                  range = list(.y_axis_lb_, .y_axis_ub_),
-                                  showline = TRUE,
-                                  linewidth = 1,
-                                  linecolor = "grey",
-                                  mirror = TRUE)) %>%
-                              {if(.legend_) {
-                                plotly::colorbar(
-                                  p = .,
-                                  title = ifelse(
-                                    .gof_name_ == "LLK",
-                                    "Log\nlikelihood",
-                                    "Sum of\nSquared\nErrors"))
-                              } else {
-                                # plotly::hide_legend(p = .) %>%
-                                plotly::hide_colorbar(p = .)
-                              }} %>%
-                              plotly::add_trace(
-                                p = .,
-                                inherit = FALSE,
-                                x = calib_res[[.param_x]],
-                                y = calib_res[[.param_y]],
-                                type = 'scatter',
-                                mode = 'markers',
-                                marker = list(
-                                  size = 5),
-                                symbol = ~ calib_res[["Points"]],
-                                symbols = symbols_,
-                                color = ~ calib_res[["Points"]],
-                                colors = colors_)
-                          }
+                                title = ifelse(
+                                  .gof_name_ == "LLK",
+                                  "LLK",
+                                  "SSE"))
+                            } else {
+                              # plotly::hide_legend(p = .) %>%
+                              plotly::hide_colorbar(p = .)
+                            }} %>%
+                            plotly::add_trace(
+                              p = .,
+                              inherit = FALSE,
+                              x = calib_res[[.param_x]],
+                              y = calib_res[[.param_y]],
+                              type = 'scatter',
+                              mode = 'markers',
+                              marker = list(
+                                size = 5),
+                              symbol = ~ calib_res[["Points"]],
+                              symbols = symbols_,
+                              color = ~ calib_res[["Points"]],
+                              colors = colors_)
                         })
                     })
                 })
@@ -3966,9 +3999,16 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.x_axis_lb_)) {
                             .x_axis_lb_ <- if(.zoom_) {
-                              min(zoom_calib_res[[.param_x]]) -
+                              tmp <- min(zoom_calib_res[[.param_x]]) -
                                 (diff(range(zoom_calib_res[[.param_x]])) *
                                    0.05)
+                              tmp <- ifelse(
+                                tmp < self$calibration_parameters$
+                                  Xargs[[.param_x]]$min,
+                                self$calibration_parameters$
+                                  Xargs[[.param_x]]$min,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_x]]$min
@@ -3976,9 +4016,16 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.x_axis_ub_)) {
                             .x_axis_ub_ <- if(.zoom_) {
-                              max(zoom_calib_res[[.param_x]]) +
+                              tmp <- max(zoom_calib_res[[.param_x]]) +
                                 (diff(range(zoom_calib_res[[.param_x]])) *
                                    0.05)
+                              tmp <- ifelse(
+                                tmp > self$calibration_parameters$
+                                  Xargs[[.param_x]]$max,
+                                self$calibration_parameters$
+                                  Xargs[[.param_x]]$max,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_x]]$max
@@ -3986,9 +4033,16 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.y_axis_lb_)) {
                             .y_axis_lb_ <- if(.zoom_) {
-                              min(zoom_calib_res[[.param_y]]) -
+                              tmp <- min(zoom_calib_res[[.param_y]]) -
                                 (diff(range(zoom_calib_res[[.param_y]])) *
                                    0.05)
+                              tmp <- ifelse(
+                                tmp < self$calibration_parameters$
+                                  Xargs[[.param_y]]$min,
+                                self$calibration_parameters$
+                                  Xargs[[.param_y]]$min,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_y]]$min
@@ -3996,58 +4050,27 @@ calibR_R6 <- R6::R6Class(
                           }
                           if(is.null(.y_axis_ub_)) {
                             .y_axis_ub_ <- if(.zoom_) {
-                              max(zoom_calib_res[[.param_y]]) +
+                              tmp <- max(zoom_calib_res[[.param_y]]) +
                                 (diff(range(zoom_calib_res[[.param_y]])) *
                                    0.05)
+                              tmp <- ifelse(
+                                tmp > self$calibration_parameters$
+                                  Xargs[[.param_y]]$max,
+                                self$calibration_parameters$
+                                  Xargs[[.param_y]]$max,
+                                tmp)
+                              tmp
                             } else {
                               self$calibration_parameters$
                                 Xargs[[.param_y]]$max
                             }
                           }
                           ####### Add points to plot:----
-                          plot <- if(!.zoom_) {
-                            self$plots$GOF_plots$
-                              blank[[.gof_name_]][[.param_x]][[.param_y]] %>%
-                              plotly::add_trace(
-                                p = .,
-                                inherit = FALSE,
-                                x = calib_res[[.param_x]],
-                                y = calib_res[[.param_y]],
-                                type = 'scatter',
-                                mode = 'markers',
-                                marker = list(
-                                  size = 5),
-                                symbol = ~ calib_res[["Points"]],
-                                symbols = symbols_,
-                                color = ~ calib_res[["Points"]],
-                                colors = colors_) %>%
-                              plotly::layout(
-                                legend = list(
-                                  x = ifelse(
-                                    .legend_,
-                                    "1.02",
-                                    # Adjust legend if true points are used:
-                                    ifelse(
-                                      .true_points_,
-                                      # Adjust legend if LLK is used:
-                                      ifelse(.gof_name_ == "LLK",
-                                             "-0.10",#"0.05",
-                                             "-0.10"),
-                                      ifelse(.gof_name_ == "LLK",
-                                             "0", #"0.15",
-                                             "-0.02"))), # "0.05"
-                                  y = ifelse(
-                                    .legend_,
-                                    "1",
-                                    "-0.15"),
-                                  orientation = ifelse(
-                                    .legend_, 'v', 'h')))
-                          } else {
-                            plotly::plot_ly(
+                          plot <- plotly::plot_ly(
                               name = ifelse(
                                 .gof_name_ == "LLK",
-                                "Log likelihood",
-                                "Sum of Squared Errors"),
+                                "LLK",
+                                "SSE"),
                               x = self$GOF_measure_plot$
                                 Results[[.gof_name_]][[.param_x]],
                               y = self$GOF_measure_plot$
@@ -4090,8 +4113,8 @@ calibR_R6 <- R6::R6Class(
                                   p = .,
                                   title = ifelse(
                                     .gof_name_ == "LLK",
-                                    "Log\nlikelihood",
-                                    "Sum of\nSquared\nErrors"))
+                                    "LLK",
+                                    "SSE"))
                               } else {
                                 # plotly::hide_legend(p = .) %>%
                                 plotly::hide_colorbar(p = .)
@@ -4119,18 +4142,17 @@ calibR_R6 <- R6::R6Class(
                                       .true_points_,
                                       # Adjust legend if LLK is used:
                                       ifelse(.gof_name_ == "LLK",
-                                             "-0.10",#"0.05",
-                                             "-0.10"),
+                                             "0",#"0.05",
+                                             "0"),
                                       ifelse(.gof_name_ == "LLK",
-                                             "0", #"0.15",
-                                             "-0.02"))), # "0.05"
+                                             "0.10", #"0.15",
+                                             "0.10"))), # "0.05"
                                   y = ifelse(
                                     .legend_,
                                     "1",
                                     "-0.15"),
                                   orientation = ifelse(
                                     .legend_, 'v', 'h')))
-                          }
                         })
                     })
                 })

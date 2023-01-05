@@ -958,3 +958,13 @@ purrr::walk(
           units = "px")
       })
   })
+
+## Run all scripts:----
+rm(list = ls())
+source(file = "CRS_scripts/Chapter_3_case_1.R")
+rm(list = ls())
+source(file = "CRS_scripts/Chapter_3_case_2.R")
+rm(list = ls())
+source(file = "CRS_scripts/Chapter_3_case_3.R")
+rm(list = ls())
+source(file = "CRS_scripts/Chapter_3_case_4.R")
