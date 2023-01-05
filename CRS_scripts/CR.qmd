@@ -1,0 +1,2520 @@
+---
+title: "The calibration of decision-analytic models"
+subtitle: "Confirmation Review"
+mainfont: Times New Roman
+format: 
+  docx: default
+  pdf: 
+    keep-tex: true
+    documentclass: scrreprt
+    #classoption: [twocolumn, landscape]
+    include-in-header: 
+      - text: |
+            \usepackage{amsmath} % gt tables and \par argument
+            \usepackage{fontspec} % \par argument
+            \usepackage[doublespacing]{setspace} % control line spacing
+            \usepackage{algorithm} % to create algorithms
+            \usepackage{algpseudocode} % to create algorithms
+            \usepackage{fancyhdr} % to control page style header/footer
+            \pagestyle{fancy} % set page style
+            \fancyhead{} % clear previous heading
+            \fancyhead[L]{\leftmark} % add new heading on left of page
+            % \fancyhead[R]{\thepage} % add page number to the right
+            \usepackage{booktabs, caption, longtable} % gt tables
+            \usepackage[singlelinecheck=false]{caption} % align table caption
+            % \setlength{\tabcolsep}{20pt} % column padding
+            \renewcommand{\arraystretch}{0.5} % row padding
+            \usepackage[labelfont=bf]{caption} % bold figure/table/section
+            \usepackage{caption}
+            %\captionsetup{format=plain,font=small,
+            %              labelfont={sc,bf},labelsep=period}
+            \usepackage{subcaption}
+            \captionsetup[subfigure]{ % centering subfigure caption
+                          %font=footnotesize,
+                          %labelfont=up,
+                          justification=centering}
+            \captionsetup[figure]{ % centering subfigure caption
+                          %font=footnotesize,
+                          %labelfont=up,
+                          justification=centering}
+      #- file: "CR_title/CR_title.tex"
+    include-before-body:
+      - file: "CR_title/CR_title.tex" # title page
+    geometry: # margins
+      - top=20mm
+      - left=30mm 
+      - right=20mm 
+    fontsize: 12pt
+    toc: true
+    toc-title: Table of contents
+    toc-depth: 4
+    lof: true
+    lot: true
+    number-sections: true
+    number-depth: 8 # depth of section number
+    highlight-style: arrow # code highlighter
+    colorlinks: true
+bibliography: "CR_bibliography/CR.bib"
+csl: "CR_bibliography/wael-harvard.csl"
+execute:
+  freeze: auto # re-render only when source changes
+  #echo: false
+  warning: false # include warning in output?
+---
+## Decision-analytic models in Public Health Economics {#sec-introduction}
+### Introduction
+
+Like all others, healthcare resources are scarce, and much like all other desires, only some desired healthcare outputs can be produced. Therefore, decisions regarding deploying these limited resources must and will be made. Economic evaluation provides a framework that considers the evidence supporting the costs and consequences of the relevant competing courses of action (decision options), aiming to inform policymakers about the efficient allocation of limited healthcare resources.
+
+In the 1980s, researchers started utilising randomised clinical trials (RCT) as the vehicle (or basis) for economic evaluation, collecting relevant economic data alongside the effectiveness evidence. These studies were later referred to as "Trial-based economic evaluations". One of the key attractions of these studies was the prospective collection of patient-specific costs and consequences data [@drummond2015].
+
+RCTs are considered the gold-standard source of evidence-based medicine where interventions are standardised and have a relatively simple causal pathway to the relevant outcome(s). However, the causal chain between a public health intervention and its effect (s) will likely involve lengthy and complex biological, behavioural and social links. In contrast to the classical RCTs, where the unit of randomisation is an individual, cluster trials, where communities, entities or other "clusters" are randomised, can accommodate the complexities of public health interventions [@rychetnik2002].
+
+However, the reliance on RCTs as the sole vehicle of economic evaluation introduces several limitations. RCTs often compare a subset of the relevant courses of action. Sometimes, the comparison intervention (for example, in placebo-controlled studies) is irrelevant to the addressed decision problem [@sculpher2004; @kong2009]. Moreover, RCTs follow a limited number of patients and for a limited period which might lead to the inaccurate estimation of some or most long-term health-related consequences that materialise after the end of the study [@drummond2015]. As a result, the use of decision-analytic modelling as an alternative vehicle of economic evaluation is growing [@drummond2015].
+
+### Modelling the cost-effectiveness of competing alternatives
+
+In comparison with trial-based economic evaluations, decision modelling offers several advantages. First, decision modelling facilitates the comparisons of all competing options. Second, it provides a framework to make the best use of available evidence, allowing the incorporation and reflection of all relevant evidence from various sources and study types, including RCTs. Third, decision modelling methods enable the extrapolation over the required time horizon of the analysis and the linkage between the observed intermediate outcomes and the simulated desired endpoints. @drummond2015 [pp. 314-322] provides a detailed account of the role of decision modelling in assessing the cost-effectiveness of public health interventions.
+
+However, there are some key methodological difficulties in modelling the economic evaluations of public health policies. First, the attribution of the effects of public health interventions is complicated since most health impacts manifest and persist for several years following the administration of the interventions. Second, many public health interventions are composed of multiple components and are usually introduced in dynamically complex healthcare systems. Third, assessed policies' positive and negative effects often extend beyond the healthcare systems. Finally, the socio-economics features of targeted population strata might lead to a varying response. A complete discussion of the hurdles in assessing the cost-effectiveness of public health interventions is in @weatherly2009 and @squires2016a.
+
+### Decision-analytic models
+
+Decision Analysis is used to determine the optimal strategy among competing options, and it refers to the techniques utilised to aid decision-making under conditions of uncertainty. A model, in general, is a representation or an approximation of one or more real-world systems. This approximation would likely lead to discrepancies in the outcomes predicted by models and those observed in the real world.
+
+In public health economics, decision-analytic models (DAM)s are mathematical expressions that describe the relationships between one or more biological, physiological, or behavioural systems or clinical conditions and outcomes of interest, allowing the prediction of the effects of competing options on modelled systems [@caro2012]. Moreover, these mathematical models are rarely tractable or expressable in closed form. Therefore, the outputs of many models are obtained analytically from computerised versions.
+
+### Decision modelling in public health economics
+
+Empirical studies that could inform the evaluation of public health interventions, especially RCTs, are often costly, impractical to undertake or take longer than decision-makers can afford to wait [@menzies2017]. On the other hand, DAMs provide a framework to incorporate relevant evidence, modelling assumptions and value judgments to support timely decision-making processes. In addition, incorporating jurisdiction-relevant data and assumptions (for example, population-specific mortality trends and disease-specific rates) facilitates the generalisation of evidence and transferability of economic evaluation across jurisdictions [@sculpher2004; @drummond2015].
+
+Several methods (or model structures) can be used to assess public health interventions' effectiveness. However, only a few designs are flexible enough to handle the complexities and hurdles associated with most public health decision problems. These methods, in order of complexity, are state-transition modelling (STM), discrete-event simulations (DES), and agent-based modelling (ABM). The strengths and weaknesses of public health economics modelling methods are discussed in @briggs2016.
+
+STMs are the most commonly used modelling method in modelling public health economic evaluations. The most common STMs in the field are cohort-level Markov models (or Markov models) and individual-level Markov models (or Microsimulation models). An STM describe the simulated problem in terms of mutually exclusive and exhaustive health states, together with transition probabilities or rates that describe possible transitions between those states. The model simulates how a cohort (Markov model) or an individual (Microsimulation model) transitions between modelled states every cycle (an iteration defined to simulate the passing of a specific interval) until the analysis time horizon elapses or the simulated cohort or individuals die. Then, the model attaches costs and health utilities to the simulated states and uses the cycle length to estimate the costs and consequences associated with the intervention.
+
+DES models a system where each individual faces several competing future events. The times at which the simulated events would occur are based on predetermined probabilities. The model, processing one simulated individual at a time, would then leap to whichever event had the next nearest time. The manifestation of an event can directly lead to many concurrent events, including the time of future events. Moreover, the costs incurred and the consequences accrued due to each event are estimated appropriately.
+
+An ABM is much like a DES in that it allows future competing events to change with time due to the manifestation of other events or the interaction between simulated individuals. But ABMs adds to the complexity of DESs by enabling the interaction between modelled entities (agents), their simulated environment and time. Agents' characteristics, behaviours and trajectories are allowed to evolve with time and affect their environment (for example, social networks). However, as the complexity of the method increases, the data required to complete the modelling excercise increases.
+
+### The role of data in decision models
+
+Decision modelling invloves several steps; namely, conceptualising a model, deciding on a modelling method, scripting the mathmatical expresions that model the targeted system, defining model parameters, calibrating model parameters (if needed), validating model structure and assumptions, and investigating decision uncertainty. 
+
+The proper undertaking of each of the modelling steps requires data. The source of this data can range from RCTs, observational studies, national registries, and pharmaceutical companies to experts' opinions. However, gaps between the data required in a public health intervention modelling process and that available are likely. For example, an RCT may only include some relevant courses of action or record all resource use data, or a national registry might not observe some country-specific epidemiological endpoints.
+
+### Unobserved or unobservable parameters
+
+Parameters in DAMs represent real-world quantities, and there is often uncertainty about the actual population values of these quantities [@drummond2015]. Therefore, one or more data sources might be used to inform model parameters (parameterise the model) directly. However, in some cases, the real-world quantities represented by some model parameters are unavailable [@menzies2017]. These parameters correspond to real-world data that is not or could not be observed. Nonetheless, the values of these parameters could be predicted by other observed quantities. We refer to such parameters as indirectly informed or weakly identifiable parameters.
+
+For example, natural history models (NHM)s, which are essential when evaluating screening and preventative interventions, are usually STMs[@whyte2011]. NHMs describe the disease in terms of mutually exclusive and exhaustive health states and transition probabilities or rates that describe possible transitions between those states. However, observing transitions between states representing an asymptomatic disease phase or corresponding to stages of the disease that are treated once detected is often not possible [@vanni2011; @kong2009; @whyte2011]. Although the quantities of interest may not be observed directly, other observable information (e.g. epidemiological endpoints such as incidence and prevalence rates) might inform the expected simulated outcomes. Using epidemiological endpoints corresponding to the simulated results enables the prediction of the indirectly informed parameters in a process we refer to as model calibration [@whyte2011; @menzies2017]. The process of calibrating decision models involves inferring the values of the weakly identifiable parameters from indirect measurements.
+
+### Notation
+
+We denote a decision model to be some function $\mathbfcal{f}(.)$. We also represent the set of input parameters to be some vector $\vec{\mathcal{X}} = \begin{bmatrix}\vec{\mathcal{x_o}} & \vec{\mathcal{x_u}}\end{bmatrix}$; where, $\vec{\mathcal{x_o}}$ is the set of observable inputs, and $\vec{\mathcal{x_u}}$ is the set of unobservable inputs. Moreover, we denote the outputs generated from evaluating $\mathbfcal{f}(.)$ as some vector $\vec{\mathcal{Y}}$ so that the relationship between the model inputs and outputs is given by @eq-dam_inputs_outpus. Finally, we denote the real-world observed quantities that correspond to the model outputs $\vec{\mathcal{Y}}$ as some vector $\vec{\mathcal{Y^{\prime}}}$.
+
+$$
+\vec{\mathcal{Y}} = \mathbfcal{f}(\vec{\mathcal{X}})
+$$ {#eq-dam_inputs_outpus}
+
+## Calibration {#sec-calibration} 
+### Introduction
+
+Model calibration can be defined as an iterative process through which the values of weakly identifiable parameters (also known as calibration parameters) are predicted. It utilises observable outcomes (also known as calibration targets) and their simulated counterparts (modelled results) to predict the missing values. Because the calibration targets, the observed version of the simulated outputs, inform the weakly identifiable parameters, we say that these parameters are informed by indirect evidence [@vanni2011; @kong2009; @whyte2011; @menzies2017]. 
+
+Terms such as model calibration, optimisation, fitting and estimation are sometimes used to describe similar processes [@vanni2011; @dahabreh2017; @collis2017]. Fitting is often a synonym for model calibration [@vanni2011]. Optimising a function involves finding the set of inputs that corresponds to the maximum or minimum output values. Estimation depends on statistical inference to determine how strongly we can believe in the ability of a particular function to resemble the real world given a set of observed data. In comparison, calibration strives for consistency between model outputs with observed data. Moreover, unlike estimation, when the simulated outputs of a model are inconsistent with the observed quantities in a calibration excercise, the model is not rejected. Instead, new values are proposed for the calibration parameters until the model solutions are sufficiently close to the calibration targets.
+
+### Commonly calibrated decision models
+
+Most of the identified studies focused on a limited topic area (e.g., treatment of cardiovascular disease [@afzali2013]) or modelling methodology (e.g., microsimulation models [@chrysanthopoulou2021]). Also, many studies evidence compared only a few methods mainly from the same type (e.g., IMIS, SIR and RS [@ryckman2020]), and on a specific types of models (for example, microsimulation models [@dowling2004; @rutter2009; @figueiredo2014]).
+
+TODO
+
+### Commonly calibrated parameters
+
+TODO
+
+### Calibration methods
+
+The methodological approach to model calibration could be Bayesian or non-Bayesian based on the theoratical framework underpining the process. We use the term non-Bayesian to refer to ad hoc, frequentist, or methods that are not based on the theory underlying the Bayesian processes. A Bayesian calibration framework is rooted on Bayesian inference and seeks to generate a posterior distribution of the calibration parameters conditional on the calibration targets [@vanni2011; @whyte2011; @menzies2017]. In contrast, non-Bayesian methods aim to improve the model’s predictive power by identifying the best set or optimal sets of calibration parameters for which the model reproduces the calibration target [@vanni2011; @chrysanthopoulou2021].
+
+Bayesian calibration methods have several advantages [@vanni2011; @muehleisen2016; @whyte2011; @menzies2017]. First, uncertainty is integral to the model definition and calibration procedure in a Bayesian framework. This framework captures parameter uncertainty by defining model parameters and observed outcomes via probability distributions while generating the calibration parameters’ posterior distribution(s) [@chrysanthopoulou2021; @muehleisen2016; @vanni2011]. Second, generating a posterior distribution for the calibration parameters facilitates probabilistic sensitivity analysis [@muehleisen2016]. Finally, by considering the uncertainty in the observed data, Bayesian methods reduce the tendency to fit the model to the noise in measured data (overfit the model). Rather than fitting the model to the calibration target data, Bayesian methods aim to generate the posterior distribution(s) of the calibrated parameters so that the model outputs are statistically consistent with the measured data [@muehleisen2016].
+
+In contrast, non-Bayesian calibration methods are prone to model overfitting by implying that the model and the calibration targets are not sources of uncertainty [@muehleisen2016]. However, the decision model, its parameters, and the observed targets are sources of uncertainty in any calibration exercise. Mathematical models are abstractions of reality, omitting or simplifying parts of it. Therefore, even parameters obtained from precise data may not predict reality. Moreover, the calibration targets are likely “imperfect” or “incompatible” in some way. For example, the observed endpoints could be estimated in studies conducted in a “different” decision setting (different population), using a relatively “weak” or more "prone to bias" study design or being too old. Neglecting to account for such uncertainties can introduce biases into the calibrated model and its simulated outputs [@muehleisen2016].
+
+Furthermore, some non-Bayesian methods imply that the calibration process is a statistical estimation problem. One of the desirable features of statistical models is identifiability. In the context of calibration, the non-Bayesian directed methods operate under the assumption that a unique set of calibration parameter(s) values produces the best fit to the calibration target and that such set is identifiable [@alarid-escudero2018; @chrysanthopoulou2021]. @alarid-escudero2018 illustrated the presence of non-identifiability when calibrating a three-state Markov cancer relative survival model. Two different but equally good-fitting calibration parameter vectors produced varying estimates of the treatment effectiveness (0.67 vs 0.31 years). @alarid-escudero2018 suggested that non-identifiability could influence the optimal cost-effectiveness choice [@alarid-escudero2018]. On the other hand, Bayesian inference is feasible and can produce valuable answers where non-identifiability exists [@neath1997] – especially where the posterior distribution is proper (integrates to 1).
+
+The reporting of the calibration of decision models in the relevant literature is mostly incomplete. For example, in a systematic review of the calibration of malaria, HIV, and tuberculosis models, the parameter-search strategies and the goodness-of-fit measures were unclear or non-reproducible in 52% and 25% of the included articles, respectively [@hazelbag2020]. Moreover, in a review of cardiovascular disease (cohort and agent-based) models, @afzali2013 identified that only 5 of the 73 included studies reported on the calibration process. Additionally, @stout2009 reported that none of the 66 cancer microsimulation modelling studies they identified provided information about their calibration search algorithm, and only 47 stated the goodness-of-fit measure used.
+
+Based on the scoping review of the literature surrounding calibration and decision-modelling in public health economics, a systematic review to identify the field's most commonly used calibration methods would require significant resources. Therefore, we identified the methods reported in the published studies that surveyed methods for the calibration of decision models, either selectively [@vanni2011] or systematically on a limited scope [@afzali2013; @stout2009; @dahabreh2017]. Moreover, we considered calibration approaches included in comparative studies where the performance of two or more methods [@chrysanthopoulou2021; @ryckman2020; @taylor2010; @morina2017] or methods' components [@vandersteen2016] are compared. Below we discuss the methods commonly employed in the calibration of decision models.
+
+We describe the non-Bayesian processes for computer model calibration and their components in @sec-non-bayes-methods. But we start with the Bayesian methods @sec-bayes-methods where we briefly describe the fundamentals of Bayesian statistics and how it relates to the Bayesian framework for model calibration before we discuss the most common Bayesian calibration methods in the field.
+
+#### Bayesian methods {#sec-bayes-methods}
+
+There are several sources of uncertainties associated with computer models or simulators. These sources include the model structure, model parameters and observed events. The model, for example, is merely an approximation of reality, and this underlying real-world system might be inherently unpredictable. Therefore, simulators cannot, even using the most precise or valid parameters, predict the exact values of obesrved quantites. The ability to incorporate the various sources of uncertainty is one key features that inspired @kennedy2001 to propose and @higdon2004 and @craig2001 to employ a Bayesian framework for model calibration in other fields.
+
+Bayesian calibration of decision models invloves the infernce (Bayesian inference) of the values of the calibration parameters $\vec{x}_u$ based on the simulator predictions $\vec{\mathcal{Y}}$ and their observed counterparts $\vec{\mathcal{Y^{\prime}}}$.  In the following subsectios we briefly discuss Bayesian infernce before we move on to the Bayesian calibration methods.
+
+##### Bayesian inference:
+
+Bayesian inference is a statistical inference method that differs from the "classical" frequentist method on how it defines probability. A probability of an event is "classically" defined as the number of trials where an event is observed relative to the total number of trials repeated under identical conditions. However, from a Bayesian prospective, a probability represents the degree of an individual's belief in given evidence or statment.
+
+Unlike the frequntist approach, the Bayesian framework - where probabilities have a subjective nature - provides a natural environment for the assessment of the cost effectiveness of public health interventions. For example, the notion of the probability of an event occuring in a simulator is difficult to define under the frequentist framework - it is not possible to assess several patients with identical conditions to estimate the probability of an event under the frequentist framework.
+
+In Bayesian inference, the subjective beliefs represented by the probabilities are allowed to be updated using Bayes' law.
+
+###### Bayes theorem
+
+For two events $\mathcal{(A, B)}$, the conditional probability of event $\mathcal{A}$ given that event $\mathcal{B}$ is given by equation @eq-cond-ab; whereas the reverse conditional probability of event $\mathcal{B}$ given that event $\mathcal{A}$ is given by equation @eq-cond-ba.
+
+$$
+\mathcal{Pr(A|B) = \frac{Pr(A \cap B)}{Pr(B)} \; provided \: that \: Pr(B) >} 0
+$${#eq-cond-ab}
+
+$$
+\mathcal{Pr(B|A) = \frac{Pr(A \cap B)}{Pr(A)} \; provided \: that \: Pr(A) > 0}
+$${#eq-cond-ba}
+
+By substituting @eq-cond-ab in @eq-cond-ba, we get Bayes’ rule (@eq-bayes). Named after the Reverend Thomas Bayes, Bayes’ theorem explains the relationship between two reverse conditional probabilities. it is also referred to as Bayes’ rule or Bayes’ law, and it applies to all common interpretations of probability. 
+
+$$
+\mathcal{Pr(B|A) = \frac{Pr(A|B)Pr(B)}{Pr(A)} \; provided \: that \: Pr(A), \: Pr(B) > 0}
+$${#eq-bayes}
+
+Bayes' theorm is indefferent between discrete events' probabilities, denoted $\mathcal{Pr}$, and continious variables probability density functions. @eq-bayes is Bayes' rule for discrete variables; whereas, @eq-bayes2 is Bayes' law version for continious random variables. In @eq-bayes2, $\mathbfcal{p}$ is a density function, $\mathcal{Y^{\prime}}$ is the data (observations). and $\mathcal{\theta}$ is a set of $\mathcal{n}$ parameters where $\mathcal{\theta = \theta_{1}, ..., \theta_{n}}$. The goal in @eq-bayes2 is to compute the posterior probability distribution $\mathcal{\mathbfcal{p}(\theta|Y^{\prime})}$ for the parameters $\mathcal{\theta}$ given the data $\mathcal{Y^{\prime}}$.
+
+$$
+\mathcal{\mathbfcal{p}(\theta|Y^{\prime}) = \frac{\mathbfcal{p}(Y^{\prime}|\theta)\mathbfcal{p}(\theta)}{\mathbfcal{p}(Y^{\prime})}}
+$${#eq-bayes2}
+
+$\mathbfcal{p}(\theta)$, in the numerator of the right-hand-side of @eq-bayes2, is referred to as the _prior_ distribution - a probability distribution that represents the uncertainty about the parameters set $\theta$ before the observed data is taken into account. Whereas, $\mathbfcal{p}(Y^{\prime}|\theta)$ is referred to as the likelihood function and is where the observations $\mathcal{Y^{\prime}}$ captures the information available in the sample.
+
+The denominator $\mathbfcal{p}(Y^{\prime})$ of the right-hand-side of @eq-bayes2, is known as the _marginal likelihood_ of the observed data $\mathcal{Y^{\prime}}$, the normalising constant, or the constant term. The marginal distribution of $\mathcal{Y^{\prime}}$ is obtained by summing (integrating for continious cases) the numerator components $\mathcal{\mathbfcal{p}(Y^{\prime}|\theta)\mathbfcal{p}(\theta)}$ over all values of $\theta$. The case for continious parameters is given in @eq-norm-c.
+
+$$
+\mathcal{\mathbfcal{p}(Y^{\prime}) = \int{\mathbfcal{p}(Y^{\prime}|\theta)\mathbfcal{p}(\theta)d(\theta)}}
+$${#eq-norm-c}
+
+The goal of Bayesian inference is to estimate the _posterior distribution_ $\mathbfcal{p}(\theta|Y^{\prime})$ taking both the prior beliefs $\mathcal{\mathbfcal{p}(\theta)}$ and the data $\mathcal{Y^{\prime}}$ into account. Moreover, the role of the normalising constant in this process is to ensure that the posterior is a proper probability distribution by normalising it, ensuring it integrates to $1$. However, the estimation of this constant (@eq-norm-c) invloves the integration - or summation for discrete parameters - of the product of the prior and likelihood across the entire range of each parameter. This multidimensional integration is often complicated and practically intractable.
+
+Estimating the normalising constant $\mathcal{\mathbfcal{p}(Y^{\prime})}$ is not required if the prior distribution $\mathcal{\mathbfcal{p}(\theta)}$ was _conjugate_ for the data likelihood $\mathbfcal{p}(Y^{\prime}|\theta)$. Under conjugacy, the resulting posterior distribution $\mathbfcal{p}(\theta|Y^{\prime})$ is in the same family as the prior distribution. In such occasions, the properties of the posterior distribution are obtained without calculating the normalising constant $\mathcal{\mathbfcal{p}(Y^{\prime})}$. In @sec-conjugacy below, we show how a Gaussian prior is conjugate to a Gaussian likelihood, and we briefly discuss how a Gaussian posterior distribution is derived analytically. A complete catalog of conjugate priors is covered in [@robert2007].
+
+The joint posterior distribution of the calibration parameters could be inferred before estimating the cost-effectiveness of the competing options. Nonetheless, Bayesian model calibration could also be incorporated in Bayesian cost-effectiveness analysis (BCEA). BCEA is the process of infering the economic outcomes (the costs and consequences) associated with a set of relevant competing options given some observed data (resource inputs and health impacts). However, the former is the common practice; hence, the latter is not discussed further.
+
+###### Conjugacy {#sec-conjugacy}
+
+The concept of conjugacy refers to the selection of a prior that, when combined with the chosen model for the data, yields a posterior distribution of the same form as the prior. An example of such cases is when a Normal prior distribution is used to express the current beliefs for a parameter combined with a Normal likelihood function.
+
+The Normal prior and likelihood are given in @eq-norm-prior and @eq-norm-llk. In these equations: $x$ represent the data from $N$ observations; $\mu$ and $v$ are the proposed values sampled from and the mean of prior distribution, respectively; and $\sigma^{2}$ and $\tau^{2}$ are the variance of the Normal likelihood and prior, respectively. By rearranging the terms in these two equations and collecting the powers of $\exp$ we get @eq-norm-prior2 and @eq-norm-llk2, respectively.
+
+$$
+\mathcal{p(\mu) = \frac{1}{\sqrt{2\pi\tau^2}} \exp(-\frac{(\mu- v)^2}{2\tau^2})}
+$${#eq-norm-prior}
+$$
+\mathcal{p(x|\mu) = \prod_{i=1}^N\frac{1}{\sqrt{2\pi\sigma^2}} \exp(-\frac{(x_i-\mu)^2}{2\sigma^2})}
+$${#eq-norm-llk}
+$$
+\mathcal{p(\mu) = \exp(-\frac{(\mu - v)^2}{2\tau^2})}
+$${#eq-norm-prior2}
+$$
+\mathcal{p(x|\mu) = \exp(-\frac{\sum_{i=1}^N(x_i-\mu)^2}{2\sigma^2})}
+$${#eq-norm-llk2}
+
+We can think about the terms that did not make it to @eq-norm-prior2 and @eq-norm-llk2 as part of a constant term (the denominator in Bayes' law), and change the relationship in Bayes' rule from an equality $=$ to a proportionality $\propto$. Replacing the prior and likelihood in Bayes' rule with @eq-norm-prior2 and @eq-norm-llk2, respectively, then the posterior probability of $\mathcal{m}$ or $\mathcal{p(\mu|x)}$ is given in @eq-norm-bayes. Expanding the squares in @eq-norm-bayes gives @eq-norm-bayes2, and collecting the powers of $\mathcal{\mu}$ and $\mathcal{\mu^2}$ gives @eq-norm-bayes3. The $\mu$ indepedent terms in @eq-norm-bayes2, $\left(\frac{-\sum_{i=1}^{N}x_{i}^{2}}{2\sigma^{2}} -\frac{v^{2}}{2\tau^{2}}\right)$, are added to the constant term in @eq-norm-bayes3.
+
+$$ 
+\mathcal{p(\mu|x) \propto \exp\left(-\frac{\sum_{i=1}^N(x_i-\mu)^2}{2\sigma^2}\right) \times \exp\left(-\frac{(\mu - v)^2}{2\tau^2}\right)}
+$${#eq-norm-bayes}
+$$ 
+\mathcal{p(\mu|x) \propto \exp\left(\frac{-\sum_{i=1}^{N}x_{i}^{2} + 2\mu N \bar x - N\mu^{2}}{2\sigma^{2}} -\frac{\mu^{2} - 2\mu v + v^{2}}{2\tau^{2}}\right)}
+$${#eq-norm-bayes2}
+$$ 
+\mathcal{p(\mu|x) \propto \exp\left(-\frac{\mu^2}{2}\left(\frac{1}{\tau^2} + \frac{N}{\sigma^2}\right) + \mu \left(\frac{v}{\tau^2} + \frac{N \bar x}{\sigma^2}\right)\right)}
+$${#eq-norm-bayes3}
+
+@eq-norm-bayes4 and @eq-norm-bayes5 introduces two the hyper-parameters $\tau^{\prime}$ and $v^{\prime}$, respectively. $\tau^{\prime}$ and $v^{\prime}$ represent updated versions of the prior distribution parameters $\tau$ and $v$, respectively. Plugging @eq-norm-bayes4 and @eq-norm-bayes5 in @eq-norm-bayes3 gives @eq-norm-bayes6. Because of the proportional relationship in @eq-norm-bayes6, we are able to introduce the term $\mathcal{\frac{v^{\prime 2}}{2\tau^{\prime 2}}}$ in @eq-norm-bayes7 to complete the quadratic and get @eq-norm-bayes8.
+
+$$
+\mathcal{\tau^{\prime2} = \left(\frac{1}{\tau^{2}} + \frac{N}{\sigma^{2}}\right)^{-1}}
+$${#eq-norm-bayes4}
+$$ 
+\mathcal{v^{\prime} = \tau^{\prime 2}\left(\frac{v}{\tau^{2}} + \frac{N \bar x}{\sigma^{2}}\right)}
+$${#eq-norm-bayes5}
+$$ 
+\mathcal{p(\mu|x) \propto \exp\left(-\frac{\mu^{2}}{2\tau^{\prime 2}} + \frac{\mu v^{\prime}}{\tau^{\prime 2}}\right)}
+$${#eq-norm-bayes6}
+$$ 
+\mathcal{p(\mu|x) \propto \exp\left(-\frac{\mu^{2}}{2\tau^{\prime 2}} + \frac{\mu v^{\prime}}{\tau^{\prime 2}} - \frac{v^{\prime 2}}{2\tau^{\prime 2}}\right)}
+$${#eq-norm-bayes7}
+$$ 
+\mathcal{p(\mu|x) \propto \exp\left(-\frac{(\mu - v^{\prime 2})}{2\tau^{\prime 2}}\right)}
+$${#eq-norm-bayes8}
+
+The difference between the posterior distribution $\mathcal{p(\mu|x)}$ in @eq-norm-bayes8 and the prior distribution in @eq-norm-prior2 is that the hyper-parameters $(v^{\prime}, \tau^{\prime 2})$ replaced the prior parameters $(v, \tau^{2})$. Therefore, when a Gaussian prior and Gaussian likelihood are used in Bayesian inference, the integration of the constant term is not required. The posterior distribution can be summarised analytically by solving for the hyper-parameters defined in @eq-norm-bayes4 and @eq-norm-bayes5.
+
+Analytical solutions are uncommon in Bayesian inference problems, and apart from relatively simple models, it is rare in Bayesian calibration of decision models. The real world systems that generate the calibration targets - the systems approximated by the model - are complex, and their likelihood functions are often complex. In these cases, conjugate priors are not equipped to fully incorporate substantial or genuine knowledge about the model and its parameters. Sampling from an un-normalised posterior distribution (inference by simulation) is how Bayesian inference is mostly performed, including Bayesian model calibration. We briefly discuss sampling in @sec-sampling.
+
+###### Sampling {#sec-sampling}
+
+The role of the normalising constant is to ensure that the posterior distribution integrates $1$. Therefore, it only provides information about the _height_ of the distribution. Whereas, the numerator of Bayes' rule $\mathbfcal{p}(Y^{\prime}|\theta)\mathbfcal{p}(\theta)$ in @eq-bayes2 informs the shape of the distribution. It estimates the un-normalised density associated with values represented by the unknown parameters' prior given the data (the un-normalised posterior).
+
+To generate samples from the posterior, we only need information about its shape. Once a sample was obtained, its properties are then utilised to approximate the summaries or moments of the posterior distribution. @eq-mean and @eq-var give the expectation and variance, respectively, of some probability distribution $\mathcal{X_i \sim p(x)}$, provided that $\mathcal{n}$ samples can be drawn from said distribution. Therefore, obtaining samples from a posterior distribution allows the characterisation of that distribution, thus enabling the inference of unobserved parameters from observed data in Bayesian Calibration.
+
+$$
+\begin{array}{cl}
+\mathbb{E}\mathcal{(X)} 
+& = \mathcal{\int _{-\infty} ^{\infty} x \times p(x)dx} \\
+& \mathcal{\approx \frac{1}{n} \sum _{i = 1} ^n X_i}
+\end{array}
+$${#eq-mean}
+$$
+\begin{array}{cl}
+\mathbb{V}\mathcal{(X)}
+& = \mathcal{\mathbb{E}(X^2) - [\mathbb{E}(X)]^2} \\
+& \mathcal{\approx \frac{1}{n} \sum _{i = 1} ^n X_{i}^{2} - [\frac{1}{n} \sum _{i = 1} ^{n} X_{i}]^{2}}
+\end{array}
+$${#eq-var}
+
+Ideally, sampling should be independent where the value of the next drawn sample is not affected by, independent from, the value of the current one. Any set of consectively drawn dependant samples are correlated, hence they provide less information about the target posterior distribution compared to an equal set of independently generated ones. The number of indpendent samples providing the same level of information as dependantly drawn ones is known as the _sampler effective sample size_. Independent sampling methods, for example Rejection sampling and Inverse Transform sampling, are not feasible in Bayesian computation.  
+
+Rejection sampling uses a proxy (envelope) easy to sample probability distribution, denoted $\mathcal{g(s)}$, to generate samples from the target distribution, denoted $\mathcal{f(s)}$. A common proxy $\mathcal{g(s)}$ a Uniform distribution $U \sim (upper, \; lower)$ scaled up by a factor $\mathcal{M}$ such that $\mathcal{g(s)}$ encapsulate $\mathcal{f(s)}$. Hence, $\mathcal{M \geq \frac {f(s)}{g(s)}}$. Then a value $\mathcal{x}$ is sampled from $\mathcal{g(s)}$ and a value $\mathcal{u}$ form a standard Uniform distribution $\mathcal{U \sim (0, 1)}$. The sampled value $\mathcal{x}$ is then evaluated by the functino of the target distribution $\mathcal{f(s)}$, and is accepted as a sample from $\mathcal{f(s)}$ if $\mathcal{u \leq f(x)}$.
+
+On the other hand, Inverse Transform sampling (ITS) uses the inverse of the cumulative density function (CDF) of the target distribution. This method reverses how the CDF operates, instead of plugging $\mathcal{x}$ into the CDF to get the corresponding probability of $\mathcal{X \leq x}$, ITS evaluates the inversed CDF function using randomly sampled values from a standard Uniform distribution $\mathcal{U \sim (0, 1)}$. The result of these evaluations is a sample from the target distribution of $\mathcal{X}$. 
+
+Independant sampling is at best difficult in Bayesian computations. For example, Rejection sampling is posterior-blind by design, it does not need to know the posterior distribution to draw samples from it. However, this feature makes it highly inefficient in sampling posterior distributions. Many samples would be rejected if a Uniform distribution is used as proxy to a bell-like shaped target. Moreover, while ITS has a 100% sampling efficiency - no samples are thrown aways - it requires knowledge about the analytical form of the posterior distribution. This information is rarely known in Bayesian problems, and the inverse of a known CDF is not easily attainable.
+
+Dependant sampling algorithms are easier to implement in comparison to independent ones. Dependant samplers only requires knowledge about the numerator of Bayes' rule. The most commonly-used dependant sampling method in Bayesian inference is Markov chain Monte Carlo (MCMC). MCMC is a dependant sampling because it combines the memoryless features of Markov chains - these chains only remember the current state of their systems - and Monte Carlo simulations - which use random numbers their prosses. 
+
+The most commonly-used MCMC algorithms in Bayesian inference are Random Walk Metropolis, Metropolis-Hastings, Gibbs sampling, and Hamiltonian Monte Carlo. Metropolis-Hastings and Gibbs sampling are special cases of Random Walk Metropolis. Whereas, the recently developed Hamiltonian Monte Carlo method is more guided and less random than the former two. Random Walk Metropolis and the Metropolis-Hastings are more common in model calibration of decision models than the other two MCMC algorithms. Thus, we briefly discuss the Random Walk Metropolis algorithm and the inner working of the MCMC in @sec-rwm.
+
+##### Random Walk Metropolis {#sec-rwm}
+
+The Random Walk Metropolis algorithm (referred to as the Metropolis algorithm hereafter) proposes or draws random values from the parameter space. Proposed values are compared to the ones last accepted. The acceptance of the proposed values relies, to some extent, on their height (the result of evaluting the numerator term in Bayes' rule) relative to the values accepted last. @eq-rwm shows the algorithm acceptance rule where we can see that the denominator of Bayes' rule cancels in the ratio computation. 
+
+Consider the un-normalised posterior distribution $\mathcal{p(\theta|data) \propto {p(data|\theta) \times p(\theta)}}$. Accepting all samples (uniform sampling) would not necessarily characterise the posterior distribution; whereas, strictly accepting samples with higher densities would not help estimating the properties of the distribution either, it would keep the algorithm stuck in parameter space hills (the distribution mode). The Metropolis algorithm achieves the balance between accepting samples of higher or lower probability densities by the decision-making rule in @eq-rwm below.
+
+$$
+r = \left\{\begin{array}{cl}
+\mathcal{1},
+& \mathcal{if \;\; p(\theta_{t+1}|data) \geq p(\theta_{t}|data)} \\
+\mathcal{\frac {p(\theta_{t+1}|data)} {p(\theta_{t}|data)}},
+& \mathcal{if \;\; p(\theta_{t+1}|data) < p(\theta_{t}|data)} 
+\end{array}\right.
+$${#eq-rwm}
+
+In @eq-rwm, $r$ is the probability Metropolis would accept the proposed point $\theta_{t+1}$ as a sample value. This decision rule dictates the acceptance of proposed samples by comparing the proposed set to the last accepted one. The algorithm would accept a proposed point if the posterior density at this proposed point were higher than the current one or probabilistically otherwise. The acceptance probability for a proposed point with a lower probability density is given by the ratio of the proposed density at the proposed location compared to the one at its current point. This acceptance probability allows the Metropolis algorithm to move the posterior density space upwards and downwards. This movement results in samples from across the target distribution.
+
+The Markov chain will eventually converge to the posterior as long as enough samples are drawn and as long as the design of the chain satisfies specific properties. The chains utilised in Bayesian inference satisfy two features. First, these chains are _Irreducible_ or _ergodic_; they reach the target distribution regardless of the starting point. Second, these chains are also _Aperiodic_; they do not cycle back precisely to the starting values. These two features ensure that the Markov chain eventually converges into a unique stationary distribution. 
+
+Moreover, when the chain reaches equilibrium (the stationary or posterior distribution), it keeps moving around that distribution. This behaviour happens because the probability density of accepting a new sample given an existing one will be equal to the probability of accepting the existing sample given the new one. This feature is known as _detailed balance_ which we discuss further in @sec-detailed-balnace.
+
+###### Detailed balance {#sec-detailed-balnace}
+
+The symmetry of the proposal distribution in the Metropolis algorithm plays an important role in keeping the Markov chain moving around the stationary distribution once it gets there. Once the chain reaches equilibrium, it is as likely to propose a point denoted $\mathcal{\theta_{b}}$ from a current point denoted $\mathcal{\theta_{a}}$ as it is to propose point $\mathcal{\theta_{a}}$ from point $\mathcal{\theta_{b}}$. This behavior means that the _jumping_ or proposal distribution denoted $\mathcal{J()}$ at point $\mathcal{\theta_{a}}$ is equivalent to the one in $\mathcal{\theta_{b}}$, $\mathcal{J(\theta_{b}|\theta_{a}) = J(\theta_{a}|\theta_{b})}$.
+
+Under the Metropolis algorithm, accepting $\mathcal{\theta_{b}}$ from $\mathcal{\theta_{a}}$ depends on the probability density at each point. Suppose that these points are sampled from a posterior distribution denoted $\mathcal{p(\theta|data)}$ and the density at $\mathcal{\theta_{b}}$ be greater than at $\mathcal{\theta_{a}}$, $\mathcal{p(\theta_b|data) \geq p(\theta_a|data)}$. Then the transition from $\mathcal{\theta_a \rightarrow \theta_b}$ is given by @eq-det-bal1. The transition from the higher density point to the lower one $\mathcal{\theta_b \rightarrow \theta_a}$, under the Metropolis algorithm, is shown in @eq-det-bal2.
+
+$$
+\mathcal{p(\theta^t = \theta_a, \theta^{t+1} = \theta_b) = p(\theta_a|data) \times J(\theta_b|\theta_a)}
+$${#eq-det-bal1}
+
+$$
+\begin{array}{cl}
+p(\theta^t = \theta_b, \theta^{t+1} = \theta_a) & = p(\theta_b|data) \times J(\theta_a|\theta_b) \times \frac {p(\theta_a|data)} {p(\theta_b|data)} \\
+& = J(\theta_a|\theta_b) \times p(\theta_a|data) \\
+& = J(\theta_b|\theta_a) \times p(\theta_a|data) = p(\theta^t = \theta_a, \theta^{t+1} = \theta_b)
+\end{array}
+$${#eq-det-bal2}
+
+Equations @eq-det-bal1 and @eq-det-bal2 above demonstrate that at equilibrium transitioning from one point to another $\theta_a \rightarrow \theta_b$ is equally likely as transitioning in the opposite direction $\theta_b \rightarrow \theta_a$. This behaviour means that the Markov chain satisfies a principle called _detailed balance_. Detailed balance means that each transition should have a probability equal to its reverse at equilibrium.
+
+###### Metropolis-Hastings algorithm
+
+The Metropolis algorithm is unsuitable for bounded parameters because of its _symmetric_ proposal distribution. For example, the standard deviation, denoted $\sigma$, can not take a value less than zero. However, the Metropolis algorithm utilises a Normal distribution that supports values from $-\infty$ to $\infty$ and could propose values less than zero. On the other hand, the Metropolis-Hastings algorithm is a particular case of the Metropolis algorithm that handles bounded parameters. Metropolis-Hastings has an asymmetric proposal distribution. For the $\sigma$ example, a log-normal distribution that naturally supports positive parameter values could be used. 
+
+The other difference between Metropolis-Hastings and Random Walk Metropolis is the correction needed to ensure that the chain will still sample from the posterior distribution given the new proposal distribution. The acceptance of proposed samples is given in @eq-mh, where $J(\theta_t|\theta_{t+1})$ is the proposal probability density at $\theta_t$ if the current position of the sampler is at $\theta_{t+1}$. Note that when $J(\theta_t|\theta_{t+1}) = J(\theta_{t+1}|\theta_t)$, which is equal to 1 (the proposal distribution is symmetric), $r$ collapses down to the Metropolis algorithm decision-rule.
+
+$$
+r = \left\{\begin{array}{cl}
+\mathcal{1},
+& \mathcal{if \;\; p(\theta_{t+1}|data) \geq p(\theta_{t}|data)} \\
+\mathcal{\frac {p(\theta_{t+1}|data)} {p(\theta_{t}|data)}} 
+\times
+\frac {J(\theta_t|\theta_{t+1})} {J(\theta_{t+1}|\theta_t)},
+& \mathcal{if \;\; p(\theta_{t+1}|data) < p(\theta_{t}|data)} 
+\end{array}\right.
+$${#eq-mh}
+
+##### Sampling Importance Resampling {#sec-sir}
+
+Sampling Importance Resampling (SIR) is based on a Monte Carlo variance reduction algorithm known as Importance Sampling (IS). IS refers to a collection of technique that, similar to MCMC, allow simulation-based numerical integration. These methods approximate a mathematical expectation of a target distribution by a weighted average of random draws from another distribution [@tokdar2010]. 
+
+Let $\mathcal{X}$ be a random variable that is distributed $\mathcal{p(x)}$, and that sampling from $\mathcal{p(x)}$ is difficult. @eq-is below shows that the $\mathcal{p()}$ probability weighted average of the function $\mathcal{\mathbfcal{g}(x)}$, or $\mathbb{E}_{\mathcal{p}}|\mathcal{\mathbfcal{g}(x)}$, is equal to the $\mathcal{q()}$ probability weighted average of the function $\mathcal{\mathbfcal{g}(x)}$ multiplied by a ratio of the target and proposal densties $\mathbb{E}_{\mathcal{q}}|\left[\mathcal{\mathbfcal{g}(x)} \times \frac{p(x)}{q(x)} \right]$. $\mathcal{q(x)}$ is a a proposal density that is easy to sample from, such that if $\mathcal{\mathbfcal{g}(x)} \times p(x) \ne 0$, the $p(x) \ne 0$.
+
+$$
+\begin{array}{cl}
+\mathbb{E}_{\mathcal{p}}|\mathcal{\mathbfcal{g}(x)} 
+& = \int \mathcal{\mathbfcal{g}(x)} \times p(x)dx  
+\approx \frac{1}{n} \sum _{i = 1} ^n \mathcal{\mathbfcal{g}(x_i)},
+\; \mathcal{x_i \sim p(x)} 
+\\
+& = \int \mathcal{\mathbfcal{g}(x)} \times \frac{p(x)}{q(x)} q(x)dx \\
+& = \int \left[\mathcal{\mathbfcal{g}(x)} \times \frac{p(x)}{q(x)} \right] q(x)dx \\
+& = \mathbb{E}_{\mathcal{q}}|\left[\mathcal{\mathbfcal{g}(x)} \times \frac{p(x)}{q(x)} \right] 
+\approx \frac{1}{n} \sum _{i = 1} ^n \mathcal{\mathbfcal{g}(x_i) \frac{p(x)}{q(x)}},
+\; \mathcal{x_i \sim q(x)} 
+\end{array}
+$${#eq-is}
+
+The initial step in IS invloves the indpendent drawing a $\mathcal{n}$ samples from an easy to sample from proxy distribution $\mathcal{q(x)}$. By the Central Limit Theorem, as the number of samples increases, $\mathcal{n \rightarrow \infty}$, the integral approximation $\frac{1}{n} \sum _{i = 1} ^n \mathcal{\mathbfcal{g}(x_i) \frac{p(x)}{q(x)}}$ approaches the integral $\int \mathcal{\mathbfcal{g}(x)} \times p(x)dx$ [@tokdar2010]. Therefore, a large number of random draws from an easy to sample distribution $\mathcal{q(x)}$ weighted by a ratio of the target and proxy distributions $\frac{p(x)}{q(x)}$ allows the estimation of the expectation some function of $\mathcal{x}$. This weight is also known as the _importance weight_.
+
+SIR builds on IS algorithm. A large sample of proposed parameter configurations is drawn from the prior distribution. Each parameter set is then evaluated to obtain the simulated outcomes, and the likelihood $\mathcal{L(\theta_i)}$ of each parameter set $\mathcal{i}$ given the observed targets is estimated. The obtained likelihood values are then normalised [@rubin1988].
+
+The normalised likelihood values are considered weights and referred to as importance weights. These importance weights are used to re-sample the initially obtained samples with replacement [@rubin1988]. Parameter sets associated with higher likelihood values are more likely to be re-sampled into the final set. However, because the re-sampling step is carried out “with replacement”, the parameter configurations with relatively high likelihood values would be sampled more than once. The algorithm is not iterative and terminates once the sampling with replacement concludes. 
+
+Using importance weights to sample with replacement explains a significant limitation in the SIR algorithm. Resampling introduces inefficiency as only a few unique samples can make it to the final sample, especially in the existance of a small number of large importance weight [@raftery2010]. Under this inefficiency, the posterior distribution would be poorly sampled or covered. This inefficiency worsens as the dimensionality of the problem increases. Moreover, normalising the weights is likely to introduce bias [@robert1999]. 
+
+The number of unique samples obtained from a posterior distribution by SIR is reflected by the effective sample size (ESS). ESS estimates the number of independently drawn samples that could generate the same amount of information as the dependent sampling algorithm. The ESS (@eq-ess-sir) of the SIR method can be obtained by dividing the square of the sum of the likelihood values by the sum of the squares of those values [@wiegand1965].
+
+$$
+\mathcal{ESS = \left ( \frac{\sum _{i}  L(\theta_i)^2}{\sum _{i}  L(\theta_{i}^{2})} \right )}
+$${#eq-ess-sir}
+
+##### Incremental Mixture Importance Sampling {#sec-imis}
+
+Introduced by @raftery2010, Incremental Mixture Importance Sampling (IMIS) is an enhanced or more efficient version of the SIR method. As identified by the SIR algorithm, areas with large importance weights are ones that are underpresnted by the sample. The SIR algorithm is, by design, unable to further sample these points. IMIS introduces an iterative process through which it focuses its sampling around the points associated with large importance weight.
+
+IMIS builds on the previously described steps of the SIR algorithm. The improvement IMIS introduces over SIR starts by using importance weights to identify under-represented areas in the density function. IMIS centers multi-variate Normal distributions around the parameter configurations with high importance sampling. IMIS then draws new samples from these multi-variate Normal distributions, and the new parameter configurations are evaluated and added to the intial set of samples. The importance weights of all (new and existing) samples is re-estimated. 
+
+The steps including centering and sampling from multi-variate Normal distributions and re-computing the importance weight are repeated until the stopping rules are satisfied. The termination criterion and convergance of the IMIS algorithm are associated with the importance weight. The algorithm ends when the proportion of unique points in the final sample is $1 - \frac{1}{e} = 0.632$ [@raftery2010]. This proportion is the expected fraction when the importance sampling weights are all equal.
+
+The IMIS algorithm improves on the SIR method by drawing more samples from higher distribution density areas. This feature allows IMIS to sample the posterior distribution more effeciently. This efficiency is reflected in the significant increase in the IMIS effective size compared to SIR. In a tutorial paper, @menzies2017 reported that IMIS was 150-200 times more efficient than SIR.
+
+Another IMIS imporvement over the SIR algorithm is the integration of an optimisation function. The intial sample of parameter configurations could be generated by Random or Latin Hypercube sampling. However, these sampling methods might miss the global maximum - the mode of the distribution or the area corresponding to the highest probability density. IMIS integrates an optimisation algorithm to allow exploring regions missed by the intial sample. 
+
+The integrated optimisation algorithm utilises the point with high importance weights as the starting point. The maximas identified by the algortihm then replace the points with high importance sampling as the center of the multi-variate Normal distributions. The algortihm includes the maximas and their samples in estimating the new importance weights and continues as described earlier.
+
+##### Integrating calibration results
+
+Once sampled, the posterior distributions of the calibration parameters are used in generating the economic evaluation results. Similar to the uncertainty associated with the other inputs of the economic evaluation, the uncertainty surrounding the identified calibration parameters is addressed in probabilistic sensitivity analysis (PSA). PSA invloves identifying the option that maximises or returns the maximum expected utility or net benefit given the uncertainty about the inputs and outcomes of all competing options. The results from the Bayesian calibration framework feeds naturally to the PSA. A subset of the joint posterior distribution are used in the PSA.
+
+##### Comparing Bayesian methods
+
+@ryckman2020 compared three Bayesian model-calibration approaches, namely, random search (RS) with rejection sampling, sampling importance resampling (SIR), and incremental mixture importance sampling (IMIS) using a cholera natural history disease model. Compared to the prior distributions, all compared methods generated posterior distributions with face validity, high likelihood, and good consistency with the calibration targets. However, there were considerable performance differences between the compared approaches. For example, @ryckman2020 suggested that RS was flexible and straightforward, and like SIR, it allows the generation of posterior distributions with any constraints. However, both RS and SIR performance is mainly affected by the search space resulting from a higher-dimensional parameter space [@ryckman2020].
+
+#### Non-Bayesian approaches {#sec-non-bayes-methods}
+
+There are four components common to the non-Bayesian methods. These parts are: (1) a parameter search strategy for exploring the parameter space; (2) the objective (fitness) function or goodness-of-fit (GOF) measure to quantify the concordance (or agreement) between the simulated and observed outcomes; (3) the acceptance criteria to identify the parameter set(s) resulting in model outputs close to or consistent with the observed data; and (4) a stopping rule to determine the termination of the calibration process [@vanni2011; @dahabreh2017; @menzies2017]. Different non-Bayesian calibration processes result from Combining different types of parameter space exploration methods and fitness functions.
+
+##### Parameter space and dimensionality
+
+The dimensionality of the calibration problem depends on the number of calibration parameters. We refer to a two-calibration-parameters problem as a two-dimensional calibration problem. Whereas, we define the parameter space as the domain supported by the parameter(s), the range of plausiable or explorable values. The range of plausiable values depneds on calibration parameter; for example, the plausiable range of probabilities and proportions is between 0 and 1. Whereas, the range of explorable values is usually defined by the modeller based on some information. Figure #### demonstrate a plausiable and explorable two-dimensional parameter space, respectively.
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/parameter_space.jpeg"}
+         \caption{Plausible}
+         \label{fig:plausible_parameter_space}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/parameter_space_lp.jpeg"}
+         \caption{Explorable}
+         \label{fig:explorable_parameter_space}
+     \end{subfigure}
+        \caption{Parameter space}
+        \label{fig:parameter_space}
+\end{figure}
+
+The performance of the calibraiton method is likely affected by the dimensionality of the problem and the parameter space. We will discuss these effects as we introduce each of the parameter exploration methods.
+
+##### Goodness-of-Fit measures
+
+The Goodness-of-Fit (GOF) criterion, also referred to as objective or fitness function, estimates the level of agreement or concordance between the model predictions (or outputs) $\vec{\mathcal{Y}}$ and their real-world counterparts (or calibration targets) $\vec{\mathcal{Y^{\prime}}}$. The fitness of any calibration parameter configuration is estimated by comparing each simulator output with its corresponding calibration target. Each of these comparisons is performed by the objective function which combines the results of all comparisons into an overall measure of fitness for a given input set.
+
+@vanni2011 and @vandersteen2016 suggested that the fitness measures most commonly used in the calibraion of decision models are the least squares, weighted least squares, chi-squared ($\chi^2$) and likelihood measure. Parameter exploration techniques can employ one method or a mixture of objective functions to identify the set or sets that generate the best fit to the calibration targets. We denote an objective function as $\mathcal{\mathbfcal{f}_{Obj}}$. \ref{fig:GOF_measures} and \ref{fig:log_likelihood_GOF_measure}
+
+###### Sum of Squared Errors
+
+The Sum of Squared Errors (SEE) measure is also known as the Least squares [@vanni2011]. SSE relies on estimating the squared differences between model prediction(s) $\vec{\mathcal{Y}}$, obtained by the evaluation of inputs set $\vec{\mathcal{X}}$, and the observed counterparts $\vec{\mathcal{Y^{\prime}}}$. This measure is relatively simple and intuitive but does not incorporate judgements about the precision or quality of the data sources informing the calibration data $\vec{\mathcal{Y^{\prime}}}$.
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/GOF_SSE_measure.jpeg"}
+         \caption{Plausible parameter space}
+         \label{fig:sse_gof_measure_fs}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/GOF_SSE_measure_lp.jpeg"}
+         \caption{Explorable parameter space}
+         \label{fig:sse_gof_measure_ls}
+     \end{subfigure}
+        \caption{Sum of squared errors (SSE) fitness function}
+        \label{fig:gof_measures}
+\end{figure}
+
+
+Many calibration problems involve several epidemiological endpoints, which we denote $A$. In such processes, the SSE $\mathcal{\mathbfcal{f}_{see}}$ estimate is a summation of the differences between each observed calibration target $\mathcal{Y^{\prime}_{a}}$ and the corresponding model output $\mathbfcal{f}(\mathcal{a}|\vec{\mathcal{X}})$. @eq-SSE represents the relationship between the SEE, model predictions and the observed quantities. As the $\mathbfcal{f}_{see}$ estimate approaches $0$, the higher the concordance or agreement between the calibration targets and model outputs. 
+
+$$
+\begin{array}{cl}
+\mathbfcal{f}_{see}(\vec{\mathcal{X}}) 
+& = (\vec{\mathcal{Y^{\prime}}} - \vec{\mathcal{Y}})^2 \\
+& = (\vec{\mathcal{Y^{\prime}}} - \mathbfcal{f}(\vec{\mathcal{X}}))^2 \\
+& = \sum_{\mathcal{a}=1}^{\mathcal{A}}(\mathcal{Y^{\prime}_{a}} - \mathbfcal{f}(\mathcal{a}|\vec{\mathcal{X}}))^2
+\end{array}
+$${#eq-SSE}
+
+###### Weighted Sum of Squared Errors
+
+The Weighted Sum of Squared Errors (WSSE) is similar to the SSE measure. However, it allows the incorporation of judgments about the quality or importance of the empirical data informing each calibration target @vanni2011. The judgement associated with each calibration target $\mathcal{Y^{\prime}_{a}}$ is represented by a corresponding weight $w_{\mathcal{a}}$. The WSSE $\mathbfcal{f}_{wsee}$ is given by @eq-WSSE.
+
+$$
+\begin{array}{cl}
+\mathbfcal{f}_{wsee}(\vec{\mathcal{X}}) 
+& = \sum_{\mathcal{a}=1}^{\mathcal{A}} \mathcal{w}_{\mathcal{a}}(\mathcal{Y^{\prime}_{a}} - \mathbfcal{f}(\mathcal{a}|\vec{\mathcal{X}}))^2
+\end{array}
+$${#eq-WSSE}
+
+SSE is a special case of the WSSE where all weights equal $1$. Moreover, a commonly used GOF criterion in the calibration of cancer microsimulations is the Pearson chi-square $\mathbfcal{f}_{p\chi^2}$ measure, a variant of the WSSE where the weights are the simulated values (@eq-P-chi) [@vandersteen2016].
+
+$$
+\begin{array}{cl}
+\mathcal{w}_{\mathcal{a}}
+&
+= \mathbfcal{f}(\mathcal{a}|\vec{\mathcal{X}}) \\
+\mathbfcal{f}_{p\chi^2}(\vec{\mathcal{X}}) 
+& = \sum_{\mathcal{a}=1}^{\mathcal{A}} \mathcal{w}_{\mathcal{a}}(\mathcal{Y^{\prime}_{a}} - \mathbfcal{f}(\mathcal{a}|\vec{\mathcal{X}}))^2 \\
+& = \sum_{\mathcal{a}=1}^{\mathcal{A}} \frac{(\mathcal{Y^{\prime}_{a}} - \mathbfcal{f}(\mathcal{a}|\vec{\mathcal{X}}))^2}{\mathbfcal{f}(\mathcal{a}|\vec{\mathcal{X}})}
+\end{array}
+$${#eq-P-chi}
+
+###### Chi-square
+
+The Chi-square ($\chi^2$) measure $\mathbfcal{f}_{\chi^2}$ is a specialised and prevalent variant of the WSSE @vanni2011. In the estimation of the $\mathbfcal{f}_{\chi^2}$, the weight applied to the distance between an observed and simulated epidemiological endpoint is the precision of the data source(s) informing the value of the observed quantity. The precision $\mathcal{\tau}$ of the calibration target is a function of the observed data's standard deviation $\sigma$; it is the inverse of the variance $\sigma^2$ as displayed in @eq-chi2. The more dispersed the observed data around their mean, the higher their variance and the less precise they are.
+
+$$
+\begin{array}{cl}
+\mathbfcal{f}_{\chi^2}(\vec{\mathcal{X}}) 
+& = \sum_{\mathcal{a}=1}^{\mathcal{A}} \mathcal{w}_{\mathcal{a}}(\mathcal{Y^{\prime}_{a}} - \mathbfcal{f}(\mathcal{a}|\vec{\mathcal{X}}))^2 \\
+\mathcal{w}_{\mathcal{a}} 
+& = \tau_{\mathcal{a}} \\
+& = \frac{1}{\sigma^2_{\mathcal{a}}}
+\end{array}
+$${#eq-chi2}
+
+###### Likelihood
+
+The concept behind the likelihood GOF measure is rooted in Bayesian statistics. A likelihood function $\mathbfcal{L(\vec{\mathcal{Y^{\prime}}}|\vec{\mathcal{X}})}$ is used to estimate the probability of observing the calibration target(s) $\vec{\mathcal{Y^{\prime}}}$ given the input set $\vec{\mathcal{X}}$. In calibration problems with several calibration targets, the overall likelihood $\mathcal{L}$ is equal to the product of all likelihood functions, assuming that the observed targets are independent and identically distributed ($\mathcal{iid}$). 
+
+It is common practice in the calibration of decision models to compute the log-likelihood, the logarithm of the likelihood. The product of the individual likelihoods (@eq-lk) translates to the sum of the individual log-likelihoods (@eq-llk), which is easier to calculate.
+
+$$
+\mathbfcal{L}(\vec{\mathcal{X}})
+= \prod_{\mathcal{a}=1}^{\mathcal{A}} \mathbfcal{L_{\mathcal{a}}(\mathcal{Y}^{\prime}_{\mathcal{a}}|\mathbfcal{f}(\vec{\mathcal{X}})_{\mathcal{a}})}
+$${#eq-lk}
+
+$$
+\log(\mathbfcal{L}) 
+= \sum_{\mathcal{a}=1}^{\mathcal{A}} \log(\mathbfcal{L_{\mathcal{a}}(\mathcal{Y}^{\prime}_{\mathcal{a}}|\mathbfcal{f}(\vec{\mathcal{X}})_{\mathcal{a}})})
+$${#eq-llk}
+
+Similar to the $\chi^2$ criterion, the likelihood measure considers the uncertainty associated with the calibration targets. Unlike the distance-based GOF criteria, the parameter configurations that result in model outputs with higher likelihood values are considered a better fit for the model. However, the higher log-likelihood values are associated with sets generating poorer fits to the calibration targets.
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/GOF_LLK_measure.jpeg"}
+         \caption{Plausible parameter space}
+         \label{fig:llik_gof_measure_fs}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/GOF_LLK_measure_lp.jpeg"}
+         \caption{Explorable parameter space}
+         \label{fig:llik_gof_measure_ls}
+     \end{subfigure}
+        \caption{Log likelihood fitness function}
+        \label{fig:llik_gof_measures}
+\end{figure}
+
+Calibration problem using a liklihood objective function could incorporate different likelihood functions, ones that correspond to the calibration targets. The selection of a likelihood function in fitness estimation relies on the function describing the data generation of the calibration targets. The probability of each calibration target can be described by a distinct probability density function (PDF), and each PDF has a corresponding likelihood function that shares its functional form. Therefore, a liklihood objective function could incorporate a Binomial and Poisson liklihood functions if the corresponding observed data included a Binomial and Poisson distributed epidemiological endpoints (for example, the number of cases per interval and total number of detected cases, respectively).
+
+For example, in a population of size $\mathcal{n}$ and cancer prevalence $\mathcal{p_{\prime}}$, the number of detected cancers $\mathcal{k}$ is frequently modelled using a binomial distribution. Therefore, a binomial likelihood function is best suited to estimate the probability of detecting $\mathcal{k}$ cases in the $\mathcal{n}$ population given some suggested value for $\mathcal{p}$. The probability mass function (PMF) of the distribution $\mathcal{Pr(K = k)}$ and the corresponding likelihood function $\mathcal{L}$ are given in @eq-Ex-Bin where the number of detected cancers follow a binomial distribution $\mathcal{k \sim B(n, p)}$ and $\mathcal{q = 1 - p}$.
+
+$$
+\begin{array}{cl}
+\mathcal{Pr(K = k)}
+&
+= \mathcal{\binom{n}{k}p_{\prime}^{k} q^{n-k}} \\
+\mathcal{L}
+&
+= \mathcal{\binom{n}{k}p^{k} q^{n-k}} 
+\end{array} 
+$${#eq-Ex-Bin}
+
+##### Parameter-space search strategies
+
+These are the methods by which values from the parameters-space of the weakly identifiable parameters $\vec{\mathcal{x_u}}$ are sampled or proposed. The model then evaluates these values before other parts of the calibration process take over. These techniques are sometimes [@vanni2011] referred to as _search algorithm_ or _optimisation method_. The exploration methods are either directed (guided) or undirected (unguided) [@vanni2011]. The sampling process in the guided methods is iterative, and the subsequently proposed sample values are affected by the fitness of the outputs from the previously sampled one. In contrast, samples in the unguided methods do not depend on the outputs from the model.
+
+The commonly employed unguided sampling strategies in the calibration of decision models are the grid search method, the random search method, and the Latin hypercube sampling method. At the same time, the commonly used directed methods include generalised reduced gradient, downhill simplex, genetic algorithms, and simulated annealing [@vanni2011; @dahabreh2017].
+
+Each method has termination or stopping rules and convergence or acceptance criteria. The termination rule indicates the point at which the parameter space exploration, and usually the calibration exercise, is considered complete. For example, these rules might include completing a certain number of trials or iterations or achieving convergence. Whereas convergence is the term(s) by which the best fitting set or sets of calibration parameters are defined.
+
+###### Grid Search method
+
+The Grid Search method is an unguided parameter space exploration technique. When using this strategy, we start by deciding the number of unique values sampled per calibration parameter. These usually include the upper and lower bounds of each parameter domain. Moreover, the remaining samples are often picked in a way that ensures equal spread over the parameters' space. Input sets are then defined from the possible combinations of sampled parameter values.
+
+The fitness function - the function that compares the model outputs to the calibration targets - evaluates each input set drawn. This method can utilise minimising and maximising objective functions affecting the acceptance criteria. For example, the top (bottom) 10% of the identified parameter sets would be acceptable if a minimising (maximising) fitness method was used. The Grid Search method's stopping rule or termination criterion is the evaluation of all proposed (sampled) values. 
+
+The implementation of this approach is relatively simple, but more grid points (samples) are required to increase the chance of identifying the global extremum. However, the greater the dimensions of the calibration problem, the more computationally expensive this approach becomes. The number of calibration parameters' configurations to be evaluated by the model grows exponentially as the number of calibration parameters or the number of per parameter samples grow.
+
+For example, if three unique values were to be sampled for each calibration parameter in a two-dimensional calibration problem, then the 50th centile or the median and the upper and lower bounds of the corresponding parameter distribution would make the sampled values. We would end up with `r 3^2` or $3^2$ parameter configurations to be evaluated by the model, as shown in @fig-Grid_search below. Sampling three unique values per parameter for a ten-dimensional problem would require `r 3^10` or $3^{10}$ model evaluations. The relationship between the number of model evaluations $g$, the number of calibration parameters $n_{\vec{\mathcal{x_u}}}$, and the required samples per parameter $n_p$ is given in @eq-grid-samples.
+
+$$
+g = \mathcal{n_p} ^ {\mathcal{n_{\vec{\mathcal{x_u}}}}}
+$${#eq-grid-samples}
+
+![A pictorial representation of grid search applied to a two-parameter   space](CR_images/Grid_search.JPG){#fig-Grid_search}
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/SSE_FGS_w_true.jpeg"}
+         \caption{GSM with SSE fitness}
+         \label{fig:gsm_w_sse_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/LLK_FGS_w_true.jpeg"}
+         \caption{GSM with LLK fitness}
+         \label{fig:gsm_w_llk_true}
+     \end{subfigure}
+        \caption{Grid Search method (GSM) with fitness functions}
+        \label{fig:gsm_gof_plots}
+\end{figure}
+
+###### Random Search method
+
+The Random Search method is the most uncomplicated, intuitive undirected parameter space exploration technique [@vanni2011]. Unlike the Grid Search method, this strategy starts by defining the number of parameter configurations (not per parameter values) to be sampled. This step is followed by drawing the defined number of samples from the distributions of the calibration parameters using a statistical package. 
+
+These statistical packages start sampling the intended distributions by drawing an equivalent number of values from a standard Uniform distribution $\mathcal{U}_{[0,1]}$ using random number generators. The values drawn from a standard Uniform distribution fall between $0$ and $1$ and are hence treated as probabilities. Finally, the inverse of the cumulative distribution function of each calibration parameter is used to identify the parameter values that correspond to the sampled probabilities.
+
+The convergence rule and stopping criterion for calibration processes utilising the Random Search strategy is similar to those employing the Grid Search method. While using this approach is relatively easy; however, it is inefficient in covering the parameter space. Samples are rarely evenly drawn from the parameter space, as demonstrated in @fig-random-search. 
+
+A large number of samples are required for the Random Search method to represent the parameter space properly and to increase the chance of locating the global extremum. Otherwise, the probability of identifying a local extremum remains high. Moreover, more samples are required as the parameter space expands and the number of calibration parameters increases. However, the more samples drawn, the greater the computational resources required to complete the additional model evaluations.
+
+![Random Search method in a two-parameter problem](CR_images/Random_search.JPG){#fig-random-search}
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/SSE_RGS_w_true.jpeg"}
+         \caption{RSM with SSE fitness}
+         \label{fig:rsm_w_sse_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/LLK_RGS_w_true.jpeg"}
+         \caption{RSM with LLK fitness}
+         \label{fig:rsm_w_llk_true}
+     \end{subfigure}
+        \caption{Random Search method (RSM) with fitness functions}
+        \label{fig:rsm_gof_plots}
+\end{figure}
+
+###### Latin Hypercube sampling
+
+The third most common unguided parameter space exploration is the Latin Hypercube sampling (LHS). LHS is considered a more efficient and recently more popular method than the Random Search method [@vanni2011]. Similar to the Random method, the first step of this method is to identify the number of required samples $n$. Next, each calibration parameter is assigned an appropriate probability density function (probability distribution). Each distribution is then divided into $n$ intervals such that the probability represented by (or area under each) $n^{th}$ interval is the same. Finally, a value is randomly drawn from each $n^{th}$ interval for each calibration parameter.
+
+LHS has the same stopping rule and convergence criteria as the earlier defined exploration methods. However, unlike the Grid Search method, the LHS does not involve creating combinations of all drawn samples; therefore, LHS generates fewer parameter configurations that require fewer model evaluations. In contrast to the Random Search method, parameter configurations sampled by LHS better cover the parameter space since a parameter value is purposefully drawn from regions equally distributed across the probability distribution.
+
+![Latin hypercube sampling (LHS) in a two-parameter problem](CR_images/LHS.JPG){#fig-lhs}
+![Ten sets sampled using Latin hypercube sampling (LHS)](CR_images/LHS_ten_points.JPG)
+![Ten sets sampled using Random Search](CR_images/Random_search_ten_points.JPG)
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/SSE_LHS_w_true.jpeg"}
+         \caption{LHS with SSE fitness}
+         \label{fig:lhs_w_sse_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/LLK_LHS_w_true.jpeg"}
+         \caption{LHS with LLK fitness}
+         \label{fig:lhs_w_llk_true}
+     \end{subfigure}
+        \caption{Latin Hypercube sampling (LHS) with fitness functions}
+        \label{fig:lhs_gof_plots}
+\end{figure}
+
+###### Generalised Reduced Gradient algorithm
+
+The Generalised Reduced Gradient (GRG) method is a commonly employed optimisation algorithm and is one of the techniques implemented in the Microsoft^{TM} Excel Solver [@vanni2011]. As the name suggests, GRG relies on reducing the gradient $\nabla$ of a function $\mathbfcal{f}$ at a given point $\mathcal{x}$ ($\nabla \mathbfcal{f}(\mathcal{x})$) to identify the value of $\mathcal{x}$ at which $\mathbfcal{f}(\mathcal{x})$ is at its minimum. Moving or changing the value of $\vec{\mathcal{x}}$ along $-\nabla \mathbfcal{f}(\vec{\mathcal{x}})$ (opposite the gradient) represent the steepest decent towards the minimum $\mathbfcal{f}$. In one-dimensional optimisation problems, where $\mathcal{x}$ is a scalar (a single parameter, not a vector of parameters), the gradient of the function $\nabla \mathbfcal{f}$ reduces to the slope $\frac{d\mathcal{f}}{d\mathcal{x}}$.
+
+The algorithm begins by guessing or randomly sampling starting value(s) for the calibration parameters' $\mathcal{\vec{x_0}}$. The derivative(s) (gradient) at $\mathcal{\vec{x_0}}$ is computed, and the negative of that value is called the _search direction_. The algorithm then estimates the jump or _step size_ $\gamma$ such that the new proposed point $\mathcal{\vec{\mathcal{x}_{n+1}}}$ is $\mathcal{\vec{x_{n}}} - \gamma _{n} \nabla \mathbfcal{f}(\vec{\mathcal{x}_n})$. The _step size_, estimated in Algorithm \ref{alg:GRG} using the Barzilai–Borwein method @barzilai1988, should not be too large to overshoot the minimum or too small that it takes a significant amount of time and computational resources to _converge_. 
+
+The GRG archives _convergance_ when the distance between the last few points is less than an identified tolerance. The smaller the tolerance (`r 1e-6`, for example), the longer the algorithm takes to converge. The GRG has two stopping rules. The second stopping rule, besides the convergence criteria, is the maximum number of iterations to run before terminating the algorithm.
+
+\begin{algorithm}
+
+\caption{Generalized Reduced Gradient}\label{alg:GRG}
+
+\begin{algorithmic}[1]
+
+\Require $\mathcal{threshold} = 0.0001$ \Comment {Set tolerance or threshold value to assess convergence}
+
+\Require $\mathcal{I} = 10000$ \Comment {Set the maximum number of iterations where $0 \leq \mathcal{i} \leq \mathcal{I}$}
+
+\Require $\mathcal{i} = 0$ \Comment {Start the iteration counter $\mathcal{i}$ at $0$}
+
+\Require $\mathcal{\vec{x_0}} \gets \begin{pmatrix}\mathcal{x^{1}_{lb} < x^{1} < x^{1}_{ub}}\\\mathcal{x^{2}_{lb} < x^{2} < x^{2}_{ub}}\\...\\\mathcal{x^{n}_{lb} < x^{n} < x^{n}_{ub}}\end{pmatrix}$ \Comment {Random intial values (guess) for the $n$ inputs in vector $\mathcal{\vec{x}}$}
+
+\State $\mathcal{i} \gets \mathcal{i} + 1$ \Comment {Count current iteration}
+
+\State $\nabla \mathbfcal{f}(\vec{\mathcal{x}_{\mathcal{i}}}) = \begin{pmatrix}\mathcal{\frac{d\mathbfcal{f}}{dx^{1}_{\mathcal{i}}}}\\\mathcal{\frac{d\mathbfcal{f}}{dx^{2}_{\mathcal{i}}}}\\...\\\mathcal{\frac{d\mathbfcal{f}}{dx^{n}_{\mathcal{i}}}}\end{pmatrix}, \; \mathcal{i} \geq 0$ \Comment {Compute the $\emph{gradient}$ $\nabla$ of the $n$ dimesional function $\mathbfcal{f}$}
+
+\State $\gamma_{\mathcal{i}} = \frac{|(\mathcal{x_{i}} - \mathcal{x_{i-1}})^T[\nabla \mathbfcal{f}(\vec{\mathcal{x}}_{\mathcal{i}}) - \nabla \mathbfcal{f}(\vec{\mathcal{x}}_{\mathcal{i}-1})]|}{||\nabla \mathbfcal{f}(\vec{\mathcal{x}}_{\mathcal{i}}) - \nabla \mathbfcal{f}(\vec{\mathcal{x}}_{\mathcal{i}-1})||^{2}}, \; \mathcal{i} \geq 0$ \Comment {Compute the $\emph{step size}$ $\gamma_{\mathcal{i}}$ for the $\mathcal{i^{th}}$ iteration}
+
+\State $\vec{\mathcal{x}}_{\mathcal{i} + 1} \gets \mathcal{x_{\mathcal{i}}} - \gamma_{\mathcal{i}} \nabla \mathbfcal{f}(\vec{\mathcal{x}}_{\mathcal{i}}), \; \mathcal{i} \geq 0$ \Comment {Calculate the next parameters configuration $\vec{\mathcal{x}}_{\mathcal{i} + 1}$}
+
+\If{$\mathbfcal{f}(\vec{\mathcal{x}}_{\mathcal{i} + 1}) - \mathbfcal{f}(\vec{\mathcal{x}}_{\mathcal{i}}) < \mathcal{threshold}$} \Comment {Assess $\emph{convergance}$}
+    \State Return $\vec{\mathcal{x}}_{\mathcal{i} + 1}$ \Comment {End Algorithm, $\emph{convergance is achieved}$}
+\Else
+    \If{$\mathcal{i} < \mathcal{I}$} \Comment {Assess $\emph{stopping rule}$}
+        \State Go to step 1 \Comment {Re-run steps 1 - 8}
+    \Else
+        \State end algorithm \Comment {End Algorithm, $\emph{maximum iterations reached}$}
+    \EndIf
+\EndIf
+
+\end{algorithmic}
+
+\end{algorithm}
+
+The GRG algorithm converges relatively fast because it moves in the steepest descent, the direction that offers the most reduction in the value of the objective function. However, relying on the gradient of an objective function, the algorithm assumes that this objective function is defined and differentiable. Defined functions have one or more defined values for inputs from a given domain. A differentiable function is one for which derivatives exist over the domain or possible values of its inputs.
+
+Also, the GRG can get trapped while descending and converge to local minima. A local minima is a point at which the function evaluates to a lower value than all its surrounding points. This limitation makes it difficult to ensure that the algorithm has converged to the global minima - the point at which the function evaluates to the least possible value in its range of outputs. Therefore, it is recommended to re-run the GRG algorithm several times using different starting values to increase the chance of identifying the global minimum.
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/BFGS_SSE_RGS.jpeg"}
+         \caption{GRG with SSE}
+         \label{fig:grg_w_sse_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/BFGS_SSE_RGS_zm_true.jpeg"}
+         \caption{GRG SSE identified and true values}
+         \label{fig:grg_w_sse_zm_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/BFGS_SSE_RGS_zm.jpeg"}
+         \caption{GRG SSE identified values}
+         \label{fig:grg_w_sse_zm}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/BFGS_LLK_RGS.jpeg"}
+         \caption{GRG with LLK}
+         \label{fig:grg_w_llk_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/BFGS_LLK_RGS_zm_true.jpeg"}
+         \caption{GRG LLK identified and true values}
+         \label{fig:grg_w_llk_zm_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/BFGS_LLK_RGS_zm.jpeg"}
+         \caption{GRG LLK identified values}
+         \label{fig:grg_w_llk_zm}
+     \end{subfigure}
+        \caption{Generalised Reduced Gradient (GRG) with fitness functions}
+        \label{fig:grg_gof_plots}
+\end{figure}
+
+###### Nelder-Mead (Downhill simplex) algorithm
+
+The Downhill Simplex or Nelder-Mead (NM) method is another popular guided parameter-space exploration technique. This algorithm differs from the GRG algorithm in that it is gradient-free. Instead of computing the gradient of the objective function, it employs iterative operations in its search efforts until it converges to a minima [@singer2009]. These steps involve proposing new points and comparing their fitness with those of the current points. 
+
+NM would likely take longer to converge to the minima than GRG since the fastest path (the gradient) does not inform its route to the minima. Moreover, by design, NM might also evaluate the objective function more times than the GRG algorithm in an iteration. However, it is free from the GRG's assumptions about the fitness function.
+
+In a calibration problem with $\mathcal{N}$ parameters (n-dimensional calibration problem), the NM algorithm starts by randomly guessing starting values for $\mathcal{N + 1}$ parameter configurations. The objective function then evaluates and sorts the input sets in ascending order based on the fitness of their corresponding outputs. Then the algorithm employs several operations to select the next point that evaluates to a value better than that corresponding to the current worst-fitting point. These operations include: _reflection_, _expansion_, _contraction_ and _shirnking_ [@singer2009].
+
+To explain the NM algorithm, we conceptualise a simplex, an $\mathcal{N + 1}$-dimensional geometrical figure floating in the parameters' space. The $\mathcal{N + 1}$ inputs sets represent this simplex's corners (or vertices). In every iteration, the algorithm identifies the head of the simplex (the point represented by the input parameters) where the evaluation of the objective function is highest (worst fitting). Then the algorithm picks one or more points in the direction opposite to or midway between the simplex centre and the head with the worst fit to the target data. The steps of the NM algorithm are briefly described in Algorithm \ref{alg:NM} below.
+
+\begin{algorithm}
+
+\caption{Nelder-Mead (Downhill simplex)}\label{alg:NM}
+
+\begin{algorithmic}[1]
+
+\Require $\mathcal{threshold} = 0.0001$ \Comment {Set tolerance or threshold value to assess convergence}
+
+\Require $\sigma = 2 \times (\frac{\mathbfcal{f}(\mathcal{\vec{x}_{i_{Worst}}}) - \mathbfcal{f}(\mathcal{\vec{x}_{i_{Best}}})}{\mathbfcal{f}(\mathcal{\vec{x}_{i_{Worst}}}) + \mathbfcal{f}(\mathcal{\vec{x}_{i_{Best}}}) + threshold})$ \Comment {Define convergance equation}
+
+\Require $\mathcal{I} = 10000$ \Comment {Set the maximum number of iterations where $0 \leq \mathcal{i} \leq \mathcal{I}$}
+
+\Require $\mathcal{i} = 0$ \Comment {Start the iteration counter $\mathcal{i}$ at $0$}
+
+\Procedure{Assess convergence and stopping rule}{}
+  \If{$\sigma > \mathcal{threshold}$} \Comment {Assess $\emph{covergence}$}
+      \If{$\mathcal{i} < \mathcal{I}$} \Comment {Assess $\emph{stopping rule}$}
+          \State Go to step 12 \Comment {Proceed to the next iteration}
+      \Else
+          \State End algorithm \Comment {End Algorithm, $\emph{maximum iterations reached}$}
+      \EndIf
+  \Else
+      \State Return $\vec{x}_{i_{Best}}$ \Comment {End Algorithm, $\emph{convergence is acheived}$}
+  \EndIf    
+\EndProcedure
+
+\Require $\{\mathcal{\vec{x}_{1_{1}}, \vec{x}_{2_{1}}, ..., \vec{x}_{(N+1)_{1}}}\}, \; where \; \mathcal{\vec{x}} \gets \begin{pmatrix}\mathcal{x^{1}_{lb} < x^{1} < x^{1}_{ub}}\\\mathcal{x^{2}_{lb} < x^{2} < x^{2}_{ub}}\\...\\\mathcal{x^{n}_{lb} < x^{n} < x^{n}_{ub}}\end{pmatrix}$ \Comment {Random intial values (guess)}
+
+\Require $\{\mathbfcal{f}(\mathcal{\vec{x}_{1_{1}}}), \mathbfcal{f}(\mathcal{\vec{x}_{2_{1}}}), ..., \mathbfcal{f}(\mathcal{\vec{x}_{(N+1)_{1}}})\}$ \Comment {Evaluate the objective function for all input sets}
+
+\State $\mathcal{i} \gets \mathcal{i} + 1$ \Comment {Count current iteration}
+
+\State Sort $\{\mathbfcal{f}(\mathcal{\vec{x}_{1_{i}}}), \mathbfcal{f}(\mathcal{\vec{x}_{2_{i}}}), ..., \mathbfcal{f}(\mathcal{\vec{x}_{(N+1)_{i}}})\}, \; to: \; \{\mathbfcal{f}(\mathcal{\vec{x}_{i_{Best}}}), \mathbfcal{f}(\mathcal{\vec{x}_{i_{other}}}), ..., \mathbfcal{f}(\mathcal{\vec{x}_{i_{Worst}}})\}$
+
+\State Compute $\emph{centroid}$ \Comment {The simplex geometric center of $N$ points, ignoring $\mathcal{\vec{x}_{i_{Worst}}}$}
+
+\State Compute $\emph{reflected}$ \Comment {$\mathcal{\vec{x}_{i_{Refl}}}$ is opposite and equally far from centroid as $\mathcal{\vec{x}_{i_{Worst}}}$}
+
+\If{$\mathbfcal{f}(\vec{x}_{i_{Refl}}) < \mathbfcal{f}(\vec{x}_{i_{Best}})$} \Comment {Reflected is even better fitting than $\vec{x}_{i_{Best}}$}
+    \State Compute $\emph{expanded}$  \Comment {$\mathcal{\vec{x}_{i_{Expn}}}$ is opposite and twice as far from  centroid as $\mathcal{\vec{x}_{i_{Worst}}}$}
+    \State $\vec{x}_{i_{Worst}} \gets \min(\mathcal{\vec{x}_{i_{Expn}}}, \mathcal{\vec{x}_{i_{Refl}}})$ \Comment {The set generating the smaller $\mathbfcal{f}()$}
+    \State ASSESS CONVERGENCE AND STOPPING RULE 
+
+\ElsIf{$\mathbfcal{f}(\vec{x}_{i_{Refl}}) < \mathbfcal{f}(\vec{x}_{i_{Worst}})$} \Comment {Reflected is only better fitting than $\vec{x}_{i_{Worst}}$}
+    \State $\vec{x}_{i_{Worst}} \gets \mathcal{\vec{x}_{i_{Refl}}}$
+    \State ASSESS CONVERGENCE AND STOPPING RULE 
+
+\Else
+    \State Compute $\emph{contracted}$ \Comment {$\vec{x}_{i_{Cont1}}$ and $\vec{x}_{i_{Cont2}}$ are halfway opposite and towards $\vec{x}_{i_{Worst}}$}
+    \If{$\mathbfcal{f}(\vec{x}_{i_{Cont1}}) < \mathbfcal{f}(\vec{x}_{i_{Worst}}) \; | \; \mathbfcal{f}(\vec{x}_{i_{Cont2}}) < \mathbfcal{f}(\vec{x}_{i_{Worst}})$}
+        \State $\vec{x}_{i_{Worst}} \gets \min(\mathcal{\vec{x}_{i_{Cont1}}}, \mathcal{\vec{x}_{i_{Cont2}}})$ \Comment {The set generating the smaller $\mathbfcal{f}()$}
+        \State ASSESS CONVERGENCE AND STOPPING RULE 
+    \Else
+        \State $\emph{Shrink}$ simplex \Comment {Keep Best \& get the points halfway between it \& (Others \& Worst)}
+        \State ASSESS CONVERGENCE AND STOPPING RULE 
+    \EndIf    
+
+\EndIf
+
+\end{algorithmic}
+
+\end{algorithm}
+
+![Nelder-Mead algorithm main steps in a three-parameter optimisation problem](CR_images/NM_tetrahedral_simplex.JPG)
+
+Similar to the GRG algorithm, NM can converge to local minima. Therefore, running the algorithm a few times, each with a different set of starting points to improve the chances of identifying the global minima is recommended. Moreover, only the best-fitting parameter set emerges at the end of the process.
+
+![Nelder-Mead trapped in a local extrema](CR_images/NM_local_exterma.JPG)
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/NM_SSE_RGS.jpeg"}
+         \caption{NM with SSE}
+         \label{fig:nm_w_sse_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/NM_SSE_RGS_zm_true.jpeg"}
+         \caption{NM SSE identified and true values}
+         \label{fig:nm_w_sse_zm_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/NM_SSE_RGS_zm.jpeg"}
+         \caption{NM SSE identified values}
+         \label{fig:nm_w_sse_zm}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/NM_LLK_RGS.jpeg"}
+         \caption{NM with LLK}
+         \label{fig:nm_w_llk_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/NM_LLK_RGS_zm_true.jpeg"}
+         \caption{NM LLK identified and true values}
+         \label{fig:nm_w_llk_zm_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/NM_LLK_RGS_zm.jpeg"}
+         \caption{NM LLK identified values}
+         \label{fig:nm_w_llk_zm}
+     \end{subfigure}
+        \caption{Nelder-Mead (NM) algorithm with fitness functions}
+        \label{fig:nm_gof_plots}
+\end{figure}
+
+###### Simulated Annealing algorithm
+
+Suppose we conceptualise the outputs of the fitness function(s) as a surface with depressions and peaks. These peaks and valleys could represent better or poor-fitting points depending on the GOF measure. Minimising functions have their better fitting points in valleys, whereas maximising functions have their worse fitting points in valleys. 
+
+The GRG and NM algorithms use minimising GOF measures by default, and they accept or sample points in their route to reach the valleys of the objective function surface. In contrast, Simulated Annealing (SA) evaluates randomly sampled neighbouring points. SA retains a neighbouring candidate point deterministically if it is a better fit, than the currently retained one, or probabilistically if is a worse fit.
+
+SA introduces an artificial variable called temperature $\mathcal{T}$. The value of this variable is reduced along the algorithm iterations until it reaches $0$. This variable is used in computing the probability $\mathcal{p}$ of retaining poorer fitting points $\mathcal{p = e^ \frac{-(\mathbfcal{f}(\vec{x}_{i+1}) - \mathbfcal{f}(\vec{x}_{i}))}{T}}$. 
+
+With high values of $\mathcal{T}$, the chance of retaining a poorer fitting point $\mathcal{p}$ increases. This feature helps SA move and better search the parameter space. As the algorithm runs more iterations, the value of $\mathcal{T}$ gets smaller, and the probability $\mathcal{p}$ falls, allowing SA to find the lowest valley.
+
+$$
+\mathcal{p = e^ \frac{-(\mathbfcal{f}(\vec{x}_{i+1}) - \mathbfcal{f}(\vec{x}_{i}))}{T}}
+$$
+
+**TODO** Limitations discussion and algorithm section
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/SANN_SSE_RGS.jpeg"}
+         \caption{SANN with SSE}
+         \label{fig:sann_w_sse_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/SANN_SSE_RGS_zm_true.jpeg"}
+         \caption{SANN SSE identified and true values}
+         \label{fig:sann_w_sse_zm_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/SANN_SSE_RGS_zm.jpeg"}
+         \caption{SANN SSE identified values}
+         \label{fig:sann_w_sse_zm}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/SANN_LLK_RGS.jpeg"}
+         \caption{SANN with LLK}
+         \label{fig:sann_w_llk_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/SANN_LLK_RGS_zm_true.jpeg"}
+         \caption{SANN LLK identified and true values}
+         \label{fig:sann_w_llk_zm_true}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.30\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_2/images/SANN_LLK_RGS_zm.jpeg"}
+         \caption{SANN LLK identified values}
+         \label{fig:sann_w_llk_zm}
+     \end{subfigure}
+        \caption{Simulated Annealing (SANN) algorithm with fitness functions}
+        \label{fig:sann_gof_plots}
+\end{figure}
+
+##### Integrating calibration results
+
+Unlike the Bayesian calibration methods, the non-Bayesian approaches do not provide samples from the posterior probability distributions of the calibration parameters [@menzies2017]. Some non-Bayesian methods identify several calibration parameters' configurations. These sets are treated as if there were drawn from the calibration parameters posterior distributions. A sample of these sets is drawn - based on the overall fitness of each set - and then used in PSA [@vanni2011].
+
+On the other hand, other non-Bayesian methods identify a single calibration parameters set that generated the best fit to the calibraiton targets. Users of these methods often represent the uncertainty associated with the calibration parameters by using independent Normal or multi-variate Normal distributions. Noraml or multi-variate Noraml distributions are centered around the identified calibration parameters' values. These fitted distributions are then used to draw calibration parameter configuration for the PSA [@vanni2011].
+
+### The selection of a calibration method
+
+In a simulation study, @chrysanthopoulou2021 performed a comparative analysis between a non-Bayesian and a Bayesian approach for the calibration of microsimulation models. The reported comparisons considered both quantitative (e.g., the error in the identified values of the calibration parameters) and qualitative features (computational efficiency and ease of implementation). @chrysanthopoulou2021 concluded that the results of the comparative analyses were inconclusive since both methods produced very similar results. However, stemming from a well-defined theoretical framework, the results of the Bayesian approach were more meaningful (representing independent draws from the joint posterior distribution of the calibration parameters). At the same time, the non-Bayesian approach was more practical and required significantly fewer computational resources [@chrysanthopoulou2021]. They also suggested that more promising results might be achieved by combining the two approaches - where an empirical method identifies informative priors for the Bayesian approach that generates the posterior distribution [@chrysanthopoulou2021].
+
+Furthermore, @morina2017 argued that in addition to the model outputs, the cost-effectiveness outcomes and the subsequent policy decisions are significantly affected by the calibration approach. Their study compared two non-Bayesian methods to calibrate an NHM of human papillomavirus infection followed by cervical lesions [@morina2017]. Both methods resulted in the same policy recommendation; however, the incremental cost-effectiveness ratios (ICER)s were widely scattered. @morina2017 emphasised the importance of using a reliable calibration method to ensure accurate and reliable information.
+
+## Calibration of a simple decision model {#sec-case-study}
+### Introduction
+
+In this section, we use a simple decision model to demonstrate the calibration methods discussed in @sec-bayes-methods and @sec-non-bayes-methods. This exercise aims to provide a comparative analysis of different calibration methods in a simple calibration problem. 
+
+In this simulation study, we will compare the predicted values of the calibration parameter(s) with the simulated truth under different scenarios. However, we first introduce the decision-analytic model, the competing options, the calibration parameters, and the calibration targets. We also present the cost-effectiveness analysis using the simulated truth. 
+
+### The model
+
+We employed a modified version of the simple Markov model used by @alarid-escudero2018 and @jalal2018. The simple cancer relative survival (CRS) describes hypothetical cancer characterised by three states, two health states ("no cancer" and cancer) and death. A transition matrix dictates transitions between the states. We denote the states $\mathcal{S^{nC}, S^{C}, S^{D}}$, respectively.
+
+The model starts by simulating a cohort of cancer-free individuals. The individuals in the "no cancer" $\mathcal{S^{nC}}$ state face an annual risk of developing cancer denoted $\mathcal{p^{nC \rightarrow C}}$. Whereas simulated cancer patients $\mathcal{S^{C}}$ face an annual risk of dying from cancer $\mathcal{p^{C \rightarrow D}}$. The model cycle is year-long, and the time horizon is sixty years. The model structure is shown in @fig-crs.
+
+Each health state is associated with annual costs $\mathcal{c^{nC}, c^{C}}$ and utilities $\mathcal{e^{nC}, e^{C}}$. Costs incurred at each health state are the product of the state cohort fraction and the corresponding state-specific costs. The QALYs accrued at each health state are the product of the state cohort fraction, the corresponding state-specific utility, and the model cycle length in years. 
+
+The model predictions include expected costs $\mathcal{O^{Costs}}$, expected quality-adjusted life years (QALYs) $\mathcal{O^{QALYs}}$, annual proportion of cohort with cancer and annual cancer relative survival. The expected costs $\mathbb{E}(\mathcal{c})$ is the sum of the states' costs over the simulation time horizon. Whereas the expected QALYs $\mathbb{E}(\mathcal{e})$ is the sum of the states' QALYs over the model time horizon.
+
+The structure of this simple model implies several assumptions. These assumptions include: first, healthy individuals do not die. Second, the disease (cancer) is incurable. Third, all individuals do not die from causes other than cancer.
+
+### Competing options
+
+We devised four competing options for this simulation study. The first course of action was "no treatment", which reflects the economic consequences of the natural history of the hypothetical disease. We also implemented a screening policy available for all healthy individuals, reducing their risk of developing cancer by $50%$. The third choice was a treatment available for cancer patients minimising their chance of dying (due to cancer) by $50%$. The last policy option was a combination of the second and third options.
+
+Individuals incurred additional costs according to the policy option they received. Moreover, the cohort simulated under the fourth policy option incurs costs for the screening and treatment based on how long they qualify for each - the fraction of the cohort at each health state over the simulation time. On the other hand, only cancer patients under treatment were allowed to accrue more QALYs compared to the other interventions.  
+
+### True cost-effective analysis
+
+Below we report the cost-effective analysis using the assigned parameter values. We treat these results as a simulated truth and use them in the following sections to reflect the effects of different calibration methods on the cost-effectiveness results. The following results are limited to the probabilistic sensitivity analysis (PSA). The PSA allows the propagation of the uncertainty in the model parameterisation to the cost-effectiveness results.
+
+Figures \ref{fig:true_ceplane} and ref{fig:true_ceac} present the cost-effectiveness plane (CEP) and the cost-effectiveness acceptability curve (CEAC), respectively. The CEP and CEAC suggest that the "Screening" policy is the optimal choice at a decision threshold of £$20,000$ and £$30,000$.
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_3/images/true_ce_plane.jpeg"}
+         \caption{Plane}
+         \label{fig:true_ceplane}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_3/images/true_ceac.jpeg"}
+         \caption{Acceptability curve}
+         \label{fig:true_ceac}
+     \end{subfigure}
+        \caption{True cost-effectiveness plots}
+        \label{fig:CE-plots}
+\end{figure}
+
+Table \ref{tbl:true-CE-results} provides a detailed breakdown of the cost-effectiveness results. The "Screening" intervention was the optimal course of action at £$20,000$, £$30,000$, and £$30,000$ decision threshold with a net benefit of £$333,808$, £$648,944$, and £$1,279,214$, respectively. In addition, the probability of the "Screening" intervention being cost-effective at the investigated decision thresholds was consistently strong, $0.6$ and higher.
+
+\scriptsize
+```{r True CE table}
+#| label: tbl-true-CE-results
+#| tbl-cap: True cost-effectiveness results
+#| echo: false 
+library(ShinyPSA)
+library(gt)
+
+psa_object <- readRDS(file = "./CR_data/Chap_3/data/CRS_true_PSA.rds")
+
+psa_sum_object <- ShinyPSA::summarise_PSA_(
+  .effs = psa_object$e,
+  .costs = psa_object$c,
+  .params = psa_object$p,
+  .interventions = psa_object$treats)
+
+ShinyPSA::draw_summary_table_(
+    .PSA_data = psa_sum_object,
+    .wtp_ = c(2e4, 3e4, 5e4),
+    .beautify_ = TRUE,
+    .long_ = TRUE, 
+    .latex_ = TRUE,
+    .latex_code_ = TRUE)
+```
+\normalsize
+
+### Calibration parameters
+
+This simple Markov model employs two parameters, both of which are transition probabilities. The variable $\mathcal{p^{nC \rightarrow C}}$ denotes the probability of transitioning from the "no cancer" or healthy state to the cancer state. In comparison, the probability of a cancer patient dying due to cancer is denoted $\mathcal{p^{C \rightarrow D}}$.
+
+We assigned a (true) value to both parameters in this simulation study. The mean and [95% confidence interval] of these parameters are $\mathcal{p^{nC \rightarrow C}} = 0.100 [0.090, 0.110]$ and $\mathcal{p^{C \rightarrow D}} = 0.050 [0.045, 0.55]$.
+
+### Calibration targets
+
+The calibration targets we utilise in this exercise are the annual values of the proportion of the cohort with cancer and annual cancer-relative survival. These targets were also simulated by evaluating the model using ten thousand configurations of $\mathcal{p^{nC \rightarrow C}}$ and $\mathcal{p^{C \rightarrow D}}$. 
+
+The ten thousand parameter configurations were obtained by sampling from independent Normal distributions. These normal distributions' means and standard deviations were the corresponding calibration parameters' true values and standard errors, respectively. The standard errors were obtained from the corresponding 95% confidence interval.
+
+The simulated target's summary statistics (mean and variance) were estimated from the results of the ten thousand model evaluations. The simulated calibration targets are shown in Figure \ref{fig:survival} and Figure \ref{fig:propsick}.
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_3/images/surv_plot.jpeg"}
+         \caption{Proportion survived}
+         \label{fig:survival}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.49\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{"./CR_data/Chap_3/images/prev_plot.jpeg"}
+         \caption{Proportion sick}
+         \label{fig:propsick}
+     \end{subfigure}
+        \caption{Calibration targets}
+        \label{fig:targets}
+\end{figure}
+
+### Calibration methods
+
+This simulation study aims to showcase the performance of the common calibration methods in the field. However, the number of methods under comparison is relatively high. For example, if we consider the combination of the Nelder-Mead (NM) algorithm with each GOF measure a distinct non-Bayesian calibration method, we would have four NM versions and twenty-four non-Bayesian methods. 
+
+Presenting a comparative analysis of all identified methods might not be helpful. Therefore, we will only consider the log-likelihood (LLK) GOF measure. We will demonstrate the MCMC, the SIR and the IMIS from the Bayesian methods. Whereas, for the non-Bayesian methods, we will employ all identified parameter search methods in conjunction with the LLK GOF measure.
+
+#### Bayesian methods
+##### Priors
+
+We assigned Uniform distributions as priors for both calibration parameters. The priors are $\mathcal{p^{nC \rightarrow C}} \sim U(0, 1)$ and $\mathcal{p^{C \rightarrow D}} \sim U(0, 1)$. Scenarios three and four use $\mathcal{p^{nC \rightarrow C}} \sim U(0, 0.2)$ and $\mathcal{p^{C \rightarrow D}} \sim U(0, 0.2)$
+
+##### Likelihood
+
+As discussed in the @sec-bayes-methods, the likelihood function computes the probability that some input generates the observed data set. The likelihood is selected such that it is in line with the data-generating model. For example, a Binomial distribution is suitable to model the number of dead patients; therefore, a suitable likelihood function for cancer survival is a Binomial function. However, a Binomial likelihood function requires data on annual deaths and the total number of individuals at risk. This data is only sometimes available.
+
+The simulated epidemiological endpoints in our example are limited to mean and standard errors. Therefore, we assumed that at each time point $\mathcal{t}$, the simulated truths ($\mathcal{y^{\prime ^{Prev}}_{t}}$ and $\mathcal{y^{\prime ^{Surv}}_{t}}$) were modelled by Normal distributions as shown in @eq-sim-norm. The means of these distributions are the corresponding model predictions, but the standard errors are those of the simulated targets.
+
+$$
+\begin{array}{rcl}
+\mathcal{y^{\prime ^{Prev}}_{t}} & \sim \mathcal{N(O^{Prev}_{t}, \sigma^{y^{\prime ^{Prev}}_{t}})}, & \mathcal{t} \geq 1 \\
+\mathcal{y^{\prime ^{Surv}}_{t}} & \sim \mathcal{N(O^{Surv}_{t}, \sigma^{y^{\prime ^{Surv}}_{t}})}, & \mathcal{t} \geq 1
+\end{array}
+$${#eq-sim-norm}
+
+Following the above assumptions, we used a Normal likelihood function for the calibration target at each time point $\mathcal{t}$. Furthermore, we assumed that each calibration target and each endpoint were independently distributed $\mathcal{iid}$. Therefore, the overall likelihood (given in @eq-sim-norm-llk) was the product of the independent Normal likelihood functions over the recorded time points. Finally, we opted for the log version of @eq-sim-norm-llk for more straightforward computations.
+
+$$
+\begin{array}{cl}
+\mathcal{L(\vec{x}|\vec{y}^{\prime}) = \prod_{t = 1}^{T}(L(\vec{x}|\vec{y}^{\prime}_{t}))}
+\end{array}
+$${#eq-sim-norm-llk}
+
+##### PSA samples
+
+We randomly sampled a subset of $1,000$ PSA parameter configurations from the posterior distribution draws generated by each method. We then summarised the PSA samples to generate the method's corresponding cost-effectiveness results.
+
+#### non-Bayesian methods
+##### Parameter space
+
+We used the Bayesian methods' Uniform priors defined for both calibration parameters.
+
+##### Algorithms controls
+
+We used $10$ starting values (guesses) for GRG, NM, and SANN, and allowed each algorithm a maximum of $1,000$ iterations. The temperature value in SANN algorithm was set to $1$, and the algorithm was set by default to run $1,000$ evaluations before reducing the temperature.
+
+##### PSA samples
+
+We randomly sampled $1,000$ PSA parameter configurations from the sets identified by each of the undirected methods. We also generated $1,000$ draws from a multi-variate Normal distribution for each directed method using the corresponding extrema and Hessian matrix as the distribution's mean and standard deviation. We then summarised the PSA samples to generate the method's corresponding cost-effectiveness results.
+
+#### Software
+
+The computations of this simulation study were performed using R. The key packages utilised were `optim`, `GenSA`, `IMIS` and `MHadaptive`. We adopted the `IMIS` function from the `IMIS` package. 
+
+### Calibration scenarios
+
+Below we present and discuss the results of four calibration scenarios. These scenarios are construted to highlight the variation in the performance of the methods. These scenarios are constructed around the model, calibration targets and calibration parameters defined above. They invlove changing the number of calibration targets and the scope of the parameter space. The target we omited in some of the scenarios was selected arbitrarily; whereas, the change in the scope was informed by the fitness function plot.
+
+### Calibration results
+
+#### Scenario 1: Two target and the plausible parameter space
+
+In the first case study, we assume there is insufficient information to inform the selection of an explorable region in the parameter space. Therefore, the parameter space explored by the calibration method is the parameter(s) supported domain. Therefore, the plausible range of both calibration parameters is $0$ to $1$.
+
+##### Plotting the fitness function
+
+Figure \ref{fig:s1_gof} shows the two-dimensional plausible parameter space, highlighting the change in fitness, the log-likelihood (LLK), as a function of the parameters. The contour regions with lighter colours represent the region with the optimal (highest) fitness values, ones that simulate targets closer to the observed ones. This fitness function plot suggests that the values of the true calibration parameters are between $0$ and $0.2$.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK.jpeg"}
+    \caption{Fitness function [scenario 1]}
+    \label{fig:s1_gof}
+\end{figure}
+
+##### Identified calibration parameters
+
+As discussed earlier in @sec-calibration, the calibration methods we tested generate different outputs — the Bayesian methods sample from the posterior distribution, the directed non-Bayesian methods locate fitness function extrema, and the undirected non-Bayesian methods identify the sets with good fitness from a sample of parameter sets. Figures \ref{fig:s1_ud_gof_plots}, \ref{fig:s1_d_gof_plots} and \ref{fig:s1_b_gof_plots} provide a pictorial representation of the results of each of the employed calibration methods. These results are shown in an LLK contour plot to reflect the efficiency of the calibration methods on exploring the optimal fitness region highlighted in Figure \ref{fig:s1_gof}.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_LLK_FGS.jpeg"}
+        \caption{GSM}
+        \label{fig:s1_gsm_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_LLK_RGS.jpeg"}
+        \caption{RSM}
+        \label{fig:s1_rsm_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_LLK_LHS.jpeg"}
+        \caption{LHS}
+        \label{fig:s1_lhs_w_llk_true}
+    \end{subfigure}
+    \caption{Identified sets using log likelihood (LLK) [scenario 1]}
+    \label{fig:s1_ud_gof_plots}
+\end{figure}
+
+Figure \ref{fig:s1_ud_gof_plots} represents the values sampled by the Grid Search method (GSM), Random Search method (RSM) and the Latin Hypercube Sampling (LHS) as grey crosses. It also highlights the identified sets, which are the 10% of the sampled sets corresponding to the highest LLK values, with red circles. 
+
+Many sampled values are outside the highest (optimal) likelihood region highlighted in Figure \ref{fig:s1_gof}. All $1,000$ identified sets will be used in the probabilistic sensitivity analysis (PSA). The samples falling far from the optimal region will likely affect the cost-effectiveness results and recommendations.
+
+The three plots demonstrate the inefficiencies of the corresponding calibration methods. These unguided methods are likely the methods most affected by the scope of the parameter space. We will return to this point in the second scenario.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_BFGS_LLK_RGS.jpeg"}
+        \caption{GRG}
+        \label{fig:s1_grg_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_BFGS_LLK_RGS_zm.jpeg"}
+        \caption{GRG extremas}
+        \label{fig:s1_grg_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_NM_LLK_RGS.jpeg"}
+        \caption{NM}
+        \label{fig:s1_nm_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_NM_LLK_RGS_zm.jpeg"}
+        \caption{NM extremas}
+        \label{fig:s1_nm_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_SANN_LLK_RGS.jpeg"}
+        \caption{SANN}
+        \label{fig:s1_sann_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_SANN_LLK_RGS_zm.jpeg"}
+        \caption{SANN extremas}
+        \label{fig:s1_sann_w_llk_true_zm}
+    \end{subfigure}
+    \caption{Identified extremas using log likelihood (LLK) [scenario 1]}
+    \label{fig:s1_d_gof_plots}
+\end{figure}
+
+The black crosses in Figure \ref{fig:s1_d_gof_plots} represent the starting values (guesses) employed by the Generalised Reduced Gradient (GRG), Nelder-Mead (NM) and the Simulated Annealing (SANN) algorithms. Moreover, the extrema (maxima) identified following each starting value are shown with circles. Finally, the extremas (orange circles) were compared to identify the global maxima (red-filled circle).
+
+Unlike the case with the \ref{fig:s1_ud_gof_plots}, all identified extremas fell within the optimal fitness region and were very close to the true point (green circle). Also, the PSA values for these directed methods are obtained by sampling from a multivariate normal distribution. We employed the identified global extrema and its corresponding Hessian matrix as this multivariate normal distribution's mean and standard deviation. Therefore, we do not show the generated PSA points, but we will discuss the results later.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_MCMC.jpeg"}
+        \caption{MCMC}
+        \label{fig:s1_mcmc_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_MCMC_zm.jpeg"}
+        \caption{MCMC posterior samples}
+        \label{fig:s1_mcmc_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_SIR.jpeg"}
+        \caption{SIR}
+        \label{fig:s1_sir_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_SIR_zm.jpeg"}
+        \caption{SIR posterior samples}
+        \label{fig:s1_sir_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_IMIS.jpeg"}
+        \caption{IMIS}
+        \label{fig:s1_imis_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/GOF_LLK_IMIS_zm.jpeg"}
+        \caption{IMIS posterior samples}
+        \label{fig:s1_imis_w_llk_true_zm}
+    \end{subfigure}
+    \caption{Posterior samples [scenario 1]}
+    \label{fig:s1_b_gof_plots}
+\end{figure}
+
+We demonstrate the posterior samples generated by Markov Chain Monte Carlo (MCMC), Sampling Importance Resampling, and Incremental Mixture Importance Sampling (IMIS) in Figure \ref{fig:s1_b_gof_plots}. Grey crosses show the prior distribution samples, while the circles represent draws from the posterior distributions. Yellow circle(s) represent the mean and mode (maximum-a-posteriori) of the corresponding posterior distributions. We also show the prior and posterior distributions in Figure \ref{fig:s1_b_prior_posterior_plots} where we can see Bayesian updating.
+
+The posterior draws generated by all three methods fall within the optimal fitness region and close to the actual value (green circle). MCMC generated the highest effective sample size (ESS) $1,000$ but took significantly longer to run. The IMIS generated an ESS of $570$ but took slightly longer than the SIR, which had an ESS of $2$. The ESS values and running time suggest that IMIS is a good Bayesian method candidate for calibrating expensive models that require significant resources. We used the obtained posterior draws in the PSA.
+
+The SIR is likely affected by the scope of the parameter space. SIR requires significantly more samples to sample the posterior distribution in this scenario better. The effects of the SIR's low ESS in the PSA results will be shown later.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/dst_MCMC_p_DieMets.jpeg"}
+        \caption{MCMC $\mathcal{p^{C \rightarrow D}}$}
+        \label{fig:s1_mcmc_pp1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/dst_MCMC_p_Mets.jpeg"}
+        \caption{MCMC $\mathcal{p^{nC \rightarrow C}}$}
+        \label{fig:s1_mcmc_pp2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/dst_SIR_p_DieMets.jpeg"}
+        \caption{SIR $\mathcal{p^{C \rightarrow D}}$}
+        \label{fig:s1_sir_pp1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/dst_SIR_p_Mets.jpeg"}
+        \caption{SIR $\mathcal{p^{nC \rightarrow C}}$}
+        \label{fig:s1_sir_pp2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/dst_IMIS_p_DieMets.jpeg"}
+        \caption{IMIS $\mathcal{p^{C \rightarrow D}}$}
+        \label{fig:s1_imis_pp1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/dst_IMIS_p_Mets.jpeg"}
+        \caption{IMIS $\mathcal{p^{nC \rightarrow C}}$}
+        \label{fig:s1_imis_pp2}
+    \end{subfigure}
+    \caption{Prior and posterior distributions [scenario 1]}
+    \label{fig:s1_b_prior_posterior_plots}
+\end{figure}
+
+\pagebreak
+
+##### Simulated targets
+
+We used the PSA sets generated from each method employed to simulate the targets. The plots show the calibration method maximum-a-posteriori (green line), the posterior mean and mode (dark green lines where relevant), the $95$% confidence interval (red lines where relevant) and the other PSA sets (light blue lines).
+
+The targets simulated by the undirected methods (Figure \ref{fig:s1_ud_tars}) followed our expectations from Figure \ref{fig:s1_d_gof_plots}, where many of the identified samples fell outside the optimal fitness region. Similarly, the targets simulated by the Bayesian methods (Figure \ref{fig:s1_b_tars}) were within the $95$% confidence interval. 
+
+On the other hand, the targets simulated by the directed methods' PSA values were significantly far from the observed ones. Since the global maxima were too close to the actual parameters' values, the departure of these PSA values is directly linked to the Hessian matrix. We will investigate this behaviour further to understand the conditions that can influence the Hessian matrix and lead to such results.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_LLK_FGS_Surv.jpeg"}
+        \caption{GSM Survival}
+        \label{fig:s1_gsm_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_LLK_RGS_Surv.jpeg"}
+        \caption{RSM Survival}
+        \label{fig:s1_rsm_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_LLK_LHS_Surv.jpeg"}
+        \caption{LHS Survival}
+        \label{fig:s1_lhs_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_LLK_FGS_PropSick.jpeg"}
+        \caption{GSM Sick}
+        \label{fig:s1_gsm_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_LLK_RGS_PropSick.jpeg"}
+        \caption{RSM Sick}
+        \label{fig:s1_rsm_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_LLK_LHS_PropSick.jpeg"}
+        \caption{LHS Sick}
+        \label{fig:s1_lhs_tar2}
+    \end{subfigure}
+    \caption{Simulated targets - undirected non-Bayesian methods [scenario 1]}
+    \label{fig:s1_ud_tars}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_BFGS_LLK_RGS_Surv.jpeg"}
+        \caption{GRG Survival}
+        \label{fig:s1_grg_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_NM_LLK_RGS_Surv.jpeg"}
+        \caption{NM Survival}
+        \label{fig:s1_nm_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_SANN_LLK_RGS_Surv.jpeg"}
+        \caption{SANN Survival}
+        \label{fig:s1_sann_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_BFGS_LLK_RGS_PropSick.jpeg"}
+        \caption{GRG Sick}
+        \label{fig:s1_grg_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_NM_LLK_RGS_PropSick.jpeg"}
+        \caption{NM Sick}
+        \label{fig:s1_nm_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_SANN_LLK_RGS_PropSick.jpeg"}
+        \caption{SANN Sick}
+        \label{fig:s1_sann_tar2}
+    \end{subfigure}
+    \caption{Simulated targets - directed non-Bayesian methods [scenario 1]}
+    \label{fig:s1_d_tars}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_MCMC_Surv.jpeg"}
+        \caption{MCMC Survival}
+        \label{fig:s1_mcmc_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_SIR_Surv.jpeg"}
+        \caption{SIR Survival}
+        \label{fig:s1_sir_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_IMIS_Surv.jpeg"}
+        \caption{IMIS Survival}
+        \label{fig:s1_imis_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_MCMC_PropSick.jpeg"}
+        \caption{MCMC Sick}
+        \label{fig:s1_mcmc_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_SIR_PropSick.jpeg"}
+        \caption{SIR Sick}
+        \label{fig:s1_sir_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_1/images/tar_IMIS_PropSick.jpeg"}
+        \caption{IMIS Sick}
+        \label{fig:s1_imis_tar2}
+    \end{subfigure}
+    \caption{Simulated targets - Bayesian methods [scenario 1]}
+    \label{fig:s1_b_tars}
+\end{figure}
+
+\pagebreak
+
+##### Cost-effectiveness analysis
+
+Below we present the results of the cost-effectiveness results. Because the dominance status of some of the interventions might change, the reference intervention of one or more Incremental Cost-Effectiveness Ratios (ICERs) might change. Therefore, we did not report the ICER because comparing ICERs generated by different interventions is challenging. We, alternatively, presented the "Net Benefit" at £$20,000$ and £$30,000$.
+
+We also reported two measures to capture the uncertainty surrounding the decision, the "probability of being cost-effective" and the "expected value of perfect information". These two measures were estimated at £$20,000$ and £$30,000$.
+
+The table below presents the cost-effectiveness results based on the PSA values obtained from each calibration method. Also, the first rows repeat some of the information presented in the "True" cost-effectiveness results table (Table \ref{tbl:true-CE-results}). We also provide the same table with the "Net Benefit" results of the calibration methods relative to the "True" ones in the appendix.\\
+
+\scriptsize
+```{r Calibration CE table}
+#| label: tbl-cal-CE
+#| tbl-cap: Cost-effectiveness results [scenario 1]
+#| echo: false 
+tab_object <- readRDS(file = "./CR_data/Chap_3/Case_study_1/data/calibration_CE_PSA_abs.rds")
+tab_object %>% 
+    gt::as_latex()
+```
+\normalsize
+
+The Bayesian methods produced the least divergent results. The "Net Benefit" discrepancies ranged between £$282$ and £$2,099$, or less than $1$%. The IMIS generated the closest "Net Benefit", whereas the SIR produced the furthest. On the other hand, the uncertainty measures were significantly different from the truth. These differences are likely because the PSA was informed only by the calibration parameters and the results of the Bayesian methods were very precise.
+
+The undirected non-Bayesian methods generated the same recommendations; the "Screening" intervention was the optimal choice at the £$20,000$ and £$30,000$ thresholds. Nonetheless, there were significant differences between the "True" and the simulated "Net Benefit" and the measures of decision uncertainty. We expected the GSM to perform worse than the LHS and RSM, but the results of the three methods were comparable, with no clear winner.
+
+On the other hand, the directed non-Bayesian methods produced different cost-effectiveness recommendations at the £$20,000$ threshold; the policy implementing "none" of the interventions was reported as the optimal choice. Compared to the other calibration methods, these methods registered the highest departure from the "True" values of the "Net Benefit" at over $£400,000$. The cost-effectiveness results of the three methods were similar.\\
+
+\scriptsize
+```{r Calibration relative CE table}
+#| label: tbl-rel-cal-CE
+#| tbl-cap: Cost-effectiveness results (net benefits values relative to true ones) [scenario 1]
+#| echo: false 
+tab_object <- readRDS(file = "./CR_data/Chap_3/Case_study_1/data/calibration_CE_PSA_rel.rds")
+tab_object %>% 
+    gt::as_latex()
+```
+\normalsize
+
+#### Scenario 2: Two target and the explorable parameter space
+
+In the second case study, we utilise the information we gained from the fitness function plot (Figure \ref{fig:s1_gof}) to select the an explorable region in the parameter space. Figure \ref{fig:s1_gof} highlighted a region of high log likelihood value between $0$ and $0.2$ for both calibration parameters. Therefore, these values are used to define the explorable parameter space explored in this scenario.
+
+##### Plotting the fitness function
+
+The two-dimensional explorable parameter space is presented in Figure \ref{fig:s2_gof} as a function of the log-likelihood fitness function. The region highlighted by the $0$ line is the parameter space with optimal (highest) fitness values.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK.jpeg"}
+    \caption{Fitness function [scenario 2]}
+    \label{fig:s2_gof}
+\end{figure}
+
+##### Identified calibration parameters
+
+Figures \ref{fig:s2_ud_gof_plots}, \ref{fig:s2_d_gof_plots} and \ref{fig:s2_b_gof_plots} demonstrates the results of the non-Bayesian undirected, directed and Bayesian methods, respectively.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_LLK_FGS.jpeg"}
+        \caption{GSM}
+        \label{fig:s2_gsm_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_LLK_RGS.jpeg"}
+        \caption{RSM}
+        \label{fig:s2_rsm_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_LLK_LHS.jpeg"}
+        \caption{LHS}
+        \label{fig:s2_lhs_w_llk_true}
+    \end{subfigure}
+    \caption{Identified sets using log likelihood (LLK) [scenario 2]}
+    \label{fig:s2_ud_gof_plots}
+\end{figure}
+
+Compared to the first case study (Figure \ref{fig:s1_ud_gof_plots}), the sets identified by GSM, RSM, and LHS (red circles) in Figure \ref{fig:s2_ud_gof_plots} are primarily concentrated closer to the assigned truth (green dot). Therefore, we expect lesser discrepancies in the simulated targets and the cost-effectiveness results compared to the first scenario. 
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_BFGS_LLK_RGS.jpeg"}
+        \caption{GRG}
+        \label{fig:s2_grg_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_BFGS_LLK_RGS_zm.jpeg"}
+        \caption{GRG extremas}
+        \label{fig:s2_grg_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_NM_LLK_RGS.jpeg"}
+        \caption{NM}
+        \label{fig:s2_nm_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_NM_LLK_RGS_zm.jpeg"}
+        \caption{NM extremas}
+        \label{fig:s2_nm_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_SANN_LLK_RGS.jpeg"}
+        \caption{SANN}
+        \label{fig:s2_sann_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_SANN_LLK_RGS_zm.jpeg"}
+        \caption{SANN extremas}
+        \label{fig:s2_sann_w_llk_true_zm}
+    \end{subfigure}
+    \caption{Identified extremas using log likelihood (LLK) [scenario 2]}
+    \label{fig:s2_d_gof_plots}
+\end{figure}
+
+Similar to the first case study (Figure \ref{fig:s1_d_gof_plots}), the extremas and global maxima identified by GRG, NM, and SANN (orange and red circles) in Figure \ref{fig:s2_d_gof_plots} were within the optimal fitness region close to the true set (green circle). We can not deduce the effects of the explorable parameter space on the Hessian from Figure \ref{fig:s2_d_gof_plots}, but we will return to this point when discussing the corresponding target plots.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_MCMC.jpeg"}
+        \caption{MCMC}
+        \label{fig:s2_mcmc_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_MCMC_zm.jpeg"}
+        \caption{MCMC posterior samples}
+        \label{fig:s2_mcmc_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_SIR.jpeg"}
+        \caption{SIR}
+        \label{fig:s2_sir_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_SIR_zm.jpeg"}
+        \caption{SIR posterior samples}
+        \label{fig:s2_sir_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_IMIS.jpeg"}
+        \caption{IMIS}
+        \label{fig:s2_imis_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/GOF_LLK_IMIS_zm.jpeg"}
+        \caption{IMIS posterior samples}
+        \label{fig:s2_imis_w_llk_true_zm}
+    \end{subfigure}
+    \caption{Posterior samples [scenario 2]}
+    \label{fig:s2_b_gof_plots}
+\end{figure}
+
+The performance of the MCMC and the IMIS methods remains almost unchanged in Figures \ref{fig:s2_b_gof_plots} and \ref{fig:s2_b_prior_posterior_plots}. However, Figure \ref{fig:s2_sir_w_llk_true_zm} shows a slight improvement in the number of posterior samples drawn by the SIR. We expect this to have slight effects on the cost-effectiveness results of the SIR method.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/dst_MCMC_p_DieMets.jpeg"}
+        \caption{MCMC $\mathcal{p^{C \rightarrow D}}$}
+        \label{fig:s2_mcmc_pp1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/dst_MCMC_p_Mets.jpeg"}
+        \caption{MCMC $\mathcal{p^{nC \rightarrow C}}$}
+        \label{fig:s2_mcmc_pp2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/dst_SIR_p_DieMets.jpeg"}
+        \caption{SIR $\mathcal{p^{C \rightarrow D}}$}
+        \label{fig:s2_sir_pp1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/dst_SIR_p_Mets.jpeg"}
+        \caption{SIR $\mathcal{p^{nC \rightarrow C}}$}
+        \label{fig:s2_sir_pp2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/dst_IMIS_p_DieMets.jpeg"}
+        \caption{IMIS $\mathcal{p^{C \rightarrow D}}$}
+        \label{fig:s2_imis_pp1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/dst_IMIS_p_Mets.jpeg"}
+        \caption{IMIS $\mathcal{p^{nC \rightarrow C}}$}
+        \label{fig:s2_imis_pp2}
+    \end{subfigure}
+    \caption{Prior and posterior distributions [scenario 2]}
+    \label{fig:s2_b_prior_posterior_plots}
+\end{figure}
+
+\pagebreak
+
+##### Simulated targets
+
+Compared to the first scenario (Figure \ref{fig:s1_ud_tars}), the targets simulated by the undirected methods (Figure \ref{fig:s2_ud_tars}) were closer to the simulated truth - they were only slightly over and below the targets' 95% confidence interval.   
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_LLK_FGS_Surv.jpeg"}
+        \caption{GSM Survival}
+        \label{fig:s2_gsm_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_LLK_RGS_Surv.jpeg"}
+        \caption{RSM Survival}
+        \label{fig:s2_rsm_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_LLK_LHS_Surv.jpeg"}
+        \caption{LHS Survival}
+        \label{fig:s2_lhs_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_LLK_FGS_PropSick.jpeg"}
+        \caption{GSM Sick}
+        \label{fig:s2_gsm_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_LLK_RGS_PropSick.jpeg"}
+        \caption{RSM Sick}
+        \label{fig:s2_rsm_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_LLK_LHS_PropSick.jpeg"}
+        \caption{LHS Sick}
+        \label{fig:s2_lhs_tar2}
+    \end{subfigure}
+    \caption{Simulated targets - undirected non-Bayesian methods [scenario 2]}
+    \label{fig:s2_ud_tars}
+\end{figure}
+
+On the other hand, the targets simulated by the directed methods' PSA values were significantly better than those in the first case study (Figure \ref{fig:s1_d_tars}). However, these values were still far from the observed ones (Figure \ref{fig:s2_d_tars}). This slight improvement suggests that the Hessian matrix is affected by the scope of the parameter space; however, it is still unclear how and why it is affected.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_BFGS_LLK_RGS_Surv.jpeg"}
+        \caption{GRG Survival}
+        \label{fig:s2_grg_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_NM_LLK_RGS_Surv.jpeg"}
+        \caption{NM Survival}
+        \label{fig:s2_nm_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_SANN_LLK_RGS_Surv.jpeg"}
+        \caption{SANN Survival}
+        \label{fig:s2_sann_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_BFGS_LLK_RGS_PropSick.jpeg"}
+        \caption{GRG Sick}
+        \label{fig:s2_grg_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_NM_LLK_RGS_PropSick.jpeg"}
+        \caption{NM Sick}
+        \label{fig:s2_nm_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_SANN_LLK_RGS_PropSick.jpeg"}
+        \caption{SANN Sick}
+        \label{fig:s2_sann_tar2}
+    \end{subfigure}
+    \caption{Simulated targets - directed non-Bayesian methods [scenario 2]}
+    \label{fig:s2_d_tars}
+\end{figure}
+
+In line with their performace in the first case (Figure \ref{fig:fig:s1_b_tars}), the Bayesian methods generate targets with tighter 95% confidence intervals (Figure \ref{fig:fig:s2_b_tars}).
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_MCMC_Surv.jpeg"}
+        \caption{MCMC Survival}
+        \label{fig:s2_mcmc_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_SIR_Surv.jpeg"}
+        \caption{SIR Survival}
+        \label{fig:s2_sir_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_IMIS_Surv.jpeg"}
+        \caption{IMIS Survival}
+        \label{fig:s2_imis_tar1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_MCMC_PropSick.jpeg"}
+        \caption{MCMC Sick}
+        \label{fig:s2_mcmc_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_SIR_PropSick.jpeg"}
+        \caption{SIR Sick}
+        \label{fig:s2_sir_tar2}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_2/images/tar_IMIS_PropSick.jpeg"}
+        \caption{IMIS Sick}
+        \label{fig:s2_imis_tar2}
+    \end{subfigure}
+    \caption{Simulated targets - Bayesian methods [scenario 2]}
+    \label{fig:s2_b_tars}
+\end{figure}
+
+\pagebreak
+
+##### Cost-effectiveness analysis
+
+Below we present the results of the cost-effectiveness results. Because the dominance status of some of the interventions might change, the reference intervention of one or more Incremental Cost-Effectiveness Ratios (ICERs) might change. Therefore, we did not report the ICER because comparing ICERs generated by different interventions is challenging. We, alternatively, presented the "Net Benefit" at £$20,000$ and £$30,000$.
+
+We also reported two measures to capture the uncertainty surrounding the decision, the "probability of being cost-effective" and the "expected value of perfect information". These two measures were estimated at £$20,000$ and £$30,000$.
+
+The table below presents the cost-effectiveness results based on the PSA values obtained from each calibration method. Also, the first rows repeat some of the information presented in the "True" cost-effectiveness results table (Table \ref{tbl:true-CE-results}). We also provide the same table with the "Net Benefit" results of the calibration methods relative to the "True" ones in the appendix.\\
+
+\scriptsize
+```{r Calibration CE table2}
+#| label: tbl-cal-CE2
+#| tbl-cap: Cost-effectiveness results [scenario 2]
+#| echo: false 
+tab_object <- readRDS(file = "./CR_data/Chap_3/Case_study_2/data/calibration_CE_PSA_abs.rds")
+tab_object %>% 
+  gt::as_latex()
+```
+\normalsize
+
+The Bayesian methods produced the least divergent results. The "Net Benefit" discrepancies ranged between £$282$ and £$2,099$, or less than $1$%. The IMIS generated the closest "Net Benefit", whereas the SIR produced the furthest. On the other hand, the uncertainty measures were significantly different from the truth. These differences are likely because the PSA was informed only by the calibration parameters and the results of the Bayesian methods were very precise.
+
+The undirected non-Bayesian methods generated the same recommendations; the "Screening" intervention was the optimal choice at the £$20,000$ and £$30,000$ thresholds. Nonetheless, there were significant differences between the "True" and the simulated "Net Benefit" and the measures of decision uncertainty. We expected the GSM to perform worse than the LHS and RSM, but the results of the three methods were comparable, with no clear winner.
+
+On the other hand, the directed non-Bayesian methods produced different cost-effectiveness recommendations at the £$20,000$ threshold; the policy implementing "none" of the interventions was reported as the optimal choice. Compared to the other calibration methods, these methods registered the highest departure from the "True" values of the "Net Benefit" at over $£400,000$. The cost-effectiveness results of the three methods were similar.\\
+
+\scriptsize
+```{r Calibration relative CE table2}
+#| label: tbl-rel-cal-CE2
+#| tbl-cap: Cost-effectiveness results (net benefits values relative to true ones) [scenario 2]
+#| echo: false 
+tab_object <- readRDS(file = "./CR_data/Chap_3/Case_study_2/data/calibration_CE_PSA_rel.rds")
+tab_object %>% 
+  gt::as_latex()
+```
+\normalsize
+
+#### Scenario 3: One target and the plausible parameter space
+
+We assume we need more information to limit the parameter space in this scenario. Therefore, the parameter space explored by the calibration method is the parameter(s) supported domain. Therefore, the plausible range of both calibration parameters is $0$ to $1$.
+
+##### Plotting the fitness function
+
+Figure \ref{fig:s3_gof} shows the two-dimensional plausible parameter space, highlighting the change in fitness as a function of the parameters. The regions with lighter colours represent values that simulate targets closer to the observed ones. This fitness function plot suggests that the values of the true calibration parameters are between $0$ and $0.2$.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK.jpeg"}
+    \caption{Fitness function [scenario 3]}
+    \label{fig:s3_gof}
+\end{figure}
+
+##### Identified calibration parameters
+
+As discussed earlier in @sec-calibration, the calibration methods we tested generate different outputs — the Bayesian methods sample from the posterior distribution, the directed non-Bayesian methods locate fitness function extrema, and the undirected non-Bayesian methods identify the sets with good fitness from a sample of parameter sets. Figures \ref{fig:s3_ud_gof_plots}, \ref{fig:s3_d_gof_plots} and \ref{fig:s3_b_gof_plots} provide a pictorial representation of the results of each of the employed calibration methods overlaid on an LLK fitness plot.
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_LLK_FGS.jpeg"}
+\caption{GSM}
+\label{fig:s3_gsm_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_LLK_RGS.jpeg"}
+\caption{RSM}
+\label{fig:s3_rsm_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_LLK_LHS.jpeg"}
+\caption{LHS}
+\label{fig:s3_lhs_w_llk_true}
+\end{subfigure}
+\caption{Identified sets using log likelihood (LLK) [scenario 3]}
+\label{fig:s3_ud_gof_plots}
+\end{figure}
+
+Figure \ref{fig:s3_ud_gof_plots} represents the values sampled by the Grid Search method (GSM), Random Search method (RSM) and the Latin Hypercube Sampling (LHS) as grey crosses. It also highlights the identified sets, which are the 10% of the sampled sets corresponding to the highest LLK values, with red circles. 
+
+Many sampled values are outside the highest (optimal) likelihood region highlighted in Figure \ref{fig:s3_gof}. All $1,000$ identified sets will be used in the probabilistic sensitivity analysis (PSA). The samples falling far from the optimal region will likely affect the cost-effectiveness results and recommendations.
+
+The three plots demonstrate the inefficiencies of the corresponding calibration methods. These unguided methods are likely the methods most affected by the scope of the parameter space. We will return to this point in the second scenario.
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_BFGS_LLK_RGS.jpeg"}
+\caption{GRG}
+\label{fig:s3_grg_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_BFGS_LLK_RGS_zm.jpeg"}
+\caption{GRG extremas}
+\label{fig:s3_grg_w_llk_true_zm}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_NM_LLK_RGS.jpeg"}
+\caption{NM}
+\label{fig:s3_nm_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_NM_LLK_RGS_zm.jpeg"}
+\caption{NM extremas}
+\label{fig:s3_nm_w_llk_true_zm}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_SANN_LLK_RGS.jpeg"}
+\caption{SANN}
+\label{fig:s3_sann_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_SANN_LLK_RGS_zm.jpeg"}
+\caption{SANN extremas}
+\label{fig:s3_sann_w_llk_true_zm}
+\end{subfigure}
+\caption{Identified extremas using log likelihood (LLK) [scenario 3]}
+\label{fig:s3_d_gof_plots}
+\end{figure}
+
+The black crosses in Figure \ref{fig:s3_d_gof_plots} represent the starting values (guesses) employed by the Generalised Reduced Gradient (GRG), Nelder-Mead (NM) and the Simulated Annealing (SANN) algorithms. Moreover, the extrema (maxima) identified following each starting value are shown with circles. Finally, the extremas (orange circles) were compared to identify the global maxima (red-filled circle).
+
+Unlike the case with the \ref{fig:s3_ud_gof_plots}, all identified extremas fell within the optimal fitness region and were very close to the true point (green circle). Also, the PSA values for these directed methods are obtained by sampling from a multivariate normal distribution. We employed the identified global extrema and its corresponding Hessian matrix as this multivariate normal distribution's mean and standard deviation. Therefore, we do not show the generated PSA points, but we will discuss the results later.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_MCMC.jpeg"}
+        \caption{MCMC}
+        \label{fig:s3_mcmc_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_MCMC_zm.jpeg"}
+        \caption{MCMC posterior samples}
+        \label{fig:s3_mcmc_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_SIR.jpeg"}
+        \caption{SIR}
+        \label{fig:s3_sir_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_SIR_zm.jpeg"}
+        \caption{SIR posterior samples}
+        \label{fig:s3_sir_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_IMIS.jpeg"}
+        \caption{IMIS}
+        \label{fig:s3_imis_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/GOF_LLK_IMIS_zm.jpeg"}
+        \caption{IMIS posterior samples}
+        \label{fig:s3_imis_w_llk_true_zm}
+    \end{subfigure}
+    \caption{Posterior samples [scenario 3]}
+    \label{fig:s3_b_gof_plots}
+\end{figure}
+
+We demonstrate the posterior samples generated by Markov Chain Monte Carlo (MCMC), Sampling Importance Resampling, and Incremental Mixture Importance Sampling (IMIS) in Figure \ref{fig:s3_b_gof_plots}. Grey crosses show the prior distribution samples, while the circles represent draws from the posterior distributions. Yellow circle(s) represent the mean and mode (maximum-a-posteriori) of the corresponding posterior distributions. We also show the prior and posterior distributions in Figure \ref{fig:s3_b_prior_posterior_plots} where we can see Bayesian updating.
+
+The posterior draws generated by all three methods fall within the optimal fitness region and close to the actual value (green circle). MCMC generated the highest effective sample size (ESS) $1,000$ but took significantly longer to run. The IMIS generated an ESS of $570$ but took slightly longer than the SIR, which had an ESS of $2$. The ESS values and running time suggest that IMIS is a good Bayesian method candidate for calibrating expensive models that require significant resources. We used the obtained posterior draws in the PSA.
+
+The SIR is likely affected by the scope of the parameter space. SIR requires significantly more samples to sample the posterior distribution in this scenario better. The effects of the SIR's low ESS in the PSA results will be shown later.
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/dst_MCMC_p_DieMets.jpeg"}
+\caption{MCMC $\mathcal{p^{C \rightarrow D}}$}
+\label{fig:s3_mcmc_pp1}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/dst_MCMC_p_Mets.jpeg"}
+\caption{MCMC $\mathcal{p^{nC \rightarrow C}}$}
+\label{fig:s3_mcmc_pp2}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/dst_SIR_p_DieMets.jpeg"}
+\caption{SIR $\mathcal{p^{C \rightarrow D}}$}
+\label{fig:s3_sir_pp1}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/dst_SIR_p_Mets.jpeg"}
+\caption{SIR $\mathcal{p^{nC \rightarrow C}}$}
+\label{fig:s3_sir_pp2}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/dst_IMIS_p_DieMets.jpeg"}
+\caption{IMIS $\mathcal{p^{C \rightarrow D}}$}
+\label{fig:s3_imis_pp1}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/dst_IMIS_p_Mets.jpeg"}
+\caption{IMIS $\mathcal{p^{nC \rightarrow C}}$}
+\label{fig:s3_imis_pp2}
+\end{subfigure}
+\caption{Prior and posterior distributions [scenario 3]}
+\label{fig:s3_b_prior_posterior_plots}
+\end{figure}
+
+\pagebreak
+
+##### Simulated targets
+
+We used the PSA sets generated from each method employed to simulate the targets. The plots show the calibration method maximum-a-posteriori (green line), the posterior mean and mode (dark green lines where relevant), the $95$% confidence interval (red lines where relevant) and the other PSA sets (light blue lines).
+
+The targets simulated by the undirected methods (Figure \ref{fig:s3_ud_tars}) followed our expectations from Figure \ref{fig:s3_d_gof_plots}, where many of the identified samples fell outside the optimal fitness region. Similarly, the targets simulated by the Bayesian methods (Figure \ref{fig:s3_b_tars}) were within the $95$% confidence interval. 
+
+On the other hand, the targets simulated by the directed methods' PSA values were significantly far from the observed ones. Since the global maxima were too close to the actual parameters' values, the departure of these PSA values is directly linked to the Hessian matrix. We will investigate this behaviour further to understand the conditions that can influence the Hessian matrix and lead to such results.
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/tar_LLK_FGS_Surv.jpeg"}
+\caption{GSM Survival}
+\label{fig:s3_gsm_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/tar_LLK_RGS_Surv.jpeg"}
+\caption{RSM Survival}
+\label{fig:s3_rsm_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/tar_LLK_LHS_Surv.jpeg"}
+\caption{LHS Survival}
+\label{fig:s3_lhs_tar1}
+\end{subfigure}
+\caption{Simulated targets - undirected non-Bayesian methods [scenario 3]}
+\label{fig:s3_ud_tars}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/tar_BFGS_LLK_RGS_Surv.jpeg"}
+\caption{GRG Survival}
+\label{fig:s3_grg_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/tar_NM_LLK_RGS_Surv.jpeg"}
+\caption{NM Survival}
+\label{fig:s3_nm_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/tar_SANN_LLK_RGS_Surv.jpeg"}
+\caption{SANN Survival}
+\label{fig:s3_sann_tar1}
+\end{subfigure}
+\caption{Simulated targets - directed non-Bayesian methods [scenario 3]}
+\label{fig:s3_d_tars}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/tar_MCMC_Surv.jpeg"}
+\caption{MCMC Survival}
+\label{fig:s3_mcmc_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/tar_SIR_Surv.jpeg"}
+\caption{SIR Survival}
+\label{fig:s3_sir_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_3/images/tar_IMIS_Surv.jpeg"}
+\caption{IMIS Survival}
+\label{fig:s3_imis_tar1}
+\end{subfigure}
+\caption{Simulated targets - Bayesian methods [scenario 3]}
+\label{fig:s3_b_tars}
+\end{figure}
+
+\pagebreak
+
+##### Cost-effectiveness analysis
+
+Below we present the results of the cost-effectiveness results. Because the dominance status of some of the interventions might change, the reference intervention of one or more Incremental Cost-Effectiveness Ratios (ICERs) might change. Therefore, we did not report the ICER because comparing ICERs generated by different interventions is challenging. We, alternatively, presented the "Net Benefit" at £$20,000$ and £$30,000$.
+
+We also reported two measures to capture the uncertainty surrounding the decision, the "probability of being cost-effective" and the "expected value of perfect information". These two measures were estimated at £$20,000$ and £$30,000$.
+
+The table below presents the cost-effectiveness results based on the PSA values obtained from each calibration method. Also, the first rows repeat some of the information presented in the "True" cost-effectiveness results table (Table \ref{tbl:true-CE-results}). We also provide the same table with the "Net Benefit" results of the calibration methods relative to the "True" ones in the appendix.\\
+
+\scriptsize
+```{r Calibration CE table3}
+#| label: tbl-cal-CE3
+#| tbl-cap: Cost-effectiveness results [scenario 3]
+#| echo: false 
+tab_object <- readRDS(file = "./CR_data/Chap_3/Case_study_3/data/calibration_CE_PSA_abs.rds")
+tab_object %>% 
+  gt::as_latex()
+```
+\normalsize
+
+The Bayesian methods produced the least divergent results. The "Net Benefit" discrepancies ranged between £$282$ and £$2,099$, or less than $1$%. The IMIS generated the closest "Net Benefit", whereas the SIR produced the furthest. On the other hand, the uncertainty measures were significantly different from the truth. These differences are likely because the PSA was informed only by the calibration parameters and the results of the Bayesian methods were very precise.
+
+The undirected non-Bayesian methods generated the same recommendations; the "Screening" intervention was the optimal choice at the £$20,000$ and £$30,000$ thresholds. Nonetheless, there were significant differences between the "True" and the simulated "Net Benefit" and the measures of decision uncertainty. We expected the GSM to perform worse than the LHS and RSM, but the results of the three methods were comparable, with no clear winner.
+
+On the other hand, the directed non-Bayesian methods produced different cost-effectiveness recommendations at the £$20,000$ threshold; the policy implementing "none" of the interventions was reported as the optimal choice. Compared to the other calibration methods, these methods registered the highest departure from the "True" values of the "Net Benefit" at over $£400,000$. The cost-effectiveness results of the three methods were similar.\\
+
+\scriptsize
+```{r Calibration relative CE table3}
+#| label: tbl-rel-cal-CE3
+#| tbl-cap: Cost-effectiveness results (net benefits values relative to true ones) [scenario 3]
+#| echo: false 
+tab_object <- readRDS(file = "./CR_data/Chap_3/Case_study_3/data/calibration_CE_PSA_rel.rds")
+tab_object %>% 
+  gt::as_latex()
+```
+\normalsize
+
+#### Scenario 4: One target and the explorable parameter space
+
+We assume we need more information to limit the parameter space in this scenario. Therefore, the parameter space explored by the calibration method is the parameter(s) supported domain. Therefore, the plausible range of both calibration parameters is $0$ to $1$.
+
+##### Plotting the fitness function
+
+Figure \ref{fig:s4_gof} shows the two-dimensional plausible parameter space, highlighting the change in fitness as a function of the parameters. The regions with lighter colours represent values that simulate targets closer to the observed ones. This fitness function plot suggests that the values of the true calibration parameters are between $0$ and $0.2$.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK.jpeg"}
+\caption{Fitness function [scenario 4]}
+\label{fig:s4_gof}
+\end{figure}
+
+##### Identified calibration parameters
+
+As discussed earlier in @sec-calibration, the calibration methods we tested generate different outputs — the Bayesian methods sample from the posterior distribution, the directed non-Bayesian methods locate fitness function extrema, and the undirected non-Bayesian methods identify the sets with good fitness from a sample of parameter sets. Figures \ref{fig:s4_ud_gof_plots}, \ref{fig:s4_d_gof_plots} and \ref{fig:s4_b_gof_plots} provide a pictorial representation of the results of each of the employed calibration methods overlaid on an LLK fitness plot.
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_LLK_FGS.jpeg"}
+\caption{GSM}
+\label{fig:s4_gsm_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_LLK_RGS.jpeg"}
+\caption{RSM}
+\label{fig:s4_rsm_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_LLK_LHS.jpeg"}
+\caption{LHS}
+\label{fig:s4_lhs_w_llk_true}
+\end{subfigure}
+\caption{Identified sets using log likelihood (LLK) [scenario 4]}
+\label{fig:s4_ud_gof_plots}
+\end{figure}
+
+Figure \ref{fig:s4_ud_gof_plots} represents the values sampled by the Grid Search method (GSM), Random Search method (RSM) and the Latin Hypercube Sampling (LHS) as grey crosses. It also highlights the identified sets, which are the 10% of the sampled sets corresponding to the highest LLK values, with red circles. 
+
+Many sampled values are outside the highest (optimal) likelihood region highlighted in Figure \ref{fig:s4_gof}. All $1,000$ identified sets will be used in the probabilistic sensitivity analysis (PSA). The samples falling far from the optimal region will likely affect the cost-effectiveness results and recommendations.
+
+The three plots demonstrate the inefficiencies of the corresponding calibration methods. These unguided methods are likely the methods most affected by the scope of the parameter space. We will return to this point in the second scenario.
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_BFGS_LLK_RGS.jpeg"}
+\caption{GRG}
+\label{fig:s4_grg_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_BFGS_LLK_RGS_zm.jpeg"}
+\caption{GRG extremas}
+\label{fig:s4_grg_w_llk_true_zm}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_NM_LLK_RGS.jpeg"}
+\caption{NM}
+\label{fig:s4_nm_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_NM_LLK_RGS_zm.jpeg"}
+\caption{NM extremas}
+\label{fig:s4_nm_w_llk_true_zm}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_SANN_LLK_RGS.jpeg"}
+\caption{SANN}
+\label{fig:s4_sann_w_llk_true}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_SANN_LLK_RGS_zm.jpeg"}
+\caption{SANN extremas}
+\label{fig:s4_sann_w_llk_true_zm}
+\end{subfigure}
+\caption{Identified extremas using log likelihood (LLK) [scenario 4]}
+\label{fig:s4_d_gof_plots}
+\end{figure}
+
+The black crosses in Figure \ref{fig:s4_d_gof_plots} represent the starting values (guesses) employed by the Generalised Reduced Gradient (GRG), Nelder-Mead (NM) and the Simulated Annealing (SANN) algorithms. Moreover, the extrema (maxima) identified following each starting value are shown with circles. Finally, the extremas (orange circles) were compared to identify the global maxima (red-filled circle).
+
+Unlike the case with the \ref{fig:s4_ud_gof_plots}, all identified extremas fell within the optimal fitness region and were very close to the true point (green circle). Also, the PSA values for these directed methods are obtained by sampling from a multivariate normal distribution. We employed the identified global extrema and its corresponding Hessian matrix as this multivariate normal distribution's mean and standard deviation. Therefore, we do not show the generated PSA points, but we will discuss the results later.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_MCMC.jpeg"}
+        \caption{MCMC}
+        \label{fig:s4_mcmc_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_MCMC_zm.jpeg"}
+        \caption{MCMC posterior samples}
+        \label{fig:s4_mcmc_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_SIR.jpeg"}
+        \caption{SIR}
+        \label{fig:s4_sir_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_SIR_zm.jpeg"}
+        \caption{SIR posterior samples}
+        \label{fig:s4_sir_w_llk_true_zm}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_IMIS.jpeg"}
+        \caption{IMIS}
+        \label{fig:s4_imis_w_llk_true}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/GOF_LLK_IMIS_zm.jpeg"}
+        \caption{IMIS posterior samples}
+        \label{fig:s4_imis_w_llk_true_zm}
+    \end{subfigure}
+    \caption{Posterior samples [scenario 4]}
+    \label{fig:s4_b_gof_plots}
+\end{figure}
+
+We demonstrate the posterior samples generated by Markov Chain Monte Carlo (MCMC), Sampling Importance Resampling, and Incremental Mixture Importance Sampling (IMIS) in Figure \ref{fig:s4_b_gof_plots}. Grey crosses show the prior distribution samples, while the circles represent draws from the posterior distributions. Yellow circle(s) represent the mean and mode (maximum-a-posteriori) of the corresponding posterior distributions. We also show the prior and posterior distributions in Figure \ref{fig:s4_b_prior_posterior_plots} where we can see Bayesian updating.
+
+The posterior draws generated by all three methods fall within the optimal fitness region and close to the actual value (green circle). MCMC generated the highest effective sample size (ESS) $1,000$ but took significantly longer to run. The IMIS generated an ESS of $570$ but took slightly longer than the SIR, which had an ESS of $2$. The ESS values and running time suggest that IMIS is a good Bayesian method candidate for calibrating expensive models that require significant resources. We used the obtained posterior draws in the PSA.
+
+The SIR is likely affected by the scope of the parameter space. SIR requires significantly more samples to sample the posterior distribution in this scenario better. The effects of the SIR's low ESS in the PSA results will be shown later.
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/dst_MCMC_p_DieMets.jpeg"}
+\caption{MCMC $\mathcal{p^{C \rightarrow D}}$}
+\label{fig:s4_mcmc_pp1}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/dst_MCMC_p_Mets.jpeg"}
+\caption{MCMC $\mathcal{p^{nC \rightarrow C}}$}
+\label{fig:s4_mcmc_pp2}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/dst_SIR_p_DieMets.jpeg"}
+\caption{SIR $\mathcal{p^{C \rightarrow D}}$}
+\label{fig:s4_sir_pp1}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/dst_SIR_p_Mets.jpeg"}
+\caption{SIR $\mathcal{p^{nC \rightarrow C}}$}
+\label{fig:s4_sir_pp2}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/dst_IMIS_p_DieMets.jpeg"}
+\caption{IMIS $\mathcal{p^{C \rightarrow D}}$}
+\label{fig:s4_imis_pp1}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/dst_IMIS_p_Mets.jpeg"}
+\caption{IMIS $\mathcal{p^{nC \rightarrow C}}$}
+\label{fig:s4_imis_pp2}
+\end{subfigure}
+\caption{Prior and posterior distributions [scenario 4]}
+\label{fig:s4_b_prior_posterior_plots}
+\end{figure}
+
+\pagebreak
+
+##### Simulated targets
+
+We used the PSA sets generated from each method employed to simulate the targets. The plots show the calibration method maximum-a-posteriori (green line), the posterior mean and mode (dark green lines where relevant), the $95$% confidence interval (red lines where relevant) and the other PSA sets (light blue lines).
+
+The targets simulated by the undirected methods (Figure \ref{fig:s4_ud_tars}) followed our expectations from Figure \ref{fig:s4_d_gof_plots}, where many of the identified samples fell outside the optimal fitness region. Similarly, the targets simulated by the Bayesian methods (Figure \ref{fig:s4_b_tars}) were within the $95$% confidence interval. 
+
+On the other hand, the targets simulated by the directed methods' PSA values were significantly far from the observed ones. Since the global maxima were too close to the actual parameters' values, the departure of these PSA values is directly linked to the Hessian matrix. We will investigate this behaviour further to understand the conditions that can influence the Hessian matrix and lead to such results.
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/tar_LLK_FGS_Surv.jpeg"}
+\caption{GSM Survival}
+\label{fig:s4_gsm_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/tar_LLK_RGS_Surv.jpeg"}
+\caption{RSM Survival}
+\label{fig:s4_rsm_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/tar_LLK_LHS_Surv.jpeg"}
+\caption{LHS Survival}
+\label{fig:s4_lhs_tar1}
+\end{subfigure}
+\caption{Simulated targets - undirected non-Bayesian methods [scenario 4]}
+\label{fig:s4_ud_tars}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/tar_BFGS_LLK_RGS_Surv.jpeg"}
+\caption{GRG Survival}
+\label{fig:s4_grg_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/tar_NM_LLK_RGS_Surv.jpeg"}
+\caption{NM Survival}
+\label{fig:s4_nm_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/tar_SANN_LLK_RGS_Surv.jpeg"}
+\caption{SANN Survival}
+\label{fig:s4_sann_tar1}
+\end{subfigure}
+\caption{Simulated targets - directed non-Bayesian methods [scenario 4]}
+\label{fig:s4_d_tars}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/tar_MCMC_Surv.jpeg"}
+\caption{MCMC Survival}
+\label{fig:s4_mcmc_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/tar_SIR_Surv.jpeg"}
+\caption{SIR Survival}
+\label{fig:s4_sir_tar1}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth]{"./CR_data/Chap_3/Case_study_4/images/tar_IMIS_Surv.jpeg"}
+\caption{IMIS Survival}
+\label{fig:s4_imis_tar1}
+\end{subfigure}
+\caption{Simulated targets - Bayesian methods [scenario 4]}
+\label{fig:s4_b_tars}
+\end{figure}
+
+\pagebreak
+
+##### Cost-effectiveness analysis
+
+Below we present the results of the cost-effectiveness results. Because the dominance status of some of the interventions might change, the reference intervention of one or more Incremental Cost-Effectiveness Ratios (ICERs) might change. Therefore, we did not report the ICER because comparing ICERs generated by different interventions is challenging. We, alternatively, presented the "Net Benefit" at £$20,000$ and £$30,000$.
+
+We also reported two measures to capture the uncertainty surrounding the decision, the "probability of being cost-effective" and the "expected value of perfect information". These two measures were estimated at £$20,000$ and £$30,000$.
+
+The table below presents the cost-effectiveness results based on the PSA values obtained from each calibration method. Also, the first rows repeat some of the information presented in the "True" cost-effectiveness results table (Table \ref{tbl:true-CE-results}). We also provide the same table with the "Net Benefit" results of the calibration methods relative to the "True" ones in the appendix.\\
+
+\scriptsize
+```{r Calibration CE table4}
+#| label: tbl-cal-CE4
+#| tbl-cap: Cost-effectiveness results [scenario 4]
+#| echo: false 
+tab_object <- readRDS(file = "./CR_data/Chap_3/Case_study_4/data/calibration_CE_PSA_abs.rds")
+tab_object %>% 
+  gt::as_latex()
+```
+\normalsize
+
+The Bayesian methods produced the least divergent results. The "Net Benefit" discrepancies ranged between £$282$ and £$2,099$, or less than $1$%. The IMIS generated the closest "Net Benefit", whereas the SIR produced the furthest. On the other hand, the uncertainty measures were significantly different from the truth. These differences are likely because the PSA was informed only by the calibration parameters and the results of the Bayesian methods were very precise.
+
+The undirected non-Bayesian methods generated the same recommendations; the "Screening" intervention was the optimal choice at the £$20,000$ and £$30,000$ thresholds. Nonetheless, there were significant differences between the "True" and the simulated "Net Benefit" and the measures of decision uncertainty. We expected the GSM to perform worse than the LHS and RSM, but the results of the three methods were comparable, with no clear winner.
+
+On the other hand, the directed non-Bayesian methods produced different cost-effectiveness recommendations at the £$20,000$ threshold; the policy implementing "none" of the interventions was reported as the optimal choice. Compared to the other calibration methods, these methods registered the highest departure from the "True" values of the "Net Benefit" at over $£400,000$. The cost-effectiveness results of the three methods were similar.\\
+
+\scriptsize
+```{r Calibration relative CE table4}
+#| label: tbl-rel-cal-CE4
+#| tbl-cap: Cost-effectiveness results (net benefits values relative to true ones) [scenario 4]
+#| echo: false 
+tab_object <- readRDS(file = "./CR_data/Chap_3/Case_study_4/data/calibration_CE_PSA_rel.rds")
+tab_object %>% 
+  gt::as_latex()
+```
+\normalsize
+
+#### Key findings
+
+The directed methods performed well under the first scenario but resulted in divergent targets and different recommendations at one of the thresholds.
+While the GSM has poorly covered the optimal fitness region, its simulated targets and cost-effectiveness recommendations were similar to the other undirected methods.
+The scope of the parameter space affects the accuracy of the GSM, RSM, and LHS; and the efficiency of the SIR.
+
+### Conclusions
+
+One key issue that remains untested is the impact of the number of calibration parameters, also referred to as the dimensionality of the calibration problem, on the performance of the calibration methods and their subsequent effects on the economic evaluation result.
+
+## Research plan {#sec-research-plan}
+### Introduction
+
+The research plans outlined in this chapter follow the outputs from chapters @sec-introduction, @sec-calibration and @sec-case-study. We discussed in @sec-calibration that there is no guidance to select an appropriate calibration method for any calibration exercise. We also highlighted that the performance of the methods varies. For example, some literature shows that both Bayesian and non-Bayesian methods perform equally in some problems, whereas other studies reported performance issues in other cases. 
+
+We demonstrated the performance of some Bayesian and non-Bayesian calibration methods in @sec-case-study. We illustrated how Bayesian methods propagate the uncertainty in the target data into the calibration exercise and how this is passed to the cost-effectiveness analysis through the PSA. While we performed PSA following non-Bayesian calibration methods, we saw how assuming multivariate normality might propagate a different level or magnitude of uncertainty.
+
+The next phase of this project aims to answer two key questions. First, given the perceived difficulties surrounding using Bayesian calibration methods, when would non-Baysian methods yield the same decision? Second, given how dependent the calibration results are on the calibration targets, what is the value of collecting the perfect calibration target?
+
+### Reserach questions
+#### When can we use a “non-Bayesian” method to calibrate a model?
+
+By non-Bayesian methods, we mean a parameter-space exploration algorithm or an optimisation-based method where we can characterise the uncertainty in the parameter estimates. For example, in an optimisation-based method, we might assume multivariate normality with a covariance matrix equal to the inverse of the Hessian returned by the optimiser, or we might assume an independent normal distribution for the parameters with variances equal to the inverse of the components of the diagonal of the Hessian.
+
+Establishing the appropriate conditions to use a "non-Bayesian" calibration method will involve several steps. First, we will identify the means to quantify the differences between the model outputs generated by Bayesian and non-Bayesian methods. Second, we will determine the model's features, the calibration parameters' distribution characteristics, and the calibration targets' colinearity that might lead to erroneous results using non-Bayesian methods. Third, we will establish a simple method to determine when non-Bayesian calibration methods will likely lead to erroneous decisions.  
+
+##### Quantifying the discrepancies in the results of Bayesian and non-Bayesian methods {#sec-quantifying-discrepancies}
+
+As we demonstrated in @sec-case-study, Bayesian and non-Bayesian calibration methods usually produce different results. The discrepancies in the generated results might be significant and might lead to different decisions, "decision error". How do we measure the difference between the output of a model that has been calibrated via a non-Bayesian method, and the output of a model that has been calibrated via a Bayesian method?
+
+We might want to measure the difference between the “posterior” distributions assumed for the model outputs (typically the costs and QALYs or the net benefits). We might want to measure the difference between the mean costs and QALYs. We might want to measure the difference in terms of the change in the optimal decision option. We could perhaps call these differences the “non-Bayesian error”.
+
+If the non-Bayesian method may lead to an incorrect decision, then we could compute the value of using the Bayesian method instead. The Bayesian method will have a non-negative expected value if it prevents this source of decision error (in the same way that the EVPI measures the value in learning the true parameters of the model with certainty).
+
+##### Identifying the calibration problem features associated with discrepancies between Bayesian and non-Bayesian methods {#sec-problem-features}
+
+As suggested by the literature and @sec-case-study, the results generated by Bayesian and non-Bayesian calibration methods might diverge in some calibration problems. Therefore, what features will lead to differences in outputs (as measured in @sec-quantifying-discrepancies) between the Bayesian and non-Bayesian methods? i.e. which features of a model will lead to a “non-Bayesian error”? What features of the input parameter distribution will lead to a “non-Bayesian error”? What features of the calibration targets will lead to a “non-Bayesian error”?
+
+This section will rely on some theoretical work. For example, suppose a model is linear, and the input parameter distributions are highly skewed. In that case, depending on the exact form of the model and parameters, we might expect the output distribution to be highly skewed. If we calibrate this model using a non-Bayesian method, will we get a poor approximation to the true posterior distribution that a Bayesian method would give us? 
+
+##### Establishing a simple analysis to determine when non-Bayesian calibration methods will likely lead to erroneous decisions {#sec-analysis}
+
+Identifying the features associated with the "non-Bayesian error" in @sec-problem-features could allow us to avoid that error. For example, could we develop a simple and quick analysis method that will tell us if a non-Bayesian calibration will give a poor result without running both the Bayesian and the non-Bayesian calibration?
+
+##### Simulation and case studies 
+
+Based on the findings from @sec-problem-features and @sec-analysis, what does this suggest for "real-life" cost-effectiveness models? What advice should we give modellers? What would a guidance document look like? 
+
+We will include sections illustrating this research question's findings and sub-questions using theoretical and real-life case studies. Guidance on the selection of the type of calibration method will follow these sections.
+
+#### What is the value of collecting better calibration data?
+
+The effect of the calibration targets was highlighted in the literature [ref alraid] and @sec-case-study. The importance of having precise or less uncertain calibration targets increases with non-Bayesian methods. Non-Bayesian methods lack the mechanisms to propagate the uncertainty in the calibration targets to the identified calibration parameters. Therefore, non-Bayesian methods are more prone to imperfections in the calibration targets.
+
+Addressing this research question invloves answering a few sub-questions. 
+
+##### What does it mean for a calibration target to be “correct”? How do we measure the distance between some set of imperfect calibration targets we have and the set of targets we want (i.e. the calibration target error)? How do we judge this calibration target error if we do not have the “perfect” targets?
+
+##### How do we compute the uncertain error in the model output (costs, QALYs, net benefit or optimal decision) that arises due to having poor calibration targets?
+
+##### How do we compute the value of collecting perfect calibration target information? How do we compute the value of a specific study that collects better calibration target information?
+
+##### There would then be sections that illustrate all of the above using hypothetical and real-life case studies.
+
+### Ethics requirements
+
+Like the data used to inform model parameterisation, the calibration target data is obtained from evidence published in the public domain. The access to and use of such evidence do not require special ethical considerations or approval.
+
+### Anticipated challenges/risk management
+
+The methods under investigation in this study will likely range from simple or straightforward to highly complicated. Moreover, some of these methods will require substantial Bayesian statistics knowledge and skills. The main difficulties identified stem from the statistical abilities of the principal investigator (PI). The PI has developed a good understanding of Bayesian statistics during his first and second years of training. While he had limited experience calibrating cost-effectiveness models before starting his project, the PI continues to engage in targeted training to improve his skills in the field.
+
+The PI attended an undergraduate course in Bayesian statistics and computations. He also attended several training workshops in decision-analytic model calibration, meta-models, and value of information analysis. All training courses were organised by the society of medical decision making (SMDM). The PI will continue to pursue targeted training for advanced methods when necessary.
+
+### Training and conferences
+
+Yearly conferences to be attended during the span of this project include:
+- PGR conference hosted annually by the School of Health and Related Research
+- ISPOR Europe conference
+- SMDM conference
+
+### Budget
+
+If applicable, the available budget will be used for conference attendance and course payments.
+
+### Proposed thesis outline
+
+### Timeline
+
+## Bibliography
+___
