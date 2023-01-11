@@ -12,7 +12,12 @@ IMIS_(
   sample.prior = .sample.prior_,
   priors = .priors_,
   prior = .prior_,
-  likelihood = .likelihood_
+  likelihood = .likelihood_,
+  .l_params_,
+  .func_,
+  .args_,
+  .l_targets_,
+  .transform_
 )
 }
 \arguments{
@@ -33,6 +38,8 @@ parameters at a time)}
 parameters at a time)}
 
 \item{likelihood}{Function that calculates the likelihood}
+
+\item{.transform_}{}
 }
 \description{
 Incremental Mixture Importance Sampling (IMIS) - amended version

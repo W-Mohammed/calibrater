@@ -76,8 +76,33 @@ and produce summary plots/tables.
 
 \dontrun{
 }
-Print
+Plot Goodness of fit function(s)
 
+
+## ------------------------------------------------
+## Method `calibR_R6$draw_GOF_measure`
+## ------------------------------------------------
+
+\dontrun{
+}
+Plot Targets
+
+
+## ------------------------------------------------
+## Method `calibR_R6$draw_targets_plots`
+## ------------------------------------------------
+
+\dontrun{
+}
+Plot prior and posterior distributions
+
+
+## ------------------------------------------------
+## Method `calibR_R6$draw_distributions_plots`
+## ------------------------------------------------
+
+\dontrun{
+}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -96,6 +121,8 @@ model}
 \item{\code{transform_parameters}}{boolean for whether to back transform
 parameters}
 
+\item{\code{GOF_measure_plot}}{log likelihood values for plot}
+
 \item{\code{model_predictions}}{simulated outputs}
 
 \item{\code{prior_samples}}{samples from parameters' priors}
@@ -109,6 +136,8 @@ samples}
 \item{\code{PSA_results}}{PSA results}
 
 \item{\code{PSA_summary}}{PSA results' summary}
+
+\item{\code{simulated_targets}}{PSA results}
 
 \item{\code{plots}}{summary plots}
 }
@@ -126,7 +155,9 @@ samples}
 \item \href{#method-calibR_R6-run_PSA}{\code{calibR_R6$run_PSA()}}
 \item \href{#method-calibR_R6-summarise_PSA}{\code{calibR_R6$summarise_PSA()}}
 \item \href{#method-calibR_R6-draw_plots}{\code{calibR_R6$draw_plots()}}
-\item \href{#method-calibR_R6-print_test}{\code{calibR_R6$print_test()}}
+\item \href{#method-calibR_R6-draw_GOF_measure}{\code{calibR_R6$draw_GOF_measure()}}
+\item \href{#method-calibR_R6-draw_targets_plots}{\code{calibR_R6$draw_targets_plots()}}
+\item \href{#method-calibR_R6-draw_distributions_plots}{\code{calibR_R6$draw_distributions_plots()}}
 \item \href{#method-calibR_R6-clone}{\code{calibR_R6$clone()}}
 }
 }
@@ -232,7 +263,7 @@ optimisation algorithm. Default is \code{FALSE}.}
 \item{\code{.maximise}}{Logical for whether the output of the function is
 used in a maximising optimisation function. Default is \code{TRUE}.}
 
-\item{\code{.weighted}}{Logical for whether the SSR was to be weighted,
+\item{\code{.weighted}}{Logical for whether the SSE was to be weighted,
 default is \code{TRUE}. The weight used by function is
 \code{1/(sd^2)}.}
 
@@ -271,7 +302,7 @@ Calibrate the model using one or more directed search method(s).
   .n_samples = 1,
   .max_iterations = 1000,
   temp = 10,
-  tmax = 10,
+  trace = NULL,
   .calibration_method = "NM",
   .sample_method = "LHS",
   .maximise = TRUE
@@ -287,18 +318,22 @@ log-likelihood.}
 \item{\code{.gof_func}}{Goodness-of-fit function; if NULL (default) the
 supported function defined by \code{.gof} will be used}
 
-\item{\code{.n_samples}}{Number of starting values (gausses) to use.}
+\item{\code{.n_samples}}{Number of Starting sets (gausses) to use.}
 
 \item{\code{.max_iterations}}{Maximum number of algorithm iterations.}
 
 \item{\code{temp}}{SANN algorithm tuning parameter.}
 
-\item{\code{tmax}}{SANN algorithm tuning parameter.}
+\item{\code{trace}}{Non-negative integer. If positive, tracing information on
+the progress of the optimization is produced. Higher values may produce
+more tracing information.}
 
 \item{\code{.calibration_method}}{The calibration process.}
 
 \item{\code{.sample_method}}{The method used to sample from the prior
 distribution.}
+
+\item{\code{.maximise}}{Boolean for whether the function is to maximise.}
 }
 \if{html}{\out{</div>}}
 }
@@ -330,7 +365,8 @@ Calibrate the model using one or more calibration method.
   .MCMC_burnIn = 10000,
   .MCMC_samples = 50000,
   .MCMC_thin = 5,
-  .MCMC_rerun = TRUE
+  .MCMC_rerun = TRUE,
+  .diag_ = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -461,7 +497,7 @@ console.}
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
 }
-Print
+Plot Goodness of fit function(s)
 
 }
 \if{html}{\out{</div>}}
@@ -470,11 +506,149 @@ Print
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-calibR_R6-print_test"></a>}}
-\if{latex}{\out{\hypertarget{method-calibR_R6-print_test}{}}}
-\subsection{Method \code{print_test()}}{
+\if{html}{\out{<a id="method-calibR_R6-draw_GOF_measure"></a>}}
+\if{latex}{\out{\hypertarget{method-calibR_R6-draw_GOF_measure}{}}}
+\subsection{Method \code{draw_GOF_measure()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$print_test()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_GOF_measure(
+  .engine_ = "plotly",
+  .gof_ = "LLK",
+  .percent_sampled_ = 10,
+  .n_samples_ = 10000,
+  .points_ = FALSE,
+  .true_points_ = FALSE,
+  .greys_ = FALSE,
+  .scale_ = NULL,
+  .coloring_ = "fill",
+  .legend_ = FALSE,
+  .zoom_ = FALSE,
+  .x_axis_lb_ = NULL,
+  .x_axis_ub_ = NULL,
+  .y_axis_lb_ = NULL,
+  .y_axis_ub_ = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.engine_}}{Plotting engine, currently c("plotly", "ggplot2")}
+
+\item{\code{.gof_}}{Goodness of fit (GOF) measure - fitness function. Either
+"LLK" or "SEE" for the log-likelihood and sum-of-squared-errors GOF,
+respectively.}
+
+\item{\code{.percent_sampled_}}{.percent_sampled_ The fraction of LHS, RGS, or
+FGS samples to select.}
+
+\item{\code{.n_samples_}}{Number of Grid samples to plot log likelihood}
+
+\item{\code{.points_}}{Boolean for whether to add scatter plot}
+
+\item{\code{.true_points_}}{Boolean for whether to add "True set" to plots.}
+
+\item{\code{.greys_}}{Boolean for whether to use a Grey scale in the plot.}
+
+\item{\code{.scale_}}{The colour bar colour-scale. Available options are Greys,
+YlGnBu, Greens, YlOrRd, Bluered, RdBu, Reds, Blues, Picnic, Rainbow,
+Portland, Jet, Hot, Blackbody, Earth, Electric, Viridis, Cividis.}
+
+\item{\code{.coloring_}}{Which contouring is required (default fill) and options
+are "fill" | "heatmap" | "lines" | "none"}
+
+\item{\code{.legend_}}{Boolean for whether to show a legend (default is FALSE).
+This parameter also controls text labels in the opposite way.}
+
+\item{\code{.zoom_}}{Boolean (default FALSE) for whether to limit the resulting
+plot to the min() and max() of the two dimensional contour plots.}
+
+\item{\code{.x_axis_lb_}}{Lower bound of the plot's x axis.}
+
+\item{\code{.x_axis_ub_}}{Upper bound of the plot's x axis.}
+
+\item{\code{.y_axis_lb_}}{Lower bound of the plot's y axis.}
+
+\item{\code{.y_axis_ub_}}{Upper bound of the plot's y axis.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+Plot Targets
+
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-calibR_R6-draw_targets_plots"></a>}}
+\if{latex}{\out{\hypertarget{method-calibR_R6-draw_targets_plots}{}}}
+\subsection{Method \code{draw_targets_plots()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_targets_plots(
+  .engine_ = "ggplot2",
+  .sim_targets_ = FALSE,
+  .calibration_methods_ = c("random", "directed", "bayesian"),
+  .legend_pos_ = "bottom",
+  .PSA_samples_ = NULL,
+  .PSA_unCalib_values_ = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.engine_}}{Plotting engine, currently c("plotly", "ggplot2")}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+Plot prior and posterior distributions
+
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-calibR_R6-draw_distributions_plots"></a>}}
+\if{latex}{\out{\hypertarget{method-calibR_R6-draw_distributions_plots}{}}}
+\subsection{Method \code{draw_distributions_plots()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_distributions_plots(
+  .engine_ = "ggplot2",
+  .legend_pos_ = "bottom",
+  .log_scaled_ = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.engine_}}{String naming plotting package currently only supports
+"ggplot2".}
+
+\item{\code{.legend_pos_}}{String (default bottom) setting legend position.}
+
+\item{\code{.log_scaled_}}{Boolean for whether to use log scale in the x axis.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+}
+\if{html}{\out{</div>}}
+
 }
 
 }

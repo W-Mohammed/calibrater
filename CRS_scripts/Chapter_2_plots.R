@@ -282,10 +282,6 @@ CR_CRS_2P2T$
   sampleR(
     .n_samples = 1e2,
     .sampling_method = sample_method)
-CR_CRS_2P2T$
-  prior_samples$FGS <- calibR::sample_prior_FGS_(
-    .n_samples = 1e2,
-    .l_params = parameters_list)
 ##### Unguided searching methods:----
 CR_CRS_2P2T$
   calibrateR_random(

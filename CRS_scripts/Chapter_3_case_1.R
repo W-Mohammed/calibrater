@@ -37,28 +37,6 @@ CR_CRS_2P2T = calibR_R6$
     .targets = targets_list,
     .args = NULL,
     .transform = FALSE)
-#### Fitness plots:----
-GOF_plots_list <- CR_CRS_2P2T$draw_GOF_measure(
-  .points_ = FALSE,
-  .true_points_ = FALSE,
-  .legend_ = FALSE,
-  .greys_ = FALSE,
-  .coloring_ = "heatmap",
-  .scale_ = NULL,
-  .gof_ = gof_measure)$
-  plots$
-  GOF_plots$
-  blank
-##### Save plot:----
-purrr::walk(
-  .x = gof_measure,
-  .f = function(.gof_measure_) {
-    image_name = glue::glue("GOF_{.gof_measure_}.jpeg")
-    plotly::save_image(
-      p = GOF_plots_list[[.gof_measure_]][[1]][[1]],
-      file = glue::glue("{image_saving_path}{image_name}"),
-      scale = 5)
-  })
 #### Generate samples using Random Grid Search:----
 set.seed(seed = seed_no)
 CR_CRS_2P2T$
@@ -530,7 +508,7 @@ purrr::walk(
           ggplot2::ggsave(
             filename = glue::glue("{image_saving_path}{image_name}"),
             plot = CR_CRS_2P2T$plots$targets[[.calib_category_]][[.target_]],
-            scale = 2.5,
+            scale = 2, #2.5
             width = 1000,
             height = 600,
             units = "px")
@@ -549,7 +527,7 @@ purrr::walk(
                 filename = glue::glue("{image_saving_path}{image_name}"),
                 plot = CR_CRS_2P2T$plots$
                   targets[[.calib_category_]][[.calib_method_]][[.target_]],
-                scale = 2.5,
+                scale = 2, #2.5
                 width = 1000,
                 height = 600,
                 units = "px")
@@ -578,4 +556,27 @@ purrr::walk(
           height = 700,
           units = "px")
       })
+  })
+#### Fitness plots:----
+GOF_plots_list <- CR_CRS_2P2T$draw_GOF_measure(
+  .points_ = FALSE,
+  .true_points_ = FALSE,
+  .legend_ = FALSE,
+  .greys_ = FALSE,
+  .coloring_ = "heatmap",
+  .scale_ = NULL,
+  .gof_ = gof_measure)$
+  plots$
+  GOF_plots$
+  blank
+##### Save plot:----
+purrr::walk(
+  .x = gof_measure,
+  .f = function(.gof_measure_) {
+    image_name = glue::glue("GOF_{.gof_measure_}.jpeg")
+    reticulate::py_run_string("import sys")
+    plotly::save_image(
+      p = GOF_plots_list[[.gof_measure_]][[1]][[1]],
+      file = glue::glue("{image_saving_path}{image_name}"),
+      scale = 5)
   })

@@ -6,6 +6,7 @@
 \usage{
 summ_optim(
   .params_name = v_params_names,
+  .params_vals,
   .gof = NULL,
   .gof_name,
   .gof_value,
@@ -16,6 +17,7 @@ summ_optim(
   .hessian = NULL,
   .maximiser = TRUE,
   .convergence,
+  .trace = NULL,
   ...
 )
 }
@@ -23,6 +25,8 @@ summ_optim(
 \item{.params_name}{Character vector containing the names of the
 parameters that were passed to the goodness-of-fit algorithm or will be
 passed to .func.}
+
+\item{.params_vals}{Guess or initial values used to start the algorithm.}
 
 \item{.gof}{goodness-of-fit function used or to be used in the
 optimisation.}
@@ -50,6 +54,8 @@ which will create) the hessian matrix maximised the goodness-of-fit
 function. Default is \code{TRUE}.}
 
 \item{.convergence}{Convergence label; 0 successful convergence}
+
+\item{.trace}{Optimisation function trace}
 
 \item{...}{Extra arguments to be passed to .gof.}
 }

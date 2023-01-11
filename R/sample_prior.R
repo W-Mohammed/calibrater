@@ -90,9 +90,8 @@ sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
   if(!is.null(dots[['.ssed_no']]))
     set.seed(dots[['.ssed_no']])
   # Adjust .n_samples to get right number of grid points:
-  .n_samples_ <- ceiling(
-    exp(log(.n_samples)/length(.l_params[['v_params_names']]))
-  )
+  .n_samples_ <- exp(log(.n_samples)/length(.l_params[['v_params_names']]))
+
   # Define inputs list:
   l_fgs <- list(.l_params[['v_params_names']],
                 .l_params[['v_params_dists']],
@@ -150,9 +149,8 @@ sample_prior_FGS_ <- function(.n_samples = 1, .l_params = .l_params_,
   if(!is.null(dots[['.ssed_no']]))
     set.seed(dots[['.ssed_no']])
   # Adjust .n_samples to get right number of grid points:
-  .n_samples_ <- ceiling(
-    exp(log(.n_samples)/length(.l_params[['v_params_names']]))
-  )
+  .n_samples_ <- exp(log(.n_samples)/length(.l_params[['v_params_names']]))
+
   # Define inputs list:
   l_fgs <- list(.l_params[['v_params_names']],
                 .l_params[['v_params_dists']],

@@ -11,7 +11,7 @@ library(ShinyPSA)
 ## Chapter 3 plots:----
 
 ### CE plots:----
-psa_object <- readRDS(file = "../../2. Confirmation Review/CR_data/Chap_3/data/CRS_true_PSA.rds")
+CRS_true_PSA <- readRDS(file = "../../2. Confirmation Review/CR_data/Chap_3/data/CRS_true_PSA.rds")
 psa_sum_object <- ShinyPSA::summarise_PSA_(
   .effs = CRS_true_PSA$e,
   .costs = CRS_true_PSA$c,
@@ -65,7 +65,7 @@ Surv_plot <- ggplot2::ggplot(
 ggplot2::ggsave(
   filename = "surv_plot.jpeg",
   plot = Surv_plot,
-  scale = 2.5,
+  scale = 2, #2.5
   width = 1000,
   height = 600,
   units = "px")
@@ -88,7 +88,7 @@ Prev_plot <- ggplot2::ggplot(
 ggplot2::ggsave(
   filename = "prev_plot.jpeg",
   plot = Prev_plot,
-  scale = 2.5,
+  scale = 2, #2.5
   width = 1000,
   height = 600,
   units = "px")

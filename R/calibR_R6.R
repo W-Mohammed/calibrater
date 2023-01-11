@@ -165,7 +165,7 @@ calibR_R6 <- R6::R6Class(
     #' log-likelihood.
     #' @param .gof_func Goodness-of-fit function; if NULL (default) the
     #' supported function defined by \code{.gof} will be used
-    #' @param .n_samples Number of starting values (gausses) to use.
+    #' @param .n_samples Number of Starting sets (gausses) to use.
     #' @param .max_iterations Maximum number of algorithm iterations.
     #' @param temp SANN algorithm tuning parameter.
     #' @param trace Non-negative integer. If positive, tracing information on
@@ -327,7 +327,7 @@ calibR_R6 <- R6::R6Class(
     #' FGS samples to select.
     #' @param .n_samples_ Number of Grid samples to plot log likelihood
     #' @param .points_ Boolean for whether to add scatter plot
-    #' @param .true_points_ Boolean for whether to add "True values" to plots.
+    #' @param .true_points_ Boolean for whether to add "True set" to plots.
     #' @param .greys_ Boolean for whether to use a Grey scale in the plot.
     #' @param .scale_ The colour bar colour-scale. Available options are Greys,
     #' YlGnBu, Greens, YlOrRd, Bluered, RdBu, Reds, Blues, Picnic, Rainbow,
@@ -484,7 +484,7 @@ calibR_R6 <- R6::R6Class(
       ### FGS:----
       if("FGS" %in% .sampling_method)
         self$prior_samples["FGS"] <- list(
-          calibR::sample_prior_FGS(...)
+          calibR::sample_prior_FGS_(...)
         )
       ### RGS:----
       if("RGS" %in% .sampling_method)
@@ -2539,7 +2539,7 @@ calibR_R6 <- R6::R6Class(
                   "x-axis shows \"", .parameter_, "\" values on a logarithmic scale"
                 ))
           }
-          # If true values are known
+          # If True set are known
           if(!is.null(self$calibration_parameters$
                       v_params_true_values[[.parameter_]])) {
             plot_ <- plot_ +
@@ -2637,7 +2637,7 @@ calibR_R6 <- R6::R6Class(
                   "x-axis shows \"", .parameter_, "\" values on a logarithmic scale"
                 ))
           }
-          # If true values are known
+          # If True set are known
           if(!is.null(self$calibration_parameters$
                       v_params_true_values[[.parameter_]])) {
             plot_ <- plot_ +
@@ -2732,7 +2732,7 @@ calibR_R6 <- R6::R6Class(
               subtitle = paste0(
                 "x-axis shows \"", .parameter_, "\" values"
               ))
-          # If true values are known
+          # If True set are known
           if(!is.null(self$calibration_parameters$
                       v_params_true_values[[.parameter_]])) {
             plot_ <- plot_ +
@@ -2824,7 +2824,7 @@ calibR_R6 <- R6::R6Class(
           cols = self$calibration_parameters$v_params_names,
           names_to = "Parameter",
           values_to = "Distribution draws")
-      # If true values are known
+      # If True set are known
       if(!is.null(self$calibration_parameters$v_params_true_values)) {
         data2_ = data2_ %>%
           dplyr::bind_rows(
@@ -2956,7 +2956,7 @@ calibR_R6 <- R6::R6Class(
           axis.text.y = ggplot2::element_blank(),
           axis.title.y = ggplot2::element_blank()) +
         ggplot2::scale_x_log10()
-      # If true values are known
+      # If True set are known
       # if(!is.null(self$calibration_parameters$v_params_true_values)) {
       #   all_plots <- all_plots +
       #     ggplot2::geom_vline(
@@ -3187,8 +3187,8 @@ calibR_R6 <- R6::R6Class(
                         plotly::plot_ly(
                           name = ifelse(
                             .gof_name_ == "LLK",
-                            "Log likelihood",
-                            "Sum of Squared Errors"),
+                            "LLK",
+                            "SSE"),
                           x = self$GOF_measure_plot$
                             Results[[.gof_name_]][[.param_x]],
                           y = self$GOF_measure_plot$
@@ -3298,20 +3298,20 @@ calibR_R6 <- R6::R6Class(
         if(.engine_ == "plotly") {
           ###### Points shapes and colours:----
           symbols_ <- c(
-            "Sampling values" = "x-thin-open", #"x-dot",
-            "Identified values" = "circle-open")
+            "Sampled sets" = "x-thin-open", #"x-dot",
+            "Identified sets" = "circle-open")
           colors_ <- c(
-            "Sampling values" = "black",
-            "Identified values" = "red")
+            "Sampled sets" = "black",
+            "Identified sets" = "red")
           if(.true_points_) {
             symbols_ <- c(
-              "Sampling values" = "x-thin-open", #"x-dot",
-              "Identified values" = "circle-open",
-              "True values" = "circle-dot")
+              "Sampled sets" = "x-thin-open", #"x-dot",
+              "Identified sets" = "circle-open",
+              "True set" = "circle-dot")
             colors_ <- c(
-              "Sampling values" = "black",
-              "Identified values" = "red",
-              "True values" = "green")
+              "Sampled sets" = "black",
+              "Identified sets" = "red",
+              "True set" = "green")
           }
           ###### Generate plots:----
           purrr::map(
@@ -3337,20 +3337,20 @@ calibR_R6 <- R6::R6Class(
 
                   calib_res <- sorted_calib_res %>%
                     dplyr::mutate(
-                      Points = "Sampled values") %>%
+                      Points = "Sampled sets") %>%
                     dplyr::bind_rows(
                       sorted_calib_res %>%
                         dplyr::slice_head(
                           n = nrow(.)/.percent_sampled_) %>%
                         dplyr::mutate(
-                          Points = "Identified values")) %>%
-                    ###### Add true values:----
+                          Points = "Identified sets")) %>%
+                    ###### Add True set:----
                   {if(.true_points_) {
                     dplyr::bind_rows(
                       .,
                       self$calibration_parameters$v_params_true_values) %>%
                       dplyr::mutate(Points = dplyr::case_when(
-                        is.na(Points) ~ "True values",
+                        is.na(Points) ~ "True set",
                         TRUE ~ Points))
                   } else {
                     .}}
@@ -3361,26 +3361,26 @@ calibR_R6 <- R6::R6Class(
                         .data = .,
                         Points = factor(
                           x = Points,
-                          levels = c("Sampled values",
-                                     "Identified values")))
+                          levels = c("Sampled sets",
+                                     "Identified sets")))
                     } else {
                       dplyr::mutate(
                         .data = .,
                         Points = factor(
                           x = Points,
-                          levels = c("Sampled values",
-                                     "Identified values",
-                                     "True values")))
+                          levels = c("Sampled sets",
+                                     "Identified sets",
+                                     "True set")))
                     }}
 
                   ####### Change colour if too many points in plot:----
-                  colors_["Sampled values"] <- ifelse(
+                  colors_["Sampled sets"] <- ifelse(
                     calib_res %>%
                       dplyr::filter(
-                        Points == "Sampled values") %>%
+                        Points == "Sampled sets") %>%
                       nrow(.) > 100,
                     "grey",
-                    colors_["Sampled values"])
+                    colors_["Sampled sets"])
 
                   ###### Add points to the plots:----
                   purrr::map(
@@ -3398,7 +3398,7 @@ calibR_R6 <- R6::R6Class(
                           if(.zoom_) {
                             zoom_calib_res <- calib_res %>%
                               dplyr::filter(
-                                Points != "Sampled values")
+                                Points != "Sampled sets")
                           }
                           if(is.null(.x_axis_lb_)) {
                             .x_axis_lb_ <- if(.zoom_) {
@@ -3562,24 +3562,24 @@ calibR_R6 <- R6::R6Class(
         if(.engine_ == "plotly") {
           ###### Points shapes and colours:----
           symbols_ <- c(
-            "Starting values" = "x-thin-open", #"x-dot",
+            "Starting sets" = "x-thin-open", #"x-dot",
             "Global extrema" = "circle-dot",
             "Local extremas" = "circle-open")
           colors_ <- c(
-            "Starting values" = "black",
+            "Starting sets" = "black",
             "Global extrema" = "red",
             "Local extremas" = "darkorange")
           if(.true_points_) {
             symbols_ <- c(
-              "Starting values" = "x-thin-open", #"x-dot",
+              "Starting sets" = "x-thin-open", #"x-dot",
               "Global extrema" = "circle-dot",
               "Local extremas" = "circle-open",
-              "True values" = "circle-dot")
+              "True set" = "circle-dot")
             colors_ <- c(
-              "Starting values" = "black",
+              "Starting sets" = "black",
               "Global extrema" = "red",
               "Local extremas" = "darkorange",
-              "True values" = "green")
+              "True set" = "green")
           }
           ###### Generate plots:----
           purrr::map(
@@ -3600,14 +3600,14 @@ calibR_R6 <- R6::R6Class(
                   transposed_calib_res <- self$calibration_results$
                     directed[[.calib_res_algorithm]] %>%
                     purrr::transpose()
-                  ###### Extract "Starting values":----
+                  ###### Extract "Starting sets":----
                   calib_res <- transposed_calib_res[["Guess"]] %>%
                     purrr::map_dfr(
                       .x = .,
                       .f = function(.x) {
                         .x}) %>%
                     dplyr::mutate(
-                      Points = "Starting values") %>%
+                      Points = "Starting sets") %>%
                     ###### Join "Local extremas":----
                   dplyr::bind_rows(
                     ###### Extract identified extremas:----
@@ -3622,19 +3622,20 @@ calibR_R6 <- R6::R6Class(
                       ###### Find "Global extrema":----
                     dplyr::mutate(
                       GOF = transposed_calib_res[["GOF value"]]) %>%
-                      dplyr::arrange(dplyr::desc(GOF)) %>%
+                      dplyr::arrange(
+                        dplyr::desc(GOF)) %>%
                       dplyr::mutate(
                         Points = dplyr::case_when(
                           dplyr::row_number() == 1 ~ "Global extrema",
                           TRUE ~ Points)
                       )) %>%
-                    ###### Add true values:----
+                    ###### Add True set:----
                   {if(.true_points_) {
                     dplyr::bind_rows(
                       .,
                       self$calibration_parameters$v_params_true_values) %>%
                       dplyr::mutate(Points = dplyr::case_when(
-                        is.na(Points) ~ "True values",
+                        is.na(Points) ~ "True set",
                         TRUE ~ Points))
                   } else {
                     .
@@ -3646,7 +3647,7 @@ calibR_R6 <- R6::R6Class(
                         .data = .,
                         Points = factor(
                           x = Points,
-                          levels = c("Starting values",
+                          levels = c("Starting sets",
                                      "Global extrema",
                                      "Local extremas")))
                     } else {
@@ -3654,20 +3655,20 @@ calibR_R6 <- R6::R6Class(
                         .data = .,
                         Points = factor(
                           x = Points,
-                          levels = c("Starting values",
+                          levels = c("Starting sets",
                                      "Global extrema",
                                      "Local extremas",
-                                     "True values")))
+                                     "True set")))
                     }}
 
                   ####### Change colour if too many points in plot:----
-                  colors_["Starting values"] <- ifelse(
+                  colors_["Starting sets"] <- ifelse(
                     calib_res %>%
                       dplyr::filter(
-                        Points == "Starting values") %>%
+                        Points == "Starting sets") %>%
                       nrow(.) > 100,
                     "grey",
-                    colors_["Starting values"])
+                    colors_["Starting sets"])
 
                   ###### Add points to the plots:----
                   purrr::map(
@@ -3685,7 +3686,28 @@ calibR_R6 <- R6::R6Class(
                           if(.zoom_) {
                             zoom_calib_res <- calib_res %>%
                               dplyr::filter(
-                                Points != "Starting values")
+                                Points != "Starting sets") %>%
+                              ######## Ignore values out-of-bound:----
+                              dplyr::filter(
+                                .data[[.param_x]] > self$calibration_parameters$
+                                  Xargs[[.param_x]]$min,
+                                .data[[.param_x]] < self$calibration_parameters$
+                                  Xargs[[.param_x]]$max,
+                                .data[[.param_y]] > self$calibration_parameters$
+                                  Xargs[[.param_y]]$min,
+                                .data[[.param_y]] < self$calibration_parameters$
+                                  Xargs[[.param_y]]$max)
+
+                            ######## Ensure global extrema is in dataset:----
+                            zoom_calib_res <- zoom_calib_res %>%
+                              dplyr::mutate(
+                                Points = as.character(Points),
+                                ranking = dplyr::row_number()) %>%
+                              dplyr::mutate(
+                                Points = dplyr::case_when(
+                                  ranking == 1 ~ "Global extrema",
+                                  TRUE ~ Points)) %>%
+                              dplyr::select(-ranking)
                           }
                           if(is.null(.x_axis_lb_)) {
                             .x_axis_lb_ <- if(.zoom_) {
@@ -3865,12 +3887,12 @@ calibR_R6 <- R6::R6Class(
               "Prior samples" = "x-thin-open", #"x-dot",
               "Posterior samples" = "circle-open",
               "Posterior centres" = "circle-dot",
-              "True values" = "circle-dot")
+              "True set" = "circle-dot")
             colors_ <- c(
               "Prior samples" = "black",
               "Posterior samples" = "red",
               "Posterior centres" = "yellow",
-              "True values" = "green")
+              "True set" = "green")
           }
           ###### Generate plots:----
           ####### Ensure Priors samples exist:----
@@ -3899,13 +3921,13 @@ calibR_R6 <- R6::R6Class(
                       self$prior_samples$LHS %>%
                         dplyr::mutate(
                           Points = "Prior samples")) %>%
-                    ###### Add true values:----
+                    ###### Add True set:----
                   {if(.true_points_) {
                     dplyr::bind_rows(
                       .,
                       self$calibration_parameters$v_params_true_values) %>%
                       dplyr::mutate(Points = dplyr::case_when(
-                        is.na(Points) ~ "True values",
+                        is.na(Points) ~ "True set",
                         TRUE ~ Points))
                   } else {
                     .
@@ -3932,7 +3954,7 @@ calibR_R6 <- R6::R6Class(
                             levels = c("Prior samples",
                                        "Posterior samples",
                                        "Posterior centres",
-                                       "True values")))
+                                       "True set")))
                       }}
                     } else {
                       {if(!.true_points_) {
@@ -3949,7 +3971,7 @@ calibR_R6 <- R6::R6Class(
                             x = Points,
                             levels = c("Prior samples",
                                        "Posterior samples",
-                                       "True values")))
+                                       "True set")))
                       }}
                     }}
 
@@ -4312,11 +4334,11 @@ calibR_R6 <- R6::R6Class(
                         'Distribution samples' = 0.4)
 
                       size_options <- c(
-                        'Posterior mean' = 1.3,
-                        'Identified set' = 1.3,
-                        'Maximum-a-posteriori' = 1.2,
-                        'Credible interval - LB' = 1.2,
-                        'Credible interval - UB' = 1.2,
+                        'Posterior mean' = 1,
+                        'Identified set' = 1,
+                        'Maximum-a-posteriori' = 1,
+                        'Credible interval - LB' = 1,
+                        'Credible interval - UB' = 1,
                         'PSA sets' = 0.6,
                         'Distribution samples' = 0.6)
 
@@ -4331,12 +4353,22 @@ calibR_R6 <- R6::R6Class(
                       scale_sizes <- size_options[existing_labels]
 
                       ######## Reorder rows in dataset for plotting:-----
-                      # plotting_df <- purrr::map_dfr(
-                      #   .x = existing_labels,
-                      #   .f = function(.label_) {
-                      #     plotting_df %>%
-                      #       dplyr::filter(Plot_label == .label_)
-                      #   })
+                      plotting_df <- plotting_df %>%
+                        dplyr::mutate(
+                          ranking = dplyr::case_when(
+                            Plot_label %in% c(
+                              "Identified set",
+                              "Maximum-a-posteriori") ~ 4,
+                            Plot_label %in% c(
+                              'Posterior mean') ~ 3,
+                            Plot_label %in% c(
+                              "Credible interval - LB",
+                              "Credible interval - UB") ~ 2,
+                            Plot_label %in% c(
+                              "PSA sets",
+                              "Distribution samples") ~ 1)) %>%
+                        dplyr::arrange(ranking) %>%
+                        dplyr::select(-ranking)
 
                       ######## More transparent if many PSA values:-----
                       alpha_options["PSA sets"] <- ifelse(
@@ -4484,7 +4516,7 @@ calibR_R6 <- R6::R6Class(
               values_to = "Distribution draws")
         })
 
-      ##### Add true values (if known):----
+      ##### Add True set (if known):----
       if(!is.null(self$calibration_parameters$v_params_true_values)) {
         data2_ <- purrr::map(
           ###### Loop through each Bayesian method:----
@@ -4624,7 +4656,7 @@ calibR_R6 <- R6::R6Class(
                       "Effective sample size:",
                       ESS_))
               }
-              ####### Add true values, if known:----
+              ####### Add True set, if known:----
               if(!is.null(self$calibration_parameters$
                           v_params_true_values[[.parameter_]])) {
                 plot_ <- plot_ +

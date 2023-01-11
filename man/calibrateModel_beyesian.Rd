@@ -18,7 +18,8 @@ calibrateModel_beyesian(
   .MCMC_samples = 50000,
   .MCMC_thin = 5,
   .MCMC_rerun = TRUE,
-  .transform = FALSE
+  .transform = FALSE,
+  .diag_ = FALSE
 )
 }
 \arguments{
@@ -59,6 +60,8 @@ first run to re-run the MCMC chain.}
 
 \item{.transform}{Logical for whether to back-transform parameters to
 their original scale.}
+
+\item{.diag_}{Boolean for whether to print diagnostics}
 }
 \description{
 Calibrate models using Bayesian methods - employing local IMIS_()
