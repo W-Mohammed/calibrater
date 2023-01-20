@@ -122,7 +122,7 @@ model}
 \item{\code{model_interventions}}{model interventions to run cost-effectiveness
 analysis}
 
-\item{\code{transform_parameters}}{boolean for whether to back transform
+\item{\code{transform_parameters}}{logical for whether to back transform
 parameters}
 
 \item{\code{GOF_measure_plot}}{log likelihood values for plot}
@@ -343,7 +343,7 @@ more tracing information.}
 \item{\code{.sample_method}}{The method used to sample from the prior
 distribution.}
 
-\item{\code{.maximise}}{Boolean for whether the function is to maximise.}
+\item{\code{.maximise}}{Logical for whether the function is to maximise.}
 }
 \if{html}{\out{</div>}}
 }
@@ -401,10 +401,10 @@ including burn-in.}
 are to reduced. .MCMC_thin defines the number of samples from which the
 first will be retained while the rest are discarded.}
 
-\item{\code{.MCMC_rerun}}{Boolean for whether to re-run MCMC using the proposal
+\item{\code{.MCMC_rerun}}{Logical for whether to re-run MCMC using the proposal
 distribution covariance matrix from the first run.}
 
-\item{\code{.diag_}}{Boolean for whether to print diagnostics.}
+\item{\code{.diag_}}{Logical for whether to print diagnostics.}
 }
 \if{html}{\out{</div>}}
 }
@@ -572,11 +572,11 @@ FGS samples to select.}
 
 \item{\code{.n_samples_}}{Number of Grid samples to plot log likelihood}
 
-\item{\code{.points_}}{Boolean for whether to add scatter plot}
+\item{\code{.points_}}{Logical for whether to add scatter plot}
 
-\item{\code{.true_points_}}{Boolean for whether to add "True set" to plots.}
+\item{\code{.true_points_}}{Logical for whether to add "True set" to plots.}
 
-\item{\code{.greys_}}{Boolean for whether to use a Grey scale in the plot.}
+\item{\code{.greys_}}{Logical for whether to use a Grey scale in the plot.}
 
 \item{\code{.scale_}}{The colour bar colour-scale. Available options are Greys,
 YlGnBu, Greens, YlOrRd, Bluered, RdBu, Reds, Blues, Picnic, Rainbow,
@@ -585,10 +585,10 @@ Portland, Jet, Hot, Blackbody, Earth, Electric, Viridis, Cividis.}
 \item{\code{.coloring_}}{Which contouring is required (default fill) and options
 are "fill" | "heatmap" | "lines" | "none"}
 
-\item{\code{.legend_}}{Boolean for whether to show a legend (default is FALSE).
+\item{\code{.legend_}}{Logical for whether to show a legend (default is FALSE).
 This parameter also controls text labels in the opposite way.}
 
-\item{\code{.zoom_}}{Boolean (default FALSE) for whether to limit the resulting
+\item{\code{.zoom_}}{Logical (default FALSE) for whether to limit the resulting
 plot to the min() and max() of the two dimensional contour plots.}
 
 \item{\code{.x_axis_lb_}}{Lower bound of the plot's x axis.}
@@ -599,7 +599,7 @@ plot to the min() and max() of the two dimensional contour plots.}
 
 \item{\code{.y_axis_ub_}}{Upper bound of the plot's y axis.}
 
-\item{\code{.save_}}{Boolean for whether to save plots.}
+\item{\code{.save_}}{Logical for whether to save plots.}
 
 \item{\code{.saving_path_}}{String defining the path for where to save the
 plots.}
@@ -653,7 +653,7 @@ Plot Targets (with or without simulated targets)
 \describe{
 \item{\code{.engine_}}{String naming the plotting engine, currently "ggplot2".}
 
-\item{\code{.sim_targets_}}{Boolean (default FALSE) for whether generate then
+\item{\code{.sim_targets_}}{Logical (default FALSE) for whether generate then
 plot simulated targets. The generation of simulated targets requires
 the package to run the model using the sampled or identified PSA values.}
 
@@ -670,7 +670,7 @@ use in plotting/generating the simulated targets.}
 \item{\code{.PSA_unCalib_values_}}{Tibble/table/dataframe containing the PSA
 draws for the parameters that are not calibrated in the object}
 
-\item{\code{.save_}}{Boolean for whether to save plots.}
+\item{\code{.save_}}{Logical for whether to save plots.}
 
 \item{\code{.saving_path_}}{String defining the path for where to save the
 plots.}
@@ -733,9 +733,9 @@ Plot prior and posterior distributions
 
 \item{\code{.legend_pos_}}{String (default bottom) setting legend position.}
 
-\item{\code{.log_scaled_}}{Boolean for whether to use log scale in the x axis.}
+\item{\code{.log_scaled_}}{Logical for whether to use log scale in the x axis.}
 
-\item{\code{.save_}}{Boolean for whether to save plots.}
+\item{\code{.save_}}{Logical for whether to save plots.}
 
 \item{\code{.saving_path_}}{String defining the path for where to save the
 plots.}
@@ -786,7 +786,7 @@ Draw PSA summary tables:----
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{.save_}}{Boolean for whether to save tables data.}
+\item{\code{.save_}}{Logical for whether to save tables data.}
 
 \item{\code{.saving_path_}}{String defining the path for where to save the
 tables data.}

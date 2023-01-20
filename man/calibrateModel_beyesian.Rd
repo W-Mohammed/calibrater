@@ -61,7 +61,7 @@ first run to re-run the MCMC chain.}
 \item{.transform}{Logical for whether to back-transform parameters to
 their original scale.}
 
-\item{.diag_}{Boolean for whether to print diagnostics}
+\item{.diag_}{Logical for whether to print diagnostics}
 }
 \description{
 Calibrate models using Bayesian methods - employing local IMIS_()

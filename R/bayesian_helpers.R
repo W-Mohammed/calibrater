@@ -505,7 +505,7 @@ calculate_posterior <- function(.samples, .func = .func_, .args = .args_,
 #' first run to re-run the MCMC chain.
 #' @param .transform Logical for whether to back-transform parameters to
 #' their original scale.
-#' @param .diag_ Boolean for whether to print diagnostics
+#' @param .diag_ Logical for whether to print diagnostics
 #'
 #' @return
 #' @export

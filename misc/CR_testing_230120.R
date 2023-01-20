@@ -85,6 +85,10 @@ CR_CRS_2P2T$
 #### Run PSA:----
 CR_CRS_2P2T$run_PSA(
   .PSA_unCalib_values_ = NULL)
+##### Plot targets:----
+CR_CRS_2P2T$draw_targets_plots(
+  .sim_targets_ = TRUE,
+  .save_ = TRUE)
 #### Generate PSA tables:----
 CR_CRS_2P2T$draw_PSA_summary_tables(
   .save_ = TRUE)
@@ -110,10 +114,6 @@ CR_CRS_2P2T$draw_GOF_measure(
   .scale_ = NULL,
   .zoom_ = TRUE,
   .gof_ = gof_measure,
-  .save_ = TRUE)
-##### Plot targets:----
-CR_CRS_2P2T$draw_targets_plots(
-  .sim_targets_ = TRUE,
   .save_ = TRUE)
 ##### Prior posterior plot:----
 CR_CRS_2P2T$draw_distributions_plots(
