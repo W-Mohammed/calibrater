@@ -16,3 +16,7 @@ was scripted for other goodness-of-fit functions}
 \description{
 Rosenbrock function
 }
+\examples{
+\dontrun{
+}
+}

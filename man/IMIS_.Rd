@@ -37,9 +37,21 @@ parameters at a time)}
 \item{prior}{Function that calculates prior densities (one set of
 parameters at a time)}
 
-\item{likelihood}{Function that calculates the likelihood}
+\item{likelihood}{A function that calculates the likelihood}
 
-\item{.transform_}{}
+\item{.l_params_}{A list with parameters information}
+
+\item{.func_}{A function defining the model to be calibrated}
+
+\item{.args_}{A list of arguments passed to the model function.}
+
+\item{.l_targets_}{A list containing a vector of targets' names, a vector
+of targets' weights, a vector of targets' distributions, and a table for
+each target that contains the values (column name 'value') and standard
+errors (column name 'sd') of the corresponding target.}
+
+\item{.transform_}{Logical for whether to back-transform parameters to
+their original scale.}
 }
 \description{
 Incremental Mixture Importance Sampling (IMIS) - amended version

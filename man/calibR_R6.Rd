@@ -76,8 +76,6 @@ and produce summary plots/tables.
 
 \dontrun{
 }
-Plot Goodness of fit function(s)
-
 
 ## ------------------------------------------------
 ## Method `calibR_R6$draw_GOF_measure`
@@ -85,8 +83,6 @@ Plot Goodness of fit function(s)
 
 \dontrun{
 }
-Plot Targets
-
 
 ## ------------------------------------------------
 ## Method `calibR_R6$draw_targets_plots`
@@ -94,11 +90,16 @@ Plot Targets
 
 \dontrun{
 }
-Plot prior and posterior distributions
-
 
 ## ------------------------------------------------
 ## Method `calibR_R6$draw_distributions_plots`
+## ------------------------------------------------
+
+\dontrun{
+}
+
+## ------------------------------------------------
+## Method `calibR_R6$draw_PSA_summary_tables`
 ## ------------------------------------------------
 
 \dontrun{
@@ -118,6 +119,9 @@ model}
 
 \item{\code{calibration_results}}{calibration interim results}
 
+\item{\code{model_interventions}}{model interventions to run cost-effectiveness
+analysis}
+
 \item{\code{transform_parameters}}{boolean for whether to back transform
 parameters}
 
@@ -136,6 +140,8 @@ samples}
 \item{\code{PSA_results}}{PSA results}
 
 \item{\code{PSA_summary}}{PSA results' summary}
+
+\item{\code{PSA_summary_tables}}{PSA results' summary tables}
 
 \item{\code{simulated_targets}}{PSA results}
 
@@ -158,6 +164,7 @@ samples}
 \item \href{#method-calibR_R6-draw_GOF_measure}{\code{calibR_R6$draw_GOF_measure()}}
 \item \href{#method-calibR_R6-draw_targets_plots}{\code{calibR_R6$draw_targets_plots()}}
 \item \href{#method-calibR_R6-draw_distributions_plots}{\code{calibR_R6$draw_distributions_plots()}}
+\item \href{#method-calibR_R6-draw_PSA_summary_tables}{\code{calibR_R6$draw_PSA_summary_tables()}}
 \item \href{#method-calibR_R6-clone}{\code{calibR_R6$clone()}}
 }
 }
@@ -168,7 +175,7 @@ samples}
 Sample prior distribution(s) using one or more sampling method.
 This function currently supports: LHS, FGS and RGS.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$new(.model, .args, .params, .targets, .transform)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$new(.model, .args, .params, .targets, .transform, .intervs = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -185,6 +192,9 @@ This function currently supports: LHS, FGS and RGS.
 \item{\code{.transform}}{Logical for whether the model will use
 transformed parameters. This allows some functions to back
 transform the parameters to their original scale before using them.}
+
+\item{\code{.intervs}}{A list containing the information about the considered
+interventions built into the model.}
 }
 \if{html}{\out{</div>}}
 }
@@ -379,7 +389,22 @@ Calibrate the model using one or more calibration method.
 
 \item{\code{.IMIS_iterations}}{Maximum number of IMIS iterations}
 
-\item{\code{.IMIS_sample}}{IMIS sample size at each iteration}
+\item{\code{.IMIS_sample}}{Positive integer for the IMIS sample size at each
+iteration.}
+
+\item{\code{.MCMC_burnIn}}{Positive integer for the MCMC burn-in sample.}
+
+\item{\code{.MCMC_samples}}{Positive integer for the total MCMC sample,
+including burn-in.}
+
+\item{\code{.MCMC_thin}}{Positive integer for the value by which MCMC results
+are to reduced. .MCMC_thin defines the number of samples from which the
+first will be retained while the rest are discarded.}
+
+\item{\code{.MCMC_rerun}}{Boolean for whether to re-run MCMC using the proposal
+distribution covariance matrix from the first run.}
+
+\item{\code{.diag_}}{Boolean for whether to print diagnostics.}
 }
 \if{html}{\out{</div>}}
 }
@@ -497,8 +522,6 @@ console.}
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
 }
-Plot Goodness of fit function(s)
-
 }
 \if{html}{\out{</div>}}
 
@@ -509,6 +532,7 @@ Plot Goodness of fit function(s)
 \if{html}{\out{<a id="method-calibR_R6-draw_GOF_measure"></a>}}
 \if{latex}{\out{\hypertarget{method-calibR_R6-draw_GOF_measure}{}}}
 \subsection{Method \code{draw_GOF_measure()}}{
+Plot Goodness of fit function(s)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_GOF_measure(
   .engine_ = "plotly",
@@ -525,14 +549,19 @@ Plot Goodness of fit function(s)
   .x_axis_lb_ = NULL,
   .x_axis_ub_ = NULL,
   .y_axis_lb_ = NULL,
-  .y_axis_ub_ = NULL
+  .y_axis_ub_ = NULL,
+  .save_ = FALSE,
+  .saving_path_ = here::here(),
+  .saving_image_dir_ = "/images/GOFs/",
+  .saving_x_params_ = 1,
+  .saving_image_scale_ = 5
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{.engine_}}{Plotting engine, currently c("plotly", "ggplot2")}
+\item{\code{.engine_}}{String naming the plotting engine, currently "plotly".}
 
 \item{\code{.gof_}}{Goodness of fit (GOF) measure - fitness function. Either
 "LLK" or "SEE" for the log-likelihood and sum-of-squared-errors GOF,
@@ -569,6 +598,20 @@ plot to the min() and max() of the two dimensional contour plots.}
 \item{\code{.y_axis_lb_}}{Lower bound of the plot's y axis.}
 
 \item{\code{.y_axis_ub_}}{Upper bound of the plot's y axis.}
+
+\item{\code{.save_}}{Boolean for whether to save plots.}
+
+\item{\code{.saving_path_}}{String defining the path for where to save the
+plots.}
+
+\item{\code{.saving_image_dir_}}{String defining the sub-folder in the path
+where to save the plots.}
+
+\item{\code{.saving_x_params_}}{Integer or vector of integers for the rank(s) of}
+
+\item{\code{.saving_image_scale_}}{Positive integer dictating the scale at which
+the image is saved. Default value is 5 for images with width of 1/3 an A4
+paper.}
 }
 \if{html}{\out{</div>}}
 }
@@ -576,8 +619,6 @@ plot to the min() and max() of the two dimensional contour plots.}
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
 }
-Plot Targets
-
 }
 \if{html}{\out{</div>}}
 
@@ -588,21 +629,69 @@ Plot Targets
 \if{html}{\out{<a id="method-calibR_R6-draw_targets_plots"></a>}}
 \if{latex}{\out{\hypertarget{method-calibR_R6-draw_targets_plots}{}}}
 \subsection{Method \code{draw_targets_plots()}}{
+Plot Targets (with or without simulated targets)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_targets_plots(
   .engine_ = "ggplot2",
   .sim_targets_ = FALSE,
-  .calibration_methods_ = c("random", "directed", "bayesian"),
+  .calibration_methods_ = "all",
   .legend_pos_ = "bottom",
   .PSA_samples_ = NULL,
-  .PSA_unCalib_values_ = NULL
+  .PSA_unCalib_values_ = NULL,
+  .save_ = FALSE,
+  .saving_path_ = here::here(),
+  .saving_image_dir_ = "/images/Targets/",
+  .saving_image_scale_ = 2,
+  .saving_image_width_ = 1000,
+  .saving_image_height_ = 600,
+  .saving_image_units_ = "px"
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{.engine_}}{Plotting engine, currently c("plotly", "ggplot2")}
+\item{\code{.engine_}}{String naming the plotting engine, currently "ggplot2".}
+
+\item{\code{.sim_targets_}}{Boolean (default FALSE) for whether generate then
+plot simulated targets. The generation of simulated targets requires
+the package to run the model using the sampled or identified PSA values.}
+
+\item{\code{.calibration_methods_}}{String vector naming the calibration methods
+for which simulated targets are to be generated. Options is either "all"
+(the default) or any of c("random", "directed", "bayesian").}
+
+\item{\code{.legend_pos_}}{String declaring the preferred position for the
+legend. Default is "bottom".}
+
+\item{\code{.PSA_samples_}}{Integer defining the maximum number of PSA values to
+use in plotting/generating the simulated targets.}
+
+\item{\code{.PSA_unCalib_values_}}{Tibble/table/dataframe containing the PSA
+draws for the parameters that are not calibrated in the object}
+
+\item{\code{.save_}}{Boolean for whether to save plots.}
+
+\item{\code{.saving_path_}}{String defining the path for where to save the
+plots.}
+
+\item{\code{.saving_image_dir_}}{String defining the sub-folder in the path
+where to save the plots.}
+
+\item{\code{.saving_image_scale_}}{Positive integer dictating the scale at which
+the image is saved. Default value is 5 for images with width of 1/3 an A4
+paper.}
+
+\item{\code{.saving_image_width_}}{Positive integer setting the width of the
+saved version of the plot. The default (1,000 px) is appropriate for an
+image 1/3 of the width of A4 sheet.}
+
+\item{\code{.saving_image_height_}}{Positive integer setting the height of the
+saved version of the plot. The default (600 px) is appropriate for an
+image 1/3 of the width of A4 sheet.}
+
+\item{\code{.saving_image_units_}}{A string (default "px") defining the units
+in which the width and height are provided.}
 }
 \if{html}{\out{</div>}}
 }
@@ -610,8 +699,6 @@ Plot Targets
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
 }
-Plot prior and posterior distributions
-
 }
 \if{html}{\out{</div>}}
 
@@ -622,11 +709,19 @@ Plot prior and posterior distributions
 \if{html}{\out{<a id="method-calibR_R6-draw_distributions_plots"></a>}}
 \if{latex}{\out{\hypertarget{method-calibR_R6-draw_distributions_plots}{}}}
 \subsection{Method \code{draw_distributions_plots()}}{
+Plot prior and posterior distributions
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_distributions_plots(
   .engine_ = "ggplot2",
   .legend_pos_ = "bottom",
-  .log_scaled_ = FALSE
+  .log_scaled_ = FALSE,
+  .save_ = FALSE,
+  .saving_path_ = here::here(),
+  .saving_image_dir_ = "/images/Prior-posterior/",
+  .saving_image_scale_ = 2,
+  .saving_image_width_ = 1000,
+  .saving_image_height_ = 700,
+  .saving_image_units_ = "px"
 )}\if{html}{\out{</div>}}
 }
 
@@ -639,6 +734,65 @@ Plot prior and posterior distributions
 \item{\code{.legend_pos_}}{String (default bottom) setting legend position.}
 
 \item{\code{.log_scaled_}}{Boolean for whether to use log scale in the x axis.}
+
+\item{\code{.save_}}{Boolean for whether to save plots.}
+
+\item{\code{.saving_path_}}{String defining the path for where to save the
+plots.}
+
+\item{\code{.saving_image_dir_}}{String defining the sub-folder in the path
+where to save the plots.}
+
+\item{\code{.saving_image_scale_}}{Positive integer dictating the scale at which
+the image is saved. Default value is 5 for images with width of 1/3 an A4
+paper.}
+
+\item{\code{.saving_image_width_}}{Positive integer setting the width of the
+saved version of the plot. The default (1,000 px) is appropriate for an
+image 1/3 of the width of A4 sheet.}
+
+\item{\code{.saving_image_height_}}{Positive integer setting the height of the
+saved version of the plot. The default (600 px) is appropriate for an
+image 1/3 of the width of A4 sheet.}
+
+\item{\code{.saving_image_units_}}{A string (default "px") defining the units
+in which the width and height are provided.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-calibR_R6-draw_PSA_summary_tables"></a>}}
+\if{latex}{\out{\hypertarget{method-calibR_R6-draw_PSA_summary_tables}{}}}
+\subsection{Method \code{draw_PSA_summary_tables()}}{
+Draw PSA summary tables:----
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_PSA_summary_tables(
+  .save_ = FALSE,
+  .saving_path_ = here::here(),
+  .saving_data_dir_ = "/data/PSA tables/"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.save_}}{Boolean for whether to save tables data.}
+
+\item{\code{.saving_path_}}{String defining the path for where to save the
+tables data.}
+
+\item{\code{.saving_data_dir_}}{String defining the sub-folder in the path
+where to save the tables data.}
 }
 \if{html}{\out{</div>}}
 }

@@ -9,12 +9,16 @@
 #' parameters at a time)
 #' @param prior Function that calculates prior densities (one set of
 #' parameters at a time)
-#' @param likelihood Function that calculates the likelihood
-#' @param .l_params_
-#' @param .func_
-#' @param .args_
-#' @param .l_targets_
-#' @param .transform_
+#' @param likelihood A function that calculates the likelihood
+#' @param .l_params_ A list with parameters information
+#' @param .func_ A function defining the model to be calibrated
+#' @param .args_ A list of arguments passed to the model function.
+#' @param .l_targets_ A list containing a vector of targets' names, a vector
+#' of targets' weights, a vector of targets' distributions, and a table for
+#' each target that contains the values (column name 'value') and standard
+#' errors (column name 'sd') of the corresponding target.
+#' @param .transform_ Logical for whether to back-transform parameters to
+#' their original scale.
 #'
 #' @return
 #' @export

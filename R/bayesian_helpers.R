@@ -575,12 +575,6 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
     return(list('Results' = SIR_results, 'Method' = "SIR"))
 
   } else if(.b_method == 'IMIS') { # IMIS:
-    ## Define function inputs:
-    # .l_params_ <- .l_params # prior/sample.prior
-    # .func_ <- .func # calculate_likelihood
-    # .args_ <- .args # calculate_likelihood
-    # .l_targets_ <- .l_targets # calculate_likelihood
-    # .transform_ <- .transform # prior
     ## Run IMIS:
     fit_IMIS <- calibR::IMIS_(
       B = .IMIS_sample, # the incremental sample size at each IMIS iteration
