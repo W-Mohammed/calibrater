@@ -100,7 +100,7 @@ summ_optim <- function(.params_name = v_params_names, .params_vals, .gof = NULL,
 
   # Continue if .hessian could be inversed:
   covr_mat <- fisher_info
-  diag(covr_mat) <- 1
+  # diag(covr_mat) <- 1
 
   # # Negative numbers don't have real square roots, correct if diag is < 0:
   # # If optim minimised GOF then we need negative hessian:

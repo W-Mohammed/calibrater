@@ -1,12 +1,12 @@
 #' Plot observed and simulated targets
 #'
-#' @param .engine_ A string naming the plotting engine, currently "ggplot2".
-#' @param .l_targets_ A list containing calibration (observed) targets
+#' @param .engine_ String naming the plotting engine, currently "ggplot2".
+#' @param .l_targets_ List containing calibration (observed) targets
 #' information.
-#' @param .simulated_targets_ A list containing simulated targets.
-#' @param .sim_targets_ A logical (default FALSE) for whether to generate
+#' @param .simulated_targets_ List containing simulated targets.
+#' @param .sim_targets_ Logical (default FALSE) for whether to generate
 #' plots for the simulated targets.
-#' @param .legend_pos_ A string defining the location of the legend position
+#' @param .legend_pos_ String defining the location of the legend position
 #' default (bottom).
 #'
 #' @return
@@ -14,17 +14,17 @@
 #'
 #' @examples
 #' \dontrun{
-#' plots_list <- plot_target(
+#' targets_plots <- plot_targets(
 #'   .l_targets_ = CR_CRS_2P2T$calibration_targets,
 #'   .simulated_targets_ = CR_CRS_2P2T$simulated_targets,
 #'   .sim_targets_ = TRUE)
 #' }
 plot_targets <- function(.engine_ = "ggplot2",
-                        .l_targets_ = self$calibration_targets,
-                        .simulated_targets_ = self$simulated_targets,
-                        .sim_targets_ = FALSE,
-                        .legend_pos_ = "bottom") {
-  ## If the user request "ggplot2":----
+                         .l_targets_ = self$calibration_targets,
+                         .simulated_targets_ = self$simulated_targets,
+                         .sim_targets_ = FALSE,
+                         .legend_pos_ = "bottom") {
+  ## For "ggplot2" plots:----
   if(.engine_ == "ggplot2") {
     ### Observed targets' plots:----
     observed_targets_lst <- purrr::map(
@@ -146,7 +146,7 @@ plot_targets <- function(.engine_ = "ggplot2",
                     unique()
 
                   scale_names <- expected_labels[expected_labels %in%
-                                                       scale_names]
+                                                   scale_names]
                   scale_colors <- color_options[scale_names]
                   scale_alphas <- alpha_options[scale_names]
                   scale_sizes <- size_options[scale_names]
@@ -185,7 +185,7 @@ plot_targets <- function(.engine_ = "ggplot2",
                   plotting_df <- purrr::map_dfr(
                     .x = scale_names,
                     .f = function(.label_) {
-                       plotting_df %>%
+                      plotting_df %>%
                         dplyr::filter(Plot_label == .label_)
                     }) %>%
                     dplyr::mutate(
@@ -195,17 +195,17 @@ plot_targets <- function(.engine_ = "ggplot2",
 
                   ##### Generate simulated targets' plots:----
                   plot_lists <- {observed_targets_lst[[.target_]] +
-                    ######## Add lines to target plot:-----
-                      ggplot2::geom_line(
-                        inherit.aes = FALSE,
-                        data = plotting_df,
-                        ggplot2::aes(
-                          x = .data[[x_axis_name_]],
-                          y = .data[[y_axis_name_]],
-                          group = id,
-                          color = Plot_label,
-                          alpha = Plot_label,
-                          size = Plot_label)) +
+                      ######## Add lines to target plot:-----
+                    ggplot2::geom_line(
+                      inherit.aes = FALSE,
+                      data = plotting_df,
+                      ggplot2::aes(
+                        x = .data[[x_axis_name_]],
+                        y = .data[[y_axis_name_]],
+                        group = id,
+                        color = Plot_label,
+                        alpha = Plot_label,
+                        size = Plot_label)) +
                       ggplot2::scale_color_manual(
                         limits = scale_names,
                         values = scale_colors) +

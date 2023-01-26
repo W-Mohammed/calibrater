@@ -85,18 +85,15 @@ CR_CRS_2P2T$
 #### Run PSA:----
 CR_CRS_2P2T$run_PSA(
   .PSA_unCalib_values_ = NULL)
-##### Plot targets:----
-CR_CRS_2P2T$draw_targets_plots(
-  .sim_targets_ = TRUE,
-  .save_ = TRUE)
 #### Generate PSA tables:----
-CR_CRS_2P2T$draw_PSA_summary_tables(
-  .save_ = TRUE)
+# CR_CRS_2P2T$draw_PSA_summary_tables(
+#   .save_ = TRUE)
 #### Plots:----
 ##### Plot fitness function:----
 ###### Full view plots:----
 set.seed(seed = seed_no)
 CR_CRS_2P2T$draw_GOF_measure(
+  .blank_contour_ = FALSE,
   .true_points_ = TRUE,
   .coloring_ = "none",
   .legend_ = FALSE,
@@ -107,6 +104,7 @@ CR_CRS_2P2T$draw_GOF_measure(
 ###### Zoomed view plots:----
 set.seed(seed = seed_no)
 CR_CRS_2P2T$draw_GOF_measure(
+  .blank_contour_ = FALSE,
   .true_points_ = TRUE,
   .coloring_ = "none",
   .legend_ = FALSE,
@@ -114,6 +112,10 @@ CR_CRS_2P2T$draw_GOF_measure(
   .scale_ = NULL,
   .zoom_ = TRUE,
   .gof_ = gof_measure,
+  .save_ = TRUE)
+##### Plot targets:----
+CR_CRS_2P2T$draw_targets_plots(
+  .sim_targets_ = TRUE,
   .save_ = TRUE)
 ##### Prior posterior plot:----
 CR_CRS_2P2T$draw_distributions_plots(

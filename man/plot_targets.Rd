@@ -13,17 +13,17 @@ plot_targets(
 )
 }
 \arguments{
-\item{.engine_}{A string naming the plotting engine, currently "ggplot2".}
+\item{.engine_}{String naming the plotting engine, currently "ggplot2".}
 
-\item{.l_targets_}{A list containing calibration (observed) targets
+\item{.l_targets_}{List containing calibration (observed) targets
 information.}
 
-\item{.simulated_targets_}{A list containing simulated targets.}
+\item{.simulated_targets_}{List containing simulated targets.}
 
-\item{.sim_targets_}{A logical (default FALSE) for whether to generate
+\item{.sim_targets_}{Logical (default FALSE) for whether to generate
 plots for the simulated targets.}
 
-\item{.legend_pos_}{A string defining the location of the legend position
+\item{.legend_pos_}{String defining the location of the legend position
 default (bottom).}
 }
 \description{
@@ -31,7 +31,7 @@ Plot observed and simulated targets
 }
 \examples{
 \dontrun{
-plots_list <- plot_target(
+targets_plots <- plot_targets(
   .l_targets_ = CR_CRS_2P2T$calibration_targets,
   .simulated_targets_ = CR_CRS_2P2T$simulated_targets,
   .sim_targets_ = TRUE)

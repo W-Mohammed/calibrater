@@ -536,10 +536,10 @@ Plot Goodness of fit function(s)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_GOF_measure(
   .engine_ = "plotly",
+  .blank_contour_ = TRUE,
   .gof_ = "LLK",
   .percent_sampled_ = 10,
   .n_samples_ = 10000,
-  .points_ = FALSE,
   .true_points_ = FALSE,
   .greys_ = FALSE,
   .scale_ = NULL,
@@ -563,6 +563,9 @@ Plot Goodness of fit function(s)
 \describe{
 \item{\code{.engine_}}{String naming the plotting engine, currently "plotly".}
 
+\item{\code{.blank_contour_}}{Logical for whether to only plot blank or empty GOF
+contour plots.}
+
 \item{\code{.gof_}}{Goodness of fit (GOF) measure - fitness function. Either
 "LLK" or "SEE" for the log-likelihood and sum-of-squared-errors GOF,
 respectively.}
@@ -571,8 +574,6 @@ respectively.}
 FGS samples to select.}
 
 \item{\code{.n_samples_}}{Number of Grid samples to plot log likelihood}
-
-\item{\code{.points_}}{Logical for whether to add scatter plot}
 
 \item{\code{.true_points_}}{Logical for whether to add "True set" to plots.}
 
@@ -713,6 +714,7 @@ Plot prior and posterior distributions
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_distributions_plots(
   .engine_ = "ggplot2",
+  .bins_ = 20,
   .legend_pos_ = "bottom",
   .log_scaled_ = FALSE,
   .save_ = FALSE,
@@ -730,6 +732,8 @@ Plot prior and posterior distributions
 \describe{
 \item{\code{.engine_}}{String naming plotting package currently only supports
 "ggplot2".}
+
+\item{\code{.bins_}}{Numeric specifying the number of bins in the histograms.}
 
 \item{\code{.legend_pos_}}{String (default bottom) setting legend position.}
 
