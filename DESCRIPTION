@@ -28,6 +28,8 @@ Imports:
     emdbook,
     GGally,
     ggplot2,
+    ggtext,
+    glue,
     gridExtra,
     gt,
     kableExtra,

@@ -22,6 +22,16 @@
 #'
 #' @examples
 #' \dontrun{
+#' pri_post_plots <- plot_pri_post_distributions(
+#'   .engine_ = "ggplot2",
+#'   .l_PSA_samples_ = CR_CRS_2P2T$PSA_samples,
+#'   .l_params_ = CR_CRS_2P2T$calibration_parameters,
+#'   .l_calibration_results_ = CR_CRS_2P2T$calibration_results,
+#'   .t_prior_samples_ = CR_CRS_2P2T$prior_samples[["LHS"]],
+#'   .transform_ = CR_CRS_2P2T$transform_parameters,
+#'   .bins_ = 20,
+#'   .legend_pos_ = "bottom",
+#'   .log_scaled_ = FALSE)
 #' }
 plot_pri_post_distributions = function(.engine_ = "ggplot2",
                                        .l_PSA_samples_ = self$PSA_samples,
@@ -120,7 +130,8 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
                 x = .data[[.parameter_]],
                 y = ggplot2::after_stat(count) / max(ggplot2::after_stat(count)),
                 fill = Method,
-                colour = Method),
+                colour = Method,
+                alpha = Method),
               bins = .bins_,
               alpha = 0.2) +
             ggplot2::geom_density(
@@ -142,7 +153,8 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
                 x = .data[[.parameter_]],
                 y = ggplot2::after_stat(count) / max(ggplot2::after_stat(count)),
                 fill = Method,
-                colour = Method),
+                colour = Method,
+                alpha = Method),
               bins = .bins_,
               alpha = 0.5) +
             ggplot2::geom_density(
@@ -161,8 +173,15 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
                 colour = 'black',
                 fill = NA),
               plot.title.position = "plot",
+              plot.title = ggtext::element_markdown(
+                # family = "Source Sans Pro"
+                # size = 11,
+                # lineheight = 1.2
+                ),
               plot.subtitle = ggplot2::element_text(
                 face = "italic"),
+              axis.text.y = ggplot2::element_blank(),
+              axis.ticks.y = ggplot2::element_blank(),
               legend.position = .legend_pos_,
               legend.title = ggplot2::element_blank(),
               # Control legend text alignment:0 left (default), 1 right
@@ -177,16 +196,16 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
 
           ####### Colour, scale and fill values:----
           color_scale <- c(
-            "Prior" = "cadetblue",
-            "Posterior" = "red")
+            "Prior" = "#0000FF",
+            "Posterior" = "#FF0000")
 
           fill_scale <- c(
-            "Prior" = "blue",
+            "Prior" = "lightblue",
             "Posterior" = "pink")
 
           alpha_scale <- c(
-            "Prior" = 0.4,
-            "Posterior" = 0.3)
+            "Prior" = 0.7,
+            "Posterior" = 0.7)
 
           plot_ <- plot_ +
             ggplot2::scale_fill_manual(
@@ -209,17 +228,7 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
             plot_ <- plot_ +
               ggplot2::scale_x_log10() +
               ggplot2::labs(
-                caption = paste0(
-                  "Effective sample size:",
-                  ESS_,
-                  "\n",
-                  "x-axis on logarithmic scale"))
-          } else {
-            plot_ <- plot_ +
-              ggplot2::labs(
-                caption = paste0(
-                  "Effective sample size:",
-                  ESS_))
+                caption = "x-axis on logarithmic scale")
           }
 
           ####### Add True set, if known:----
@@ -227,15 +236,31 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
             plot_ <- plot_ +
               ggplot2::geom_vline(
                 xintercept = .l_params_$v_params_true_values[[.parameter_]],
+                colour = "green",
                 show.legend = TRUE) +
               ggplot2::labs(
-                subtitle = paste0(
-                  "The black vertical line represents the true value of the\n\"",
-                  .l_params_$v_params_labels[[.parameter_]],
-                  ": (",
-                  round(.l_params_$v_params_true_values[[.parameter_]], 2),
-                  ")"
-                ))
+                title = glue::glue(# font-family:Source Sans Pro;
+                  "<span style = 'font-size:10pt;'>_{.l_params_$
+                  v_params_labels[[.parameter_]]}_<span style =
+                  'color:#00FF00;'> **true**</span> value, <span style =
+                  'color:{color_scale[\"Prior\"]};'>**prior**</span>
+                  distribution <br>and the **{.data_}** <span style = 'color:
+                  {color_scale[\"Posterior\"]};'>**posterior**</span> distribution.
+                  *ESS = **{ESS_}***.</span>"
+                )
+              )
+          } else {
+            plot_ <- plot_ +
+              ggplot2::labs(
+                title = glue::glue(# font-family:Source Sans Pro;
+                  "<span style = 'font-size:10pt;'>_{.l_params_$
+                  v_params_labels[[.parameter_]]}_ <span style =
+                  'color:{color_scale[\"Prior\"]};'>**prior**</span>
+                  distribution <br>and the **{.data_}** <span style = 'color:
+                  {color_scale[\"Posterior\"]};'>**posterior**</span> distribution.
+                  *ESS = **{ESS_}***.</span>"
+                )
+              )
           }
         })
     })

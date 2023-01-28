@@ -9,7 +9,7 @@ plot_targets(
   .l_targets_ = self$calibration_targets,
   .simulated_targets_ = self$simulated_targets,
   .sim_targets_ = FALSE,
-  .legend_pos_ = "bottom"
+  .legend_pos_ = "none"
 )
 }
 \arguments{

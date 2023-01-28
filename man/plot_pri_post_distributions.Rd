@@ -47,5 +47,15 @@ Plot prior-posterior distributions
 }
 \examples{
 \dontrun{
+pri_post_plots <- plot_pri_post_distributions(
+  .engine_ = "ggplot2",
+  .l_PSA_samples_ = CR_CRS_2P2T$PSA_samples,
+  .l_params_ = CR_CRS_2P2T$calibration_parameters,
+  .l_calibration_results_ = CR_CRS_2P2T$calibration_results,
+  .t_prior_samples_ = CR_CRS_2P2T$prior_samples[["LHS"]],
+  .transform_ = CR_CRS_2P2T$transform_parameters,
+  .bins_ = 20,
+  .legend_pos_ = "bottom",
+  .log_scaled_ = FALSE)
 }
 }

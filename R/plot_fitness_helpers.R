@@ -146,6 +146,7 @@ plot_fitness_function <- function(.engine_ = "plotly",
         "Identified sets" = "circle-open",
         "Local extremas" = "circle-open",
         "Global extrema" = "circle-dot",
+        "PSA draws" = "circle-open",
         "Posterior samples" = "circle-open",
         "Posterior centres" = "circle-dot")
       colors_ <- c(
@@ -155,6 +156,7 @@ plot_fitness_function <- function(.engine_ = "plotly",
         "Identified sets" = "red",
         "Local extremas" = "darkorange",
         "Global extrema" = "red",
+        "PSA draws" = "pink",
         "Posterior samples" = "red",
         "Posterior centres" = "yellow")
       if(.true_points_) {
@@ -165,6 +167,7 @@ plot_fitness_function <- function(.engine_ = "plotly",
           "Identified sets" = "circle-open",
           "Local extremas" = "circle-open",
           "Global extrema" = "circle-dot",
+          "PSA draws" = "circle-open",
           "Posterior samples" = "circle-open",
           "Posterior centres" = "circle-dot",
           "True set" = "circle-dot")
@@ -175,6 +178,7 @@ plot_fitness_function <- function(.engine_ = "plotly",
           "Identified sets" = "red",
           "Local extremas" = "darkorange",
           "Global extrema" = "red",
+          "PSA draws" = "pink",
           "Posterior samples" = "red",
           "Posterior centres" = "yellow",
           "True set" = "green")
@@ -303,6 +307,22 @@ plot_fitness_function <- function(.engine_ = "plotly",
                             dplyr::row_number() == 1 ~ "Global extrema",
                             TRUE ~ Points)
                         )) %>%
+                      ######
+                      {if(!is.null(.l_PSA_samples_[[.l_calib_res_]][[.calib_res_]])) {
+                        dplyr::bind_rows(
+                          .,
+                          .l_PSA_samples_[[.l_calib_res_]][[.calib_res_]]$
+                            PSA_calib_draws %>%
+                            dplyr::filter(Plot_label == "PSA sets") %>%
+                            dplyr::select(
+                              dplyr::all_of(
+                                .l_params_$v_params_names)) %>%
+                            dplyr::mutate(
+                              Points = "PSA draws")
+                        )
+                      } else {
+                        .
+                        }} %>%
                       ###### Add True set:----
                     {if(.true_points_) {
                       dplyr::bind_rows(
@@ -324,7 +344,8 @@ plot_fitness_function <- function(.engine_ = "plotly",
                             x = Points,
                             levels = c("Starting sets",
                                        "Global extrema",
-                                       "Local extremas")))
+                                       "Local extremas",
+                                       "PSA draws")))
                       } else {
                         dplyr::mutate(
                           .data = .,
@@ -333,6 +354,7 @@ plot_fitness_function <- function(.engine_ = "plotly",
                             levels = c("Starting sets",
                                        "Global extrema",
                                        "Local extremas",
+                                       "PSA draws",
                                        "True set")))
                       }}
 
