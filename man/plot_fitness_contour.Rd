@@ -8,6 +8,7 @@ plot_fitness_contour(
   .l_gof_values_,
   .l_params_,
   .gof_name_,
+  .title_ = "",
   .param_x,
   .param_y,
   .scale_,

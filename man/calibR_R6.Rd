@@ -554,7 +554,9 @@ Plot Goodness of fit function(s)
   .saving_path_ = here::here(),
   .saving_image_dir_ = "/images/GOFs/",
   .saving_x_params_ = 1,
-  .saving_image_scale_ = 5
+  .saving_image_scale_ = 2,
+  .saving_image_width_ = 1000,
+  .saving_image_height_ = 600
 )}\if{html}{\out{</div>}}
 }
 
@@ -613,6 +615,14 @@ where to save the plots.}
 \item{\code{.saving_image_scale_}}{Positive integer dictating the scale at which
 the image is saved. Default value is 5 for images with width of 1/3 an A4
 paper.}
+
+\item{\code{.saving_image_width_}}{Positive integer setting the width of the
+saved version of the plot. The default (1,000 px) is appropriate for an
+image 1/3 of the width of A4 sheet.}
+
+\item{\code{.saving_image_height_}}{Positive integer setting the height of the
+saved version of the plot. The default (600 px) is appropriate for an
+image 1/3 of the width of A4 sheet.    #'}
 }
 \if{html}{\out{</div>}}
 }
@@ -636,7 +646,7 @@ Plot Targets (with or without simulated targets)
   .engine_ = "ggplot2",
   .sim_targets_ = FALSE,
   .calibration_methods_ = "all",
-  .legend_pos_ = "bottom",
+  .legend_pos_ = "none",
   .PSA_samples_ = NULL,
   .PSA_unCalib_values_ = NULL,
   .save_ = FALSE,
@@ -715,14 +725,14 @@ Plot prior and posterior distributions
 \if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_distributions_plots(
   .engine_ = "ggplot2",
   .bins_ = 20,
-  .legend_pos_ = "bottom",
+  .legend_pos_ = "none",
   .log_scaled_ = FALSE,
   .save_ = FALSE,
   .saving_path_ = here::here(),
   .saving_image_dir_ = "/images/Prior-posterior/",
   .saving_image_scale_ = 2,
   .saving_image_width_ = 1000,
-  .saving_image_height_ = 700,
+  .saving_image_height_ = 600,
   .saving_image_units_ = "px"
 )}\if{html}{\out{</div>}}
 }

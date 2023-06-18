@@ -86,8 +86,8 @@ CR_CRS_2P2T$
 CR_CRS_2P2T$run_PSA(
   .PSA_unCalib_values_ = NULL)
 #### Generate PSA tables:----
-# CR_CRS_2P2T$draw_PSA_summary_tables(
-#   .save_ = TRUE)
+CR_CRS_2P2T$draw_PSA_summary_tables(
+  .save_ = TRUE)
 #### Plots:----
 ##### Plot fitness function:----
 ###### Full view plots:----
@@ -120,26 +120,4 @@ CR_CRS_2P2T$draw_targets_plots(
 ##### Prior posterior plot:----
 CR_CRS_2P2T$draw_distributions_plots(
   .save_ = TRUE)
-# #### Fitness plots:----
-# GOF_plots_list <- CR_CRS_2P2T$draw_GOF_measure(
-#   .points_ = FALSE,
-#   .true_points_ = FALSE,
-#   .legend_ = FALSE,
-#   .greys_ = FALSE,
-#   .coloring_ = "heatmap",
-#   .scale_ = NULL,
-#   .gof_ = gof_measure)$
-#   plots$
-#   GOF_plots$
-#   blank
-# ##### Save plot:----
-# purrr::walk(
-#   .x = gof_measure,
-#   .f = function(.gof_measure_) {
-#     image_name = glue::glue("GOF_{.gof_measure_}.jpeg")
-#     reticulate::py_run_string("import sys")
-#     plotly::save_image(
-#       p = GOF_plots_list[[.gof_measure_]][[1]][[1]],
-#       file = glue::glue("{image_saving_path}{image_name}"),
-#       scale = 5)
-#   })
+

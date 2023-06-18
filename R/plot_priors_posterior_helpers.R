@@ -30,7 +30,7 @@
 #'   .t_prior_samples_ = CR_CRS_2P2T$prior_samples[["LHS"]],
 #'   .transform_ = CR_CRS_2P2T$transform_parameters,
 #'   .bins_ = 20,
-#'   .legend_pos_ = "bottom",
+#'   .legend_pos_ = "none",
 #'   .log_scaled_ = FALSE)
 #' }
 plot_pri_post_distributions = function(.engine_ = "ggplot2",
@@ -40,7 +40,7 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
                                        .t_prior_samples_ = self$prior_samples[["LHS"]],
                                        .transform_ = self$transform_parameters,
                                        .bins_ = 100,
-                                       .legend_pos_ = "bottom",
+                                       .legend_pos_ = "none",
                                        .log_scaled_ = FALSE) {
   #### Grab Bayesian data PSA samples:----
   data_ <- .l_PSA_samples_$bayesian %>%
@@ -133,6 +133,7 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
                 colour = Method,
                 alpha = Method),
               bins = .bins_,
+              size = 0.2,
               alpha = 0.2) +
             ggplot2::geom_density(
               data = data_[[.data_]] %>%
@@ -156,6 +157,7 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
                 colour = Method,
                 alpha = Method),
               bins = .bins_,
+              size = 0.2,
               alpha = 0.5) +
             ggplot2::geom_density(
               data = data_[[.data_]] %>%
@@ -173,11 +175,10 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
                 colour = 'black',
                 fill = NA),
               plot.title.position = "plot",
-              plot.title = ggtext::element_markdown(
-                # family = "Source Sans Pro"
-                # size = 11,
-                # lineheight = 1.2
-                ),
+              plot.title =  ggtext::element_textbox_simple(
+                lineheight = 1,
+                padding = ggplot2::margin(0, 0, 5, 0)
+              ),
               plot.subtitle = ggplot2::element_text(
                 face = "italic"),
               axis.text.y = ggplot2::element_blank(),
@@ -196,8 +197,8 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
 
           ####### Colour, scale and fill values:----
           color_scale <- c(
-            "Prior" = "#0000FF",
-            "Posterior" = "#FF0000")
+            "Prior" = "#0072B2",
+            "Posterior" = "#D55E00")
 
           fill_scale <- c(
             "Prior" = "lightblue",
@@ -236,15 +237,15 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
             plot_ <- plot_ +
               ggplot2::geom_vline(
                 xintercept = .l_params_$v_params_true_values[[.parameter_]],
-                colour = "green",
+                colour = "#54B200",
                 show.legend = TRUE) +
               ggplot2::labs(
                 title = glue::glue(# font-family:Source Sans Pro;
-                  "<span style = 'font-size:10pt;'>_{.l_params_$
+                  "<span style = 'font-size:13pt;'>_{.l_params_$
                   v_params_labels[[.parameter_]]}_<span style =
-                  'color:#00FF00;'> **true**</span> value, <span style =
+                  'color:#54B200;'> **true**</span> value, <span style =
                   'color:{color_scale[\"Prior\"]};'>**prior**</span>
-                  distribution <br>and the **{.data_}** <span style = 'color:
+                  distribution and the **{.data_}** <span style = 'color:
                   {color_scale[\"Posterior\"]};'>**posterior**</span> distribution.
                   *ESS = **{ESS_}***.</span>"
                 )
@@ -253,10 +254,10 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
             plot_ <- plot_ +
               ggplot2::labs(
                 title = glue::glue(# font-family:Source Sans Pro;
-                  "<span style = 'font-size:10pt;'>_{.l_params_$
+                  "<span style = 'font-size:13pt;'>_{.l_params_$
                   v_params_labels[[.parameter_]]}_ <span style =
                   'color:{color_scale[\"Prior\"]};'>**prior**</span>
-                  distribution <br>and the **{.data_}** <span style = 'color:
+                  distribution and the **{.data_}** <span style = 'color:
                   {color_scale[\"Posterior\"]};'>**posterior**</span> distribution.
                   *ESS = **{ESS_}***.</span>"
                 )

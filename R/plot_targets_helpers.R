@@ -136,22 +136,22 @@ plot_targets <- function(.engine_ = "ggplot2",
 
                   ######## Prepare lines' colours, sizes and opacity:-----
                   color_options <- c(
-                    'PSA sets' = "skyblue",
-                    'Distribution samples' = "skyblue",
-                    'Credible interval - LB' = "red",
-                    'Credible interval - UB' = "red",
-                    'Posterior mean' = "darkgreen",
-                    'Identified set' = "green",
-                    'Maximum-a-posteriori' = "green")
+                    'PSA sets' = "#0072B2",
+                    'Distribution samples' = "#0072B2",
+                    'Credible interval - LB' = "#FFC300",
+                    'Credible interval - UB' = "#FFC300",
+                    'Posterior mean' = "#35D220",
+                    'Identified set' = "#FF0000",
+                    'Maximum-a-posteriori' = "#FF0000")
 
                   alpha_options <- c(
-                    'PSA sets' = 0.4,
-                    'Distribution samples' = 0.4,
-                    'Credible interval - LB' = 0.6,
-                    'Credible interval - UB' = 0.6,
-                    'Posterior mean' = 0.6,
-                    'Identified set' = 0.6,
-                    'Maximum-a-posteriori' = 0.6)
+                    'PSA sets' = 0.3,
+                    'Distribution samples' = 0.3,
+                    'Credible interval - LB' = 1,
+                    'Credible interval - UB' = 1,
+                    'Posterior mean' = 1,
+                    'Identified set' = 1,
+                    'Maximum-a-posteriori' = 1)
 
                   # size_options <- c(
                   #   'PSA sets' = 0.6,
@@ -168,13 +168,17 @@ plot_targets <- function(.engine_ = "ggplot2",
 
                   ######## More transparent if many PSA values:-----
                   alpha_options["PSA sets"] <- ifelse(
-                    nrow(plotting_df %>%
-                           dplyr::filter(Plot_label == "PSA sets")) > 1e3,
+                    nrow(
+                      plotting_df %>%
+                        dplyr::filter(
+                          Plot_label == "PSA sets")) > 1e3,
                     0.2,
                     alpha_options["PSA sets"])
                   alpha_options["Distribution samples"] <- ifelse(
-                    nrow(plotting_df %>%
-                           dplyr::filter(Plot_label == "PSA sets")) > 1e3,
+                    nrow(
+                      plotting_df %>%
+                        dplyr::filter(
+                          Plot_label == "Distribution samples")) > 1e3,
                     0.2,
                     alpha_options["Distribution samples"])
 
@@ -217,7 +221,10 @@ plot_targets <- function(.engine_ = "ggplot2",
                       ggplot2::theme(
                         # Start title from near the margin
                         plot.title.position = "plot",
-                        plot.title = ggtext::element_markdown(),
+                        plot.title = ggtext::element_textbox_simple(
+                          lineheight = 1,
+                          padding = ggplot2::margin(0, 0, 5, 0)
+                        ),
                         legend.position = .legend_pos_,
                         legend.title = ggplot2::element_blank(),
                         # Control legend text alignment:
@@ -282,23 +289,35 @@ get_target_plot_title <- function(.scale_names_ = scale_names,
   .scale_names_ <- .scale_names_[!names(.scale_names_) == 'Credible interval - LB']
   .scale_colors_ <- .scale_colors_[!names(.scale_colors_) == 'Credible interval - LB']
   if(!is.na(.scale_names_['Credible interval - UB']))
-    .scale_names_['Credible interval - UB'] <- "Posterior 95% CI"
+    .scale_names_['Credible interval - UB'] <- "95% credible interval"
 
   if(!is.na(.scale_names_['Distribution samples']))
-    .scale_names_['Distribution samples'] <- "Posterior sampled"
+    .scale_names_['Distribution samples'] <- "samples"
 
   if(!is.na(.scale_names_['PSA sets']))
-    .scale_names_['PSA sets'] <- "PSA"
+    .scale_names_['PSA sets'] <- "PSA samples"
 
   if(!is.na(.scale_names_['Identified set']))
-    .scale_names_['Identified set'] <- "Identified"
+    .scale_names_['Identified set'] <- "identified set(s)"
+
+  if(!is.na(.scale_names_['Posterior mean']))
+    .scale_names_['Posterior mean'] <- "mean"
+
+  if(!is.na(.scale_names_['Maximum-a-posteriori']))
+    .scale_names_['Maximum-a-posteriori'] <- "mode"
 
   .method_ <- calibR:::get_clean_method_name(.method_ = .method_)
 
   .title_ <- paste0(
     glue::glue(
-      "Plot shows <span style = 'color:black;'>**observed**</span> & {.method_}
-      simulated *{.target_}* using"),
+      "<span style = 'color:black;'>**Observed**</span> *{.target_}* with
+      <span style = 'color:black;'>**95% confidence interval**</span> & {.method_} *{.target_}*
+      simulated using "),
+    if(.method_ %in% c("MCMC", "SIR", "IMIS")) {
+      "posterior "
+    } else {
+      ""
+    },
     paste0(
       purrr::map_chr(
         .x = names(
@@ -307,35 +326,36 @@ get_target_plot_title <- function(.scale_names_ = scale_names,
           if(.scale_name_ == names(.scale_names_[1])){
             if(length(.scale_names_) == 2){
               glue::glue(
-                "<span style = 'color:{.scale_colors_[.scale_name_]};'>
-          **{.scale_names_[.scale_name_]}**</span> &<br>")
+                "<span style = 'color:{.scale_colors_[.scale_name_]};
+                '>**{.scale_names_[.scale_name_]}**</span> & ")
             } else {
               glue::glue(
-                "<span style = 'color:{.scale_colors_[.scale_name_]};'>
-          **{.scale_names_[.scale_name_]}**</span>,<br>")
+                "<span style = 'color:{.scale_colors_[.scale_name_]};
+                '>**{.scale_names_[.scale_name_]}**</span>, ")
             }
           } else {
             glue::glue(
-              "<span style = 'color:{.scale_colors_[.scale_name_]};'>
-          **{.scale_names_[.scale_name_]}**</span>, ")
+              "<span style = 'color:{.scale_colors_[.scale_name_]};
+              '>**{.scale_names_[.scale_name_]}**</span>, ")
           }
-        }),
+        }
+      ),
       collapse = ""),
     if(length(.scale_names_) == 2){
       glue::glue(
-        "<span style = 'color:{.scale_colors_[length(.scale_names_)]};'>
-      **{.scale_names_[length(.scale_names_)]}**</span> sets."
+        "<span style = 'color:{.scale_colors_[length(.scale_names_)]};
+        '>**{.scale_names_[length(.scale_names_)]}**.</span>"
       )
     } else {
       glue::glue(
-        "&<span style = 'color:{.scale_colors_[length(.scale_names_)]};'>
-      **{.scale_names_[length(.scale_names_)]}**</span> sets."
+        "& <span style = 'color:{.scale_colors_[length(.scale_names_)]};
+        '>**{.scale_names_[length(.scale_names_)]}**.</span>"
       )
     }
   )
 
   .title_ <- glue::glue(
-    "<span style = 'font-size:10pt; color:#383838;'>{.title_}</span>"
+    "<span style = 'font-size:13pt; color:#383838;'>{.title_}</span>"
   )
 
   return(.title_)
@@ -355,28 +375,28 @@ get_clean_method_name = function(.method_) {
     dplyr::as_tibble() %>%
     dplyr::mutate(
       value = dplyr::case_when(
-        value %in% c("LLK_RGS", "log_likelihood_RGS") ~ "RGS (LLK)",
-        value %in% c("SSE_RGS", "wSumSquareError_RGS") ~ "RGS (SSE)",
-        value %in% c("LLK_FGS", "log_likelihood_FGS") ~ "FGS (LLK)",
-        value %in% c("SSE_FGS", "wSumSquareError_FGS") ~ "FGS (SSE)",
-        value %in% c("LLK_LHS", "log_likelihood_LHS") ~ "LHS (LLK)",
-        value %in% c("SSE_LHS", "wSumSquareError_LHS") ~ "LHS (SSE)",
-        value == "NM_LLK_0" ~ "NM (LLK)",
-        value %in% c("NM_LLK_RGS") ~ "NM (LLK)",
-        value == "NM_SSE_0" ~ "NM (SSE)",
-        value %in% c("NM_SSE_RGS") ~ "NM (SSE)",
-        value == "NM_LLK_1" ~ "NM (LLK - unconverged)",
-        value == "NM_SSE_1" ~ "NM (SSE - unconverged)",
-        value == "BFGS_LLK_0" ~ "BFGS (LLK)",
-        value %in% c("BFGS_LLK_RGS") ~ "BFGS (LLK)",
-        value == "BFGS_SSE_0" ~ "BFGS (SSE)",
-        value %in% c("BFGS_SSE_RGS") ~ "BFGS (SSE)",
-        value == "BFGS_LLK_1" ~ "BFGS (LLK - unconverged)",
-        value == "BFGS_SSE_1" ~ "BFGS (SSE - unconverged)",
-        value == "SANN_LLK_" ~ "SANN (LLK)",
-        value %in% c("SANN_LLK_RGS") ~ "SANN (LLK)",
-        value == "SANN_SSE_" ~ "SANN (SSE)",
-        value %in% c("SANN_SSE_RGS") ~ "SANN (SSE)",
+        value %in% c("LLK_RGS", "log_likelihood_RGS") ~ "RGS-LLK",
+        value %in% c("SSE_RGS", "wSumSquareError_RGS") ~ "RGS-SSE",
+        value %in% c("LLK_FGS", "log_likelihood_FGS") ~ "FGS-LLK",
+        value %in% c("SSE_FGS", "wSumSquareError_FGS") ~ "FGS-SSE",
+        value %in% c("LLK_LHS", "log_likelihood_LHS") ~ "LHS-LLK",
+        value %in% c("SSE_LHS", "wSumSquareError_LHS") ~ "LHS-SSE",
+        value == "NM_LLK_0" ~ "NM-LLK",
+        value %in% c("NM_LLK_RGS") ~ "NM-LLK",
+        value == "NM_SSE_0" ~ "NM-SSE",
+        value %in% c("NM_SSE_RGS") ~ "NM-SSE",
+        value == "NM_LLK_1" ~ "NM-LLK-unconverged",
+        value == "NM_SSE_1" ~ "NM-SSE-unconverged",
+        value == "BFGS_LLK_0" ~ "GRG-LLK",
+        value %in% c("BFGS_LLK_RGS") ~ "GRG-LLK",
+        value == "BFGS_SSE_0" ~ "GRG-SSE",
+        value %in% c("BFGS_SSE_RGS") ~ "GRG-SSE",
+        value == "BFGS_LLK_1" ~ "GRG-LLK-unconverged",
+        value == "BFGS_SSE_1" ~ "GRG-SSE-unconverged",
+        value == "SANN_LLK_" ~ "SANN-LLK",
+        value %in% c("SANN_LLK_RGS") ~ "SANN-LLK",
+        value == "SANN_SSE_" ~ "SANN-SSE",
+        value %in% c("SANN_SSE_RGS") ~ "SANN-SSE",
         TRUE ~ value)
     ) %>%
     as.vector(.) %>%

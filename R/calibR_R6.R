@@ -372,7 +372,12 @@ calibR_R6 <- R6::R6Class(
     #' @param .saving_image_scale_ Positive integer dictating the scale at which
     #' the image is saved. Default value is 5 for images with width of 1/3 an A4
     #' paper.
-    #'
+    #' @param .saving_image_width_ Positive integer setting the width of the
+    #' saved version of the plot. The default (1,000 px) is appropriate for an
+    #' image 1/3 of the width of A4 sheet.
+    #' @param .saving_image_height_ Positive integer setting the height of the
+    #' saved version of the plot. The default (600 px) is appropriate for an
+    #' image 1/3 of the width of A4 sheet.    #'
     #' @return
     #' @export
     #'
@@ -398,7 +403,9 @@ calibR_R6 <- R6::R6Class(
                                 .saving_path_ = here::here(),
                                 .saving_image_dir_ = "/images/GOFs/",
                                 .saving_x_params_ = 1,
-                                .saving_image_scale_ = 5) {
+                                .saving_image_scale_ = 2,
+                                .saving_image_width_ = 1000,
+                                .saving_image_height_ = 600) {
       ## Sanity check (stop if .gof not recognised):----
       stopifnot(".gof_ value is not supported by the function" =
                   all(.gof_ %in% c('LLK', 'SSE')))
@@ -512,7 +519,9 @@ calibR_R6 <- R6::R6Class(
                                     GOF_plots[[.calib_category_]][[.calib_gof_]][[.x_param_]][[.y_param_]],
                                   file = glue::glue(
                                     "{image_saving_path}{image_name}"),
-                                  scale = .saving_image_scale_)
+                                  scale = .saving_image_scale_,
+                                  width = .saving_image_width_,
+                                  height = .saving_image_height_)
                               }
                             } else {
                               image_name <- glue::glue(
@@ -529,7 +538,9 @@ calibR_R6 <- R6::R6Class(
                                   $GOF_plots[[.calib_category_]][[.calib_gof_]][[.calib_method_]][[.x_param_]][[.y_param_]],
                                   file = glue::glue(
                                     "{image_saving_path}{image_name}"),
-                                  scale = .saving_image_scale_)
+                                  scale = .saving_image_scale_,
+                                  width = .saving_image_width_,
+                                  height = .saving_image_height_)
                               }
                             }
                           })
@@ -584,7 +595,7 @@ calibR_R6 <- R6::R6Class(
     draw_targets_plots = function(.engine_ = "ggplot2",
                                   .sim_targets_ = FALSE,
                                   .calibration_methods_ = "all",
-                                  .legend_pos_ = "bottom",
+                                  .legend_pos_ = "none",
                                   .PSA_samples_ = NULL,
                                   .PSA_unCalib_values_ = NULL,
                                   .save_ = FALSE,
@@ -705,14 +716,14 @@ calibR_R6 <- R6::R6Class(
     #' }
     draw_distributions_plots = function(.engine_ = "ggplot2",
                                         .bins_ = 20,
-                                        .legend_pos_ = "bottom",
+                                        .legend_pos_ = "none",
                                         .log_scaled_ = FALSE,
                                         .save_ = FALSE,
                                         .saving_path_ = here::here(),
                                         .saving_image_dir_ = "/images/Prior-posterior/",
                                         .saving_image_scale_ = 2,
                                         .saving_image_width_ = 1000,
-                                        .saving_image_height_ = 700,
+                                        .saving_image_height_ = 600,
                                         .saving_image_units_ = "px") {
       ## Invoke the private plotting function:----
       private$plot_distributions(

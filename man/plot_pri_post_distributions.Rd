@@ -12,7 +12,7 @@ plot_pri_post_distributions(
   .t_prior_samples_ = self$prior_samples[["LHS"]],
   .transform_ = self$transform_parameters,
   .bins_ = 100,
-  .legend_pos_ = "bottom",
+  .legend_pos_ = "none",
   .log_scaled_ = FALSE
 )
 }
@@ -55,7 +55,7 @@ pri_post_plots <- plot_pri_post_distributions(
   .t_prior_samples_ = CR_CRS_2P2T$prior_samples[["LHS"]],
   .transform_ = CR_CRS_2P2T$transform_parameters,
   .bins_ = 20,
-  .legend_pos_ = "bottom",
+  .legend_pos_ = "none",
   .log_scaled_ = FALSE)
 }
 }

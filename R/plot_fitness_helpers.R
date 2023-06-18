@@ -115,6 +115,8 @@ plot_fitness_function <- function(.engine_ = "plotly",
                   .l_gof_values_ = .l_gof_values_,
                   .l_params_ = .l_params_,
                   .gof_name_ = .gof_name_,
+                  .title_ = glue::glue(
+                    "<span style = 'color:blue;'><b>{.gof_name_}</b></span> contour plot."),
                   .param_x = .param_x,
                   .param_y = .param_y,
                   .scale_ = .scale_,
@@ -217,7 +219,9 @@ plot_fitness_function <- function(.engine_ = "plotly",
                   calib_res_objs_names %>%
                     `names<-`(., .)
                 } else if(.l_calib_res_ == "bayesian") {
-                  .l_PSA_samples_[[.l_calib_res_]]
+                  .l_PSA_samples_[[.l_calib_res_]] %>%
+                    names(.) %>%
+                    `names<-`(., .)
                 },
                 .f = function(.calib_res_) {
                   if(.l_calib_res_ == "random") {
@@ -307,22 +311,22 @@ plot_fitness_function <- function(.engine_ = "plotly",
                             dplyr::row_number() == 1 ~ "Global extrema",
                             TRUE ~ Points)
                         )) %>%
-                      ######
-                      {if(!is.null(.l_PSA_samples_[[.l_calib_res_]][[.calib_res_]])) {
-                        dplyr::bind_rows(
-                          .,
-                          .l_PSA_samples_[[.l_calib_res_]][[.calib_res_]]$
-                            PSA_calib_draws %>%
-                            dplyr::filter(Plot_label == "PSA sets") %>%
-                            dplyr::select(
-                              dplyr::all_of(
-                                .l_params_$v_params_names)) %>%
-                            dplyr::mutate(
-                              Points = "PSA draws")
-                        )
-                      } else {
-                        .
-                        }} %>%
+                      ###### Grab relevant PSA samples:----
+                    {if(!is.null(.l_PSA_samples_[[.l_calib_res_]][[.calib_res_]])) {
+                      dplyr::bind_rows(
+                        .,
+                        .l_PSA_samples_[[.l_calib_res_]][[.calib_res_]]$
+                          PSA_calib_draws %>%
+                          dplyr::filter(Plot_label == "PSA sets") %>%
+                          dplyr::select(
+                            dplyr::all_of(
+                              .l_params_$v_params_names)) %>%
+                          dplyr::mutate(
+                            Points = "PSA draws")
+                      )
+                    } else {
+                      .
+                    }} %>%
                       ###### Add True set:----
                     {if(.true_points_) {
                       dplyr::bind_rows(
@@ -368,7 +372,8 @@ plot_fitness_function <- function(.engine_ = "plotly",
                       colors_["Starting sets"])
 
                   } else if(.l_calib_res_ == "bayesian") {
-                    calib_res <- .calib_res_$PSA_calib_draws %>%
+                    calib_res <- .l_PSA_samples_[[.l_calib_res_]][[.calib_res_]]$
+                      PSA_calib_draws %>%
                       dplyr::mutate(
                         Points = dplyr::case_when(
                           Plot_label %in% c("Maximum-a-posteriori",
@@ -461,7 +466,7 @@ plot_fitness_function <- function(.engine_ = "plotly",
                   }
 
                   #### For zoomed in plots:----
-                  zoom_calib_res <- if(.zoom_) {
+                  zoom_calib_res <<- if(.zoom_) {
                     calib_res %>%
                       dplyr::filter(
                         !(Points %in% c("Sampled sets",
@@ -480,6 +485,23 @@ plot_fitness_function <- function(.engine_ = "plotly",
                       plots_list_ <- purrr::map(
                         .x = other_params_names,
                         .f = function(.param_y) {
+                          ####### Generate plot title:----
+                          title_ <- calibR:::get_gof_contour_plot_title(
+                            .gof_function_ = .gof_name_,
+                            .calib_method_ = .calib_res_,
+                            .colors_ = colors_,
+                            .points_names = if(!.zoom_){
+                              calib_res %>%
+                                dplyr::pull(Points) %>%
+                                as.character(.) %>%
+                                unique(.)
+                            } else {
+                              zoom_calib_res %>%
+                                dplyr::pull(Points) %>%
+                                as.character(.) %>%
+                                unique(.)
+                            }
+                          )
                           ####### Dynamically get axis coordinates to zoom in:----
                           x_y_axis_limits_ <- calibR:::fitness_contour_area(
                             .l_params_ = .l_params_,
@@ -496,6 +518,7 @@ plot_fitness_function <- function(.engine_ = "plotly",
                             .l_gof_values_ = .l_gof_values_,
                             .l_params_ = .l_params_,
                             .gof_name_ = .gof_name_,
+                            .title_ = title_,
                             .param_x = .param_x,
                             .param_y = .param_y,
                             .scale_ = .scale_,
@@ -612,6 +635,7 @@ plot_fitness_function <- function(.engine_ = "plotly",
 plot_fitness_contour <- function(.l_gof_values_,
                                  .l_params_,
                                  .gof_name_,
+                                 .title_ = "",
                                  .param_x,
                                  .param_y,
                                  .scale_,
@@ -653,6 +677,27 @@ plot_fitness_contour <- function(.l_gof_values_,
       coloring = .coloring_)) %>%
     ### Control legend position:----
   plotly::layout(
+    showlegend = ifelse(!.legend_ & (.title_ == "" | is.na(.title_)),
+                        TRUE,
+                        FALSE),
+    margin = list(
+      t = 80,
+      b = 80 # push x-axis upwards
+    ),
+    title = list(
+      text = .title_,
+      font = list(
+        size = 25
+      ),
+      x = 0,
+      y = 1,
+      xanchor = "left",
+      yanchor = "top",
+      pad = list(
+        b = 3,
+        t = 30
+      )
+    ),
     legend = list(
       x = ifelse(.legend_,
                  "1.02",
@@ -672,7 +717,12 @@ plot_fitness_contour <- function(.l_gof_values_,
                            'v',
                            'h')),
     xaxis = list(
-      title = .l_params_$v_params_labels[[.param_x]],
+      title = list(
+        text = .l_params_$v_params_labels[[.param_x]],
+        font = list(
+          size = 20
+        )
+      ),
       range = list(
         .x_axis_lb_,
         .x_axis_ub_),
@@ -681,7 +731,12 @@ plot_fitness_contour <- function(.l_gof_values_,
       linecolor = "grey",
       mirror = TRUE), # creates a box
     yaxis = list(
-      title = .l_params_$v_params_labels[[.param_y]],
+      title = list(
+        text = .l_params_$v_params_labels[[.param_y]],
+        font = list(
+          size = 20
+        )
+      ),
       range = list(
         .y_axis_lb_,
         .y_axis_ub_),
@@ -810,4 +865,53 @@ fitness_contour_area <- function(.l_params_,
   }
 
   return(outputs_)
+}
+
+#' Create contour plot title based on the calibration method and its outputs
+#'
+#' @param .gof_function_ String specifying the name of the goodness-of-fit (GOF)
+#' measure used in generating the contour.
+#' @param .calib_method_ String specifying the name of the calibration method used
+#' to generate the points displayed over the contour plot.
+#' @param .colors_ String vector naming the colours of the each of displayed
+#' points.
+#' @param .points_names String vector labelling the points displayed on the
+#' contour plot.
+#'
+#' @return
+#'
+#' @examples
+#' \dontrun{
+#' }
+get_gof_contour_plot_title <- function(.gof_function_ = .gof_name_,
+                                       .calib_method_ = .calib_res_,
+                                       .colors_ = colors_,
+                                       .points_names) {
+
+  .colors_ <- .colors_[names(.colors_) %in% .points_names]
+  names(.points_names) <- .points_names
+
+  title_ <- paste0(
+    glue::glue("<span style = 'color:blue;'><b>{.gof_function_}</b></span> contour plot showing <span style = 'color:black;'><b>{.calib_method_}</b> </span>"),
+    paste0(
+      purrr::map_chr(
+        .x = .points_names[1:(length(.points_names) - 1)],
+        .f = function(.point_name) {
+          if(.point_name == .points_names[1]){
+            if(length(.points_names) == 2){
+              glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span> & ")
+            } else {
+              glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span>, ")
+            }
+          } else {
+            glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span>, ")
+          }
+        }
+      ),
+      collapse = ""
+    ),
+    glue::glue("& <span style = 'color:{.colors_[length(.colors_)]};'><b>{.points_names[length(.points_names)]}</b></span>")
+  )
+
+  return(title_)
 }
