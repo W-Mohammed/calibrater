@@ -1,0 +1,155 @@
+##################################################
+#              Meeting task 230619               #
+##################################################
+
+# Task: compare correlation between inputs and outputs in a similar way to how one-way sensitivity analysis (SA) is performed.
+
+```{r}
+library(calibR)
+Model <- calibR::CRS_markov_2
+Parameters_names <- c(p_Mets = "p_Mets", p_DieMets = "p_DieMets")
+Parameters_values <- c(p_Mets = 0.10, p_DieMets = 0.05)
+Parameters_configurations <- 1000
+```
+#### Case study lists:----
+```{r}
+seed_no <- 1
+set.seed(seed = seed_no)
+parameters_list <- calibR::CR_CRS_data_2t$l_params
+targets_list <- calibR::CR_CRS_data_2t$l_targets
+interventions_list <- calibR::CR_CRS_data_2t$l_intervs
+gof_measure <- "LLK"
+sample_method <- "LHS"
+sampling_methods <- "LHS"
+```
+#### Initiate CalibR R6 object:----
+```{r}
+CR_CRS_2P2T = calibR_R6$
+  new(
+    .model = Model,
+    .params = parameters_list,
+    .targets = targets_list,
+    .intervs = interventions_list,
+    .args = NULL,
+    .transform = FALSE)
+```
+#### Generate samples using Random Grid Search:----
+```{r}
+set.seed(seed = seed_no)
+CR_CRS_2P2T$
+  sampleR(
+    .n_samples = 1e4,
+    .sampling_method = sampling_methods)
+```
+
+## Generate configurations for each parameters and estimate correlation:
+
+### Objective function (overall fit) and parameter value:
+```{r}
+corr_obj_function <- purrr::map(
+  .x = Parameters_names,
+  .f = function(param_name_) {
+    #### Generate samples using Random Grid Search:----
+    param_colname <- Parameters_names[!Parameters_names %in% param_name_] |>
+      unname()
+    param_corr_name <- paste0(param_name_, "_cor")
+
+    CR_CRS_2P2T$prior_samples[["LHS"]] <- calibR::sample_prior_LHS(
+      .n_samples = Parameters_configurations,
+      .l_params = parameters_list
+    ) %>%
+      dplyr::mutate(
+        {{param_colname}} := Parameters_values[param_name_] %>%
+          unname()
+      )
+
+    CR_CRS_2P2T$calibrateR_random(
+      .optim = FALSE,
+      .maximise = TRUE,
+      .weighted = TRUE,
+      .sample_method = sampling_methods,
+      .calibration_method = gof_measure)
+
+    calibration_results <- CR_CRS_2P2T$
+      calibration_results$
+      random$
+      LLK_LHS %>%
+      dplyr::select(
+        dplyr::all_of(
+          c("Overall_fit", param_name_)
+        )
+      )
+
+    calibration_results %>%
+      dplyr::mutate(
+        {{param_corr_name}} := cor(
+          dplyr::pull(calibration_results, {{param_name_}}),
+          dplyr::pull(calibration_results, Overall_fit)
+        )
+      )
+  })
+corr_obj_function
+```
+
+### Cost-effectiveness outcomes and parameter value:
+```{r}
+corr_outcomes <- purrr::map(
+  .x = Parameters_names,
+  .f = function(param_name_) {
+    #### Generate samples using Random Grid Search:----
+    param_colname <- Parameters_names[!Parameters_names %in% param_name_] |>
+      unname()
+    param_cost_corr <- paste0(param_name_, "_Costs_cor")
+    param_qaly_corr <- paste0(param_name_, "_QALYs_cor")
+
+    CR_CRS_2P2T$prior_samples[["LHS"]] <- calibR::sample_prior_LHS(
+      .n_samples = Parameters_configurations,
+      .l_params = parameters_list
+    ) %>%
+      dplyr::mutate(
+        {{param_colname}} := Parameters_values[param_name_] %>%
+          unname()
+      )
+
+    CR_CRS_2P2T$prior_samples$LHS %>%
+      purrr::pmap(
+        .f = function(...) {
+          params <- list(...)
+          Model(
+            .v_params_ = params,
+            calibrate_ = FALSE
+          )
+        }
+      ) %>%
+      purrr::transpose() %>%
+      purrr::map(
+        .f = function(inner_list) {
+          inner_list %>%
+            purrr::transpose() %>%
+            purrr::map(
+              .f = function(in_inner_list){
+                in_inner_list %>%
+                  purrr::list_c()
+              }) %>%
+            tibble::as_tibble() %>%
+            dplyr::mutate(
+              {{param_name_}} := CR_CRS_2P2T$
+                prior_samples$
+                LHS[[param_name_]],
+              {{param_cost_corr}} := cor(
+                dplyr::pull(., costs),
+                CR_CRS_2P2T$
+                  prior_samples$
+                  LHS[[param_name_]]
+              ),
+              {{param_qaly_corr}} := cor(
+                dplyr::pull(., Effects),
+                CR_CRS_2P2T$
+                  prior_samples$
+                  LHS[[param_name_]]
+              )
+            )
+        })
+  })
+corr_outcomes
+```
