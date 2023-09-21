@@ -33,8 +33,8 @@ sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
   n_params <- length(.l_params[["v_params_names"]])
   # Get LHS samples:
   tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
-    dplyr::as_tibble()
-  # Define inputs list:
+    as.data.frame()
+    # Define inputs list:
   l_lhs <- list(.l_params[['v_params_names']],
                 paste0('q', .l_params[['v_params_dists']]),
                 tbl_lhs_unit,
@@ -111,7 +111,7 @@ sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
   )
 
   tbl_fgs_samp <- do.call(expand.grid, tbl_grid_points) %>%
-    dplyr::as_tibble() %>%
+    as.data.frame() %>%
     dplyr::slice_sample(n = .n_samples)
 
   return(tbl_fgs_samp)
@@ -170,7 +170,7 @@ sample_prior_FGS_ <- function(.n_samples = 1, .l_params = .l_params_,
   )
 
   tbl_fgs_samp <- do.call(expand.grid, tbl_grid_points) %>%
-    dplyr::as_tibble()
+    as.data.frame()
 
   return(tbl_fgs_samp)
 }

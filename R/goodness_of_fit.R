@@ -115,7 +115,7 @@ LLK_GOF <- function(.samples, .func, .args = list(NULL),
 
   # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
-    dplyr::as_tibble(.name_repair = "unique") %>% # when .samples is a vector
+    as.data.frame() %>% # when .samples is a vector
     dplyr::mutate('Overall_fit' = overall_lliks) %>%
     dplyr::arrange(dplyr::desc(Overall_fit))
 
@@ -227,7 +227,7 @@ wSSE_GOF <- function(.samples, .func, .args = list(NULL), .weighted = TRUE,
 
   # Prepare extensive output table if not used by an optimisation function:
   output <- .samples %>%
-    dplyr::as_tibble(.name_repair = "unique") %>% # when .samples is a vector
+    as.data.frame() %>% # when .samples is a vector
     dplyr::mutate('Overall_fit' = overall_wsses) %>%
     dplyr::arrange(dplyr::desc(Overall_fit))
 

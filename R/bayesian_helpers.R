@@ -26,9 +26,8 @@ sample_prior_IMIS <- function(.n_samples, .l_params = .l_params_) {
   n_params <- length(.l_params[["v_params_names"]])
   # Get LHS samples:
   tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
-    dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                           repair = "unique",
-                                           quiet = TRUE))
+    as.data.frame()
+
   # Define inputs list:
   l_lhs <- list(.l_params[['v_params_names']],
                 paste0('q', .l_params[['v_params_dists']]),
@@ -74,9 +73,7 @@ log_priors <- function(.samples, .l_params, .transform) {
     .samples <- t(.samples)
   if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
     .samples <- .samples %>%
-    dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                           repair = "unique",
-                                           quiet = TRUE)) %>%
+    as.data.frame() %>%
     `colnames<-`(v_params_names)
   # Get appropriate distributions' and distributions' parameters' objects:
   params_dists <- 'v_params_dists'
@@ -129,9 +126,7 @@ log_prior <- function(.samples, .l_params, .transform) {
     .samples <- t(.samples)
   if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
     .samples <- .samples %>%
-    dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                           repair = "unique",
-                                           quiet = TRUE)) %>%
+    as.data.frame() %>%
     `colnames<-`(v_params_names)
   # Get appropriate distributions' and distributions' parameters' objects:
   params_dists <- 'v_params_dists'
@@ -253,9 +248,7 @@ log_likelihood <- function(.samples, .func, .args, .l_targets) {
     .samples <- t(.samples)
   if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
     .samples <- .samples %>%
-      dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                             repair = "unique",
-                                             quiet = TRUE))
+      as.data.frame()
   # Run the model using each set of sampled parameters:
   model_results <- purrr::pmap(
     .l = as.list(.samples),
@@ -566,10 +559,7 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
     SIR_results <- cbind(posterior_SIR,
                          "Overall_fit" = llik[SIR_resample],
                          "Posterior_prob" = weight[SIR_resample]) %>%
-      dplyr::as_tibble(
-        ~ vctrs::vec_as_names(...,
-                              repair = "unique",
-                              quiet = TRUE)) %>%
+      as.data.frame() %>%
       dplyr::arrange(dplyr::desc(Overall_fit))
 
     return(list('Results' = SIR_results, 'Method' = "SIR"))
@@ -610,9 +600,7 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
       dplyr::arrange(dplyr::desc(Overall_fit))
     ## Assign column names in the IMIS stats object:
     stats <- fit_IMIS$stat %>%
-      dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                             repair = "unique",
-                                             quiet = TRUE)) %>%
+      as.data.frame() %>%
       `colnames<-`(c("MargLike", "UniquePoint", "MaxWeight", "ESS",
                      "ImpWt", "ImpWtVar"))
 
@@ -725,10 +713,7 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
       .l_targets = .l_targets, .l_params = .l_params)
     ## Group results into one object:
     MCMC_results <- m_calib_res %>%
-      dplyr::as_tibble(
-        ~ vctrs::vec_as_names(...,
-                              repair = "unique",
-                              quiet = TRUE)) %>%
+      as.data.frame() %>%
       dplyr::mutate(
         "Overall_fit" = Overall_fit,
         "Posterior_prob" = Posterior_prob / sum(Posterior_prob)) %>%
@@ -742,9 +727,7 @@ calibrateModel_beyesian <- function(.b_method = "SIR", .func, .args,
 
     ## Assign column names to the MCMC proposal distribution covariance matrix:
     prop_sigma <- fit_MCMC$prop_sigma %>%
-      dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                             repair = "unique",
-                                             quiet = TRUE)) %>%
+      as.data.frame() %>%
       `colnames<-`(.l_params[["v_params_names"]])
 
     return(list('Results' = MCMC_results, 'Method' = "MCMC",

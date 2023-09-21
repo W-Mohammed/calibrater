@@ -62,9 +62,7 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
             upper = ub,
             algorithm = "gibbs",
             burn.in.samples = 10000) %>%
-            dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                                   repair = "unique",
-                                                   quiet = TRUE)) %>%
+            as.data.frame() %>%
             `colnames<-`(.list_[[1]][["Params"]]) %>%
             dplyr::mutate(
               Label =
@@ -72,9 +70,7 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
             dplyr::bind_rows(
               .list_[[1]][["Estimate"]] %>%
                 t() %>%
-                dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                                       repair = "unique",
-                                                       quiet = TRUE)) %>%
+                as.data.frame() %>%
                 `colnames<-`(.list_[[1]][["Params"]])) %>%
             dplyr::mutate(
               Overall_fit = dplyr::case_when(
@@ -103,9 +99,7 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
           # Retain the point estimates if sigma is NA or not +ve definite:
           PSA_calib_draws <- .list_[[1]][["Estimate"]] %>%
             t() %>%
-            dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                                   repair = "unique",
-                                                   quiet = TRUE)) %>%
+            as.data.frame() %>%
             `colnames<-`(.list_[[1]][["Params"]]) %>%
             dplyr::mutate(
               Label =
@@ -168,7 +162,7 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
             dplyr::bind_rows(
               .list_[["Cred_int_95"]] %>%
                 t() %>%
-                dplyr::as_tibble() %>%
+                as.data.frame() %>%
                 dplyr::mutate(
                   Plot_label = .list_[["Cred_int_95"]] %>%
                     t() %>%

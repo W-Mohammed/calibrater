@@ -101,7 +101,7 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
             dplyr::bind_rows(
               .l_params_$
                 v_params_true_values %>%
-                dplyr::as_tibble(rownames = "Parameter") %>%
+                as.data.frame(row.names = "Parameter") %>%
                 dplyr::rename(`Distribution draws` = value) %>%
                 dplyr::mutate(
                   Label = "True",

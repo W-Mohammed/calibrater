@@ -111,7 +111,7 @@ plot_targets <- function(.engine_ = "ggplot2",
                   dplyr::select(
                     dplyr::contains(.target_)) %>%
                     t() %>%
-                    dplyr::as_tibble() %>%
+                    as.data.frame() %>%
                     ######## Name columns as numbers for grouping:----
                   `names<-`(paste0(1:ncol(.))) %>%
                     ######## Generate x axis name:----
@@ -372,7 +372,7 @@ get_target_plot_title <- function(.scale_names_ = scale_names,
 #' }
 get_clean_method_name = function(.method_) {
   .method_ <- .method_ %>%
-    dplyr::as_tibble() %>%
+    as.data.frame() %>%
     dplyr::mutate(
       value = dplyr::case_when(
         value %in% c("LLK_RGS", "log_likelihood_RGS") ~ "RGS-LLK",

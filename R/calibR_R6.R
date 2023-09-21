@@ -1776,9 +1776,7 @@ calibR_R6 <- R6::R6Class(
       n_params <- length(.l_params[["v_params_names"]])
       # Get LHS samples:
       tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
-        dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                               repair = "unique",
-                                               quiet = TRUE))
+        as.data.frame()
       # Define inputs list:
       l_lhs <- list(.l_params[['v_params_names']],
                     paste0('q', .l_params[['v_params_dists']]),
@@ -1822,9 +1820,7 @@ calibR_R6 <- R6::R6Class(
         .samples <- t(.samples)
       if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
         .samples <- .samples %>%
-        dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                               repair = "unique",
-                                               quiet = TRUE)) %>%
+        as.data.frame() %>%
         `colnames<-`(v_params_names)
       # Get appropriate distributions' and distributions' parameters' objects:
       params_dists <- 'v_params_dists'
@@ -1874,9 +1870,7 @@ calibR_R6 <- R6::R6Class(
         .samples <- t(.samples)
       if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
         .samples <- .samples %>%
-        dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                               repair = "unique",
-                                               quiet = TRUE)) %>%
+        as.data.frame() %>%
         `colnames<-`(v_params_names)
       # Get appropriate distributions' and distributions' parameters' objects:
       params_dists <- 'v_params_dists'
@@ -1971,9 +1965,7 @@ calibR_R6 <- R6::R6Class(
         .samples <- t(.samples)
       if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
         .samples <- .samples %>%
-          dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                                 repair = "unique",
-                                                 quiet = TRUE))
+          as.data.frame()
       # Run the model using each set of sampled parameters:
       model_results <- purrr::pmap(
         .l = as.list(.samples),
@@ -2309,7 +2301,7 @@ calibR_R6 <- R6::R6Class(
         SIR_results <- cbind(posterior_SIR,
                              "Overall_fit" = llik[SIR_resample],
                              "Posterior_prob" = weight[SIR_resample]) %>%
-          dplyr::as_tibble() %>%
+          as.data.frame() %>%
           dplyr::arrange(dplyr::desc(Overall_fit))
 
         return(list('Results' = SIR_results, 'Method' = "SIR"))
@@ -2338,19 +2330,14 @@ calibR_R6 <- R6::R6Class(
           .l_targets = .l_targets, .l_params = .l_params)
         ## Group results into one object:
         IMIS_results <- m_calib_res %>%
-          dplyr::as_tibble(
-            ~ vctrs::vec_as_names(...,
-                                  repair = "unique",
-                                  quiet = TRUE)) %>%
+          as.data.frame() %>%
           dplyr::mutate(
             "Overall_fit" = Overall_fit,
             "Posterior_prob" = Posterior_prob / sum(Posterior_prob)) %>%
           dplyr::arrange(dplyr::desc(Overall_fit))
         ## Assign column names in the IMIS stats object:
         stats <- fit_IMIS$stat %>%
-          dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                                 repair = "unique",
-                                                 quiet = TRUE)) %>%
+          as.data.frame() %>%
           `colnames<-`(c("MargLike", "UniquePoint", "MaxWeight", "ESS",
                          "ImpWt", "ImpWtVar"))
 
@@ -2416,10 +2403,7 @@ calibR_R6 <- R6::R6Class(
           .l_targets = .l_targets, .l_params = .l_params)
         ## Group results into one object:
         MCMC_results <- m_calib_res %>%
-          dplyr::as_tibble(
-            ~ vctrs::vec_as_names(...,
-                                  repair = "unique",
-                                  quiet = TRUE)) %>%
+          as.data.frame() %>%
           dplyr::mutate(
             "Overall_fit" = Overall_fit,
             "Posterior_prob" = Posterior_prob / sum(Posterior_prob)) %>%
@@ -2433,9 +2417,7 @@ calibR_R6 <- R6::R6Class(
 
         ## Assign column names to the MCMC proposal distribution covariance matrix:
         prop_sigma <- fit_MCMC$prop_sigma %>%
-          dplyr::as_tibble(~ vctrs::vec_as_names(...,
-                                                 repair = "unique",
-                                                 quiet = TRUE)) %>%
+          as.data.frame() %>%
           `colnames<-`(.l_params[["v_params_names"]])
 
         return(list('Results' = MCMC_results, 'Method' = "MCMC",
@@ -3205,7 +3187,7 @@ calibR_R6 <- R6::R6Class(
           dplyr::bind_rows(
             self$calibration_parameters$
               v_params_true_values %>%
-              dplyr::as_tibble(rownames = "Parameter") %>%
+              as.data.frame(row.names = "Parameter") %>%
               dplyr::rename(`Distribution draws` = value) %>%
               dplyr::mutate(Label = "True"))
       }
@@ -3536,7 +3518,7 @@ calibR_R6 <- R6::R6Class(
           .x = .,
           .f = function(.gof_data) {
             .gof_data %>%
-              dplyr::as_tibble() %>%
+              as.data.frame() %>%
               dplyr::filter(!is.na(Overall_fit)) %>%
               dplyr::filter(Overall_fit != Inf) %>%
               dplyr::filter(Overall_fit != -Inf)
@@ -3680,7 +3662,7 @@ calibR_R6 <- R6::R6Class(
     },
     ## Tables:----
     ### PSA tables:----
-    generate_PSA_summary_tables = function(.true_CE_object_path_ = "../../2. Confirmation Review/CR_data/Chap_3/data/CRS_true_PSA.rds",
+    generate_PSA_summary_tables = function(.true_CE_object_path_ = "../5. Presentations/data/CRS_true_PSA.rds",
                                            .subset_CE_table_ = c("NetBenefit",
                                                                 "ProbabilityCE",
                                                                 "EVPI")) {
@@ -4422,10 +4404,7 @@ calibR_R6 <- R6::R6Class(
           .f = function(.list_ = .x) {
             max_a_posteriori <- .list_[[1]][["Estimate"]] %>%
               t() %>%
-              dplyr::as_tibble(~ vctrs::vec_as_names(
-                ...,
-                repair = "unique",
-                quiet = TRUE)) %>%
+              as.data.frame() %>%
               `colnames<-`(.list_[[1]][["Params"]]) %>%
               dplyr::mutate(
                 Label =
