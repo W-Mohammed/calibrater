@@ -60,6 +60,17 @@
 #'   .scale_ = NULL,
 #'   .coloring_ = "none",
 #'   .blank_ = FALSE)
+#' fitness_function_plots <- plot_fitness_function(
+#'   .l_params_ = CR_CRS_2P1T$calibration_parameters,
+#'   .l_gof_values_ = CR_CRS_2P1T$GOF_measure_plot,
+#'   .l_calibration_results_ = CR_CRS_2P1T$calibration_results,
+#'   .l_PSA_samples_ = CR_CRS_2P1T$PSA_samples,
+#'   .t_prior_samples_ = CR_CRS_2P1T$prior_samples$LHS,
+#'   .true_points_ = TRUE,
+#'   .greys_ = FALSE,
+#'   .scale_ = NULL,
+#'   .coloring_ = "none",
+#'   .blank_ = FALSE)
 #' }
 plot_fitness_function <- function(.engine_ = "plotly",
                                   .l_params_ = self$calibration_parameters,
@@ -237,7 +248,7 @@ plot_fitness_function <- function(.engine_ = "plotly",
                       dplyr::bind_rows(
                         sorted_calib_res %>%
                           dplyr::slice_head(
-                            n = nrow(.)/.percent_sampled_) %>%
+                            n = round(nrow(.)/.percent_sampled_)) %>%
                           dplyr::mutate(
                             Points = "Identified sets")) %>%
                       ###### Add True set:----
@@ -882,10 +893,27 @@ fitness_contour_area <- function(.l_params_,
 #'
 #' @examples
 #' \dontrun{
+#' get_gof_contour_plot_title(
+#'  .gof_function_ = "LLK",
+#'  .calib_method_ = "IMIS",
+#'  .colors_ = c(`Sampled sets` = "black",
+#'              `Starting sets` = "black",
+#'              `Prior samples` = "grey",
+#'              `Identified sets` = "red",
+#'              `Local extremas` = "darkorange",
+#'              `Global extrema` = "red",
+#'              `PSA draws` = "pink",
+#'              `Posterior samples` = "red",
+#'              `Posterior centres` = "yellow"),
+#'  .points_names = c("Posterior centres",
+#'                    "Posterior samples",
+#'                    "Prior samples",
+#'                    "True set")
+#'  )
 #' }
-get_gof_contour_plot_title <- function(.gof_function_ = .gof_name_,
-                                       .calib_method_ = .calib_res_,
-                                       .colors_ = colors_,
+get_gof_contour_plot_title <- function(.gof_function_,
+                                       .calib_method_,
+                                       .colors_,
                                        .points_names) {
 
   .colors_ <- .colors_[names(.colors_) %in% .points_names]
@@ -899,18 +927,25 @@ get_gof_contour_plot_title <- function(.gof_function_ = .gof_name_,
         .f = function(.point_name) {
           if(.point_name == .points_names[1]){
             if(length(.points_names) == 2){
-              glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span> & ")
+              glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span> and ")
             } else {
               glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span>, ")
             }
           } else {
-            glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span>, ")
+            if(length(.points_names) == 2)
+              glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span>, ")
+            else {
+              if(.point_name == .points_names[2])
+                glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span>,<br>")
+              else
+                glue::glue("<span style = 'color:{.colors_[.point_name]};'><b>{.points_names[.point_name]}</b></span>, ")
+            }
           }
         }
       ),
       collapse = ""
     ),
-    glue::glue("& <span style = 'color:{.colors_[length(.colors_)]};'><b>{.points_names[length(.points_names)]}</b></span>")
+    glue::glue("and <span style = 'color:{.colors_[length(.colors_)]};'><b>{.points_names[length(.points_names)]}</b></span>")
   )
 
   return(title_)

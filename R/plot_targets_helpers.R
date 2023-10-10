@@ -371,37 +371,72 @@ get_target_plot_title <- function(.scale_names_ = scale_names,
 #' \dontrun{
 #' }
 get_clean_method_name = function(.method_) {
-  .method_ <- .method_ %>%
-    as.data.frame() %>%
-    dplyr::mutate(
-      value = dplyr::case_when(
-        value %in% c("LLK_RGS", "log_likelihood_RGS") ~ "RGS-LLK",
-        value %in% c("SSE_RGS", "wSumSquareError_RGS") ~ "RGS-SSE",
-        value %in% c("LLK_FGS", "log_likelihood_FGS") ~ "FGS-LLK",
-        value %in% c("SSE_FGS", "wSumSquareError_FGS") ~ "FGS-SSE",
-        value %in% c("LLK_LHS", "log_likelihood_LHS") ~ "LHS-LLK",
-        value %in% c("SSE_LHS", "wSumSquareError_LHS") ~ "LHS-SSE",
-        value == "NM_LLK_0" ~ "NM-LLK",
-        value %in% c("NM_LLK_RGS") ~ "NM-LLK",
-        value == "NM_SSE_0" ~ "NM-SSE",
-        value %in% c("NM_SSE_RGS") ~ "NM-SSE",
-        value == "NM_LLK_1" ~ "NM-LLK-unconverged",
-        value == "NM_SSE_1" ~ "NM-SSE-unconverged",
-        value == "BFGS_LLK_0" ~ "GRG-LLK",
-        value %in% c("BFGS_LLK_RGS") ~ "GRG-LLK",
-        value == "BFGS_SSE_0" ~ "GRG-SSE",
-        value %in% c("BFGS_SSE_RGS") ~ "GRG-SSE",
-        value == "BFGS_LLK_1" ~ "GRG-LLK-unconverged",
-        value == "BFGS_SSE_1" ~ "GRG-SSE-unconverged",
-        value == "SANN_LLK_" ~ "SANN-LLK",
-        value %in% c("SANN_LLK_RGS") ~ "SANN-LLK",
-        value == "SANN_SSE_" ~ "SANN-SSE",
-        value %in% c("SANN_SSE_RGS") ~ "SANN-SSE",
-        TRUE ~ value)
-    ) %>%
-    as.vector(.) %>%
-    unlist(.) %>%
-    `names<-`(NULL)
+  df_methods_dictionary <- data.frame(
+    value = c("LLK_RGS",
+              "log_likelihood_RGS",
+              "SSE_RGS",
+              "wSumSquareError_RGS",
+              "LLK_FGS",
+              "log_likelihood_FGS",
+              "SSE_FGS",
+              "wSumSquareError_FGS",
+              "LLK_LHS",
+              "log_likelihood_LHS",
+              "SSE_LHS",
+              "wSumSquareError_LHS",
+              "NM_LLK_0",
+              "NM_LLK_RGS",
+              "NM_SSE_0",
+              "NM_SSE_RGS",
+              "NM_LLK_1",
+              "NM_SSE_1",
+              "BFGS_LLK_0",
+              "BFGS_LLK_RGS",
+              "BFGS_SSE_0",
+              "BFGS_SSE_RGS",
+              "BFGS_LLK_1",
+              "BFGS_SSE_1",
+              "SANN_LLK_",
+              "SANN_LLK_RGS",
+              "SANN_SSE_",
+              "SANN_SSE_RGS"),
+    label = c("RGS-LLK",
+              "RGS-LLK",
+              "RGS-SSE",
+              "RGS-SSE",
+              "FGS-LLK",
+              "FGS-LLK",
+              "FGS-SSE",
+              "FGS-SSE",
+              "LHS-LLK",
+              "LHS-LLK",
+              "LHS-SSE",
+              "LHS-SSE",
+              "NM-LLK",
+              "NM-LLK",
+              "NM-SSE",
+              "NM-SSE",
+              "NM-LLK-unconverged",
+              "NM-SSE-unconverged",
+              "GRG-LLK",
+              "GRG-LLK",
+              "GRG-SSE",
+              "GRG-SSE",
+              "GRG-LLK-unconverged",
+              "GRG-SSE-unconverged",
+              "SANN-LLK",
+              "SANN-LLK",
+              "SANN-SSE",
+              "SANN-SSE")
+  )
 
-  return(.method_)
+  method_label <- df_methods_dictionary[
+    df_methods_dictionary$value == .method_,
+    "label"
+  ]
+
+  if(length(method_label) == 0)
+    method_label <- .method_
+
+  return(method_label)
 }

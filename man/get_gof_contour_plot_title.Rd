@@ -5,9 +5,9 @@
 \title{Create contour plot title based on the calibration method and its outputs}
 \usage{
 get_gof_contour_plot_title(
-  .gof_function_ = .gof_name_,
-  .calib_method_ = .calib_res_,
-  .colors_ = colors_,
+  .gof_function_,
+  .calib_method_,
+  .colors_,
   .points_names
 )
 }
@@ -29,5 +29,22 @@ Create contour plot title based on the calibration method and its outputs
 }
 \examples{
 \dontrun{
+get_gof_contour_plot_title(
+ .gof_function_ = "LLK",
+ .calib_method_ = "IMIS",
+ .colors_ = c(`Sampled sets` = "black",
+             `Starting sets` = "black",
+             `Prior samples` = "grey",
+             `Identified sets` = "red",
+             `Local extremas` = "darkorange",
+             `Global extrema` = "red",
+             `PSA draws` = "pink",
+             `Posterior samples` = "red",
+             `Posterior centres` = "yellow"),
+ .points_names = c("Posterior centres",
+                   "Posterior samples",
+                   "Prior samples",
+                   "True set")
+ )
 }
 }

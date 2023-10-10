@@ -107,5 +107,16 @@ fitness_function_plots <- plot_fitness_function(
   .scale_ = NULL,
   .coloring_ = "none",
   .blank_ = FALSE)
+fitness_function_plots <- plot_fitness_function(
+  .l_params_ = CR_CRS_2P1T$calibration_parameters,
+  .l_gof_values_ = CR_CRS_2P1T$GOF_measure_plot,
+  .l_calibration_results_ = CR_CRS_2P1T$calibration_results,
+  .l_PSA_samples_ = CR_CRS_2P1T$PSA_samples,
+  .t_prior_samples_ = CR_CRS_2P1T$prior_samples$LHS,
+  .true_points_ = TRUE,
+  .greys_ = FALSE,
+  .scale_ = NULL,
+  .coloring_ = "none",
+  .blank_ = FALSE)
 }
 }
