@@ -11,7 +11,7 @@ import_plots_fonts <- function(.name_ = "Source Sans Pro") {
   pacman::p_install(
     package = "sysfonts",
     force = FALSE)
-
+#
   # fonts_path_ <- glue::glue(
   #   "C:/Users/{Sys.getenv('USERNAME')}/AppData/Local/Microsoft/Windows/Fonts"
   # )
