@@ -20,6 +20,24 @@ and produce summary plots/tables.
 
 \dontrun{
 }
+Save Data to User-defined positions
+
+
+## ------------------------------------------------
+## Method `calibR_R6$set_data`
+## ------------------------------------------------
+
+\dontrun{
+}
+Save to position if exists
+
+
+## ------------------------------------------------
+## Method `calibR_R6$set_position`
+## ------------------------------------------------
+
+\dontrun{
+}
 
 ## ------------------------------------------------
 ## Method `calibR_R6$sampleR`
@@ -99,7 +117,7 @@ and produce summary plots/tables.
 }
 
 ## ------------------------------------------------
-## Method `calibR_R6$draw_PSA_summary_tables`
+## Method `calibR_R6$draw_CEA_results_tables`
 ## ------------------------------------------------
 
 \dontrun{
@@ -137,15 +155,17 @@ probability}
 \item{\code{PSA_samples}}{calibration and un-calibration parameters
 samples}
 
-\item{\code{PSA_results}}{PSA results}
+\item{\code{PSA_results}}{Probabilistic Sensitivity Analysis (PSA) results}
 
 \item{\code{PSA_summary}}{PSA results' summary}
 
-\item{\code{PSA_summary_tables}}{PSA results' summary tables}
+\item{\code{CEA_results_tables}}{Cost-Effectiveness Analysis (CEA) results' tables}
 
 \item{\code{simulated_targets}}{PSA results}
 
 \item{\code{plots}}{summary plots}
+
+\item{\code{data}}{data storage list}
 }
 \if{html}{\out{</div>}}
 }
@@ -153,6 +173,8 @@ samples}
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-calibR_R6-new}{\code{calibR_R6$new()}}
+\item \href{#method-calibR_R6-set_data}{\code{calibR_R6$set_data()}}
+\item \href{#method-calibR_R6-set_position}{\code{calibR_R6$set_position()}}
 \item \href{#method-calibR_R6-sampleR}{\code{calibR_R6$sampleR()}}
 \item \href{#method-calibR_R6-calibrateR_random}{\code{calibR_R6$calibrateR_random()}}
 \item \href{#method-calibR_R6-calibrateR_directed}{\code{calibR_R6$calibrateR_directed()}}
@@ -164,7 +186,7 @@ samples}
 \item \href{#method-calibR_R6-draw_GOF_measure}{\code{calibR_R6$draw_GOF_measure()}}
 \item \href{#method-calibR_R6-draw_targets_plots}{\code{calibR_R6$draw_targets_plots()}}
 \item \href{#method-calibR_R6-draw_distributions_plots}{\code{calibR_R6$draw_distributions_plots()}}
-\item \href{#method-calibR_R6-draw_PSA_summary_tables}{\code{calibR_R6$draw_PSA_summary_tables()}}
+\item \href{#method-calibR_R6-draw_CEA_results_tables}{\code{calibR_R6$draw_CEA_results_tables()}}
 \item \href{#method-calibR_R6-clone}{\code{calibR_R6$clone()}}
 }
 }
@@ -200,6 +222,66 @@ interventions built into the model.}
 }
 \subsection{Returns}{
 Object of class \code{CalibrateR_R6}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+Save Data to User-defined positions
+
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-calibR_R6-set_data"></a>}}
+\if{latex}{\out{\hypertarget{method-calibR_R6-set_data}{}}}
+\subsection{Method \code{set_data()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$set_data(.position_, .data_)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.position_}}{List containing the name(s) of the name slot(s) to
+house the data to be stored into the R6 object.}
+
+\item{\code{.data_}}{Object containing what to be saved into the R6 object.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+}
+Save to position if exists
+
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-calibR_R6-set_position"></a>}}
+\if{latex}{\out{\hypertarget{method-calibR_R6-set_position}{}}}
+\subsection{Method \code{set_position()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$set_position(.position_, .data_)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{.position_}}{List containing the name(s) of the name slot(s) to
+house the data to be stored into the R6 object.}
+
+\item{\code{.data_}}{Object containing what to be saved into the R6 object.}
+}
+\if{html}{\out{</div>}}
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
@@ -785,12 +867,26 @@ in which the width and height are provided.}
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-calibR_R6-draw_PSA_summary_tables"></a>}}
-\if{latex}{\out{\hypertarget{method-calibR_R6-draw_PSA_summary_tables}{}}}
-\subsection{Method \code{draw_PSA_summary_tables()}}{
+\if{html}{\out{<a id="method-calibR_R6-draw_CEA_results_tables"></a>}}
+\if{latex}{\out{\hypertarget{method-calibR_R6-draw_CEA_results_tables}{}}}
+\subsection{Method \code{draw_CEA_results_tables()}}{
 Draw PSA summary tables:----
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_PSA_summary_tables(
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$draw_CEA_results_tables(
+  .label_effects_ = "QALYs",
+  .label_costs_ = "Costs",
+  .wtp_key_values_ = c(20000, 30000),
+  .highlight_optimal_choices_ = FALSE,
+  .currency_symbol_ = "£",
+  .output_type_ = "html",
+  .full_output_format_ = "long",
+  .add_simulated_truth_ = TRUE,
+  .truth_PSA_output_list_path_ = "../5. Presentations/data/CRS_true_PSA.rds",
+  .truth_PSA_output_list_ = NULL,
+  .generate_partial_cea_table_ = TRUE,
+  .partial_cea_table_groups_ = c("NMB", "PCE", "EVPI"),
+  .generate_relative_values_ = TRUE,
+  .relative_values_data_ = c("NMB"),
   .save_ = FALSE,
   .saving_path_ = here::here(),
   .saving_data_dir_ = "/data/PSA tables/"
@@ -800,13 +896,78 @@ Draw PSA summary tables:----
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{.label_effects_}}{Character indicating the name of the column
+containing the mean values of the effects. Default is \code{"QALYs"}.}
+
+\item{\code{.label_costs_}}{Character indicating the name of the column
+containing the mean values of the costs. Default is \code{"Costs"}.}
+
+\item{\code{.wtp_key_values_}}{Numeric vector specifying the willingness-to-pay
+(WTP) values to be used in estimating the NMB and probability of the
+optimal choice being cost-effective. Default is \code{c(20000, 30000)}.}
+
+\item{\code{.highlight_optimal_choices_}}{Logical for whether to report NMB, PCE
+or EVPI for the optimal choice. Default is \code{TRUE}. If \code{FALSE}, the values
+of NMB, PCE or EVPI will be reported for all options.}
+
+\item{\code{.currency_symbol_}}{Character scalar representing the Hex code of
+the currency symbol to use in labeling relevant results. Default is
+\code{"\\u00A3"} for Sterling (GBP). Use \code{"\\u20AC"}for Euros or \code{"\\u0024"} for
+US Dollars.}
+
+\item{\code{.output_type_}}{Character scalar that takes one of three options:
+\code{"html"}, \code{"latex"} or \code{"dataframe"}. Default is \code{"dataframe"}. If
+\code{"html"} or \code{"latex"} were passed to this argument, the function calls
+\link{generate_gt_table} internally to generate the required output. The
+\code{"html"} is suitable for shiny application; whereas, \code{"latex"}is suitable
+for PDF document.}
+
+\item{\code{.full_output_format_}}{Character scalar taking one of two options:
+\code{"wide"} or \code{"long"} specifying whether the generated results table would
+be in a wide or long format, respectively. Default is \code{"long"}.}
+
+\item{\code{.add_simulated_truth_}}{Logical scalar for whether to add results
+from the Simulated Truth PSA data to the generated results tables.
+Default is \code{TRUE}.}
+
+\item{\code{.truth_PSA_output_list_path_}}{Character scalar specifying the path
+where the list containing the Simulated Truth PSA data. The path is
+expected to lead to a \code{.RDS} file representing the list containing the
+PSA data. This list is expected to contain two dataframes named "e" or
+"effects" and "c" or "costs", containing the effects and costs PSA data,
+respectively; and a character vector containing the names of the
+interventions. This argument is ignored if \code{.add_simulated_truth_} is set
+to \code{FALSE}.}
+
+\item{\code{.truth_PSA_output_list_}}{List containing the Simulated Truth PSA
+data. This list is expected to contain two dataframes named "e" or
+"effects" and "c" or "costs", containing the effects and costs PSA data,
+respectively; and a character vector containing the names of the
+interventions. This argument is ignored if \code{.add_simulated_truth_} is set
+to \code{FALSE} or if \code{.truth_PSA_output_list_path_} is set to \code{NULL}.}
+
+\item{\code{.generate_partial_cea_table_}}{Logical for whether to generate CEA
+tables with fewer results. Default is \code{TRUE}.}
+
+\item{\code{.partial_cea_table_groups_}}{Character vector specifying what CEA
+measures to report on the tables with fewer results. Default is
+\code{c("NMB", "PCE", "EVPI")}, but it can take any or all of these values.}
+
+\item{\code{.generate_relative_values_}}{Logical for whether the produced CEA
+results table should be relative to the Simulated Truth or not. Default
+is \code{TRUE}.}
+
+\item{\code{.relative_values_data_}}{Character vector specifying what CEA
+measures to report on the tables with fewer results. Default is
+\code{c("NMB")}, but it can take any or all of\code{c("NMB", "PCE", "EVPI")}.}
+
 \item{\code{.save_}}{Logical for whether to save tables data.}
 
-\item{\code{.saving_path_}}{String defining the path for where to save the
-tables data.}
+\item{\code{.saving_path_}}{String scalar defining the path for where to save
+the tables data.}
 
-\item{\code{.saving_data_dir_}}{String defining the sub-folder in the path
-where to save the tables data.}
+\item{\code{.saving_data_dir_}}{String scalar defining the sub-folder in the
+path where to save the tables data.}
 }
 \if{html}{\out{</div>}}
 }

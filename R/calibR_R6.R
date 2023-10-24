@@ -47,16 +47,18 @@ calibR_R6 <- R6::R6Class(
     #' @field PSA_samples calibration and un-calibration parameters
     #' samples
     PSA_samples = NULL,
-    #' @field PSA_results PSA results
+    #' @field PSA_results Probabilistic Sensitivity Analysis (PSA) results
     PSA_results = NULL,
     #' @field PSA_summary PSA results' summary
     PSA_summary = NULL,
-    #' @field PSA_summary_tables PSA results' summary tables
-    PSA_summary_tables = NULL,
+    #' @field CEA_results_tables Cost-Effectiveness Analysis (CEA) results' tables
+    CEA_results_tables = NULL,
     #' @field simulated_targets PSA results
     simulated_targets = NULL,
     #' @field plots summary plots
     plots = NULL,
+    #' @field data data storage list
+    data = NULL,
 
     #' @description
     #' Sample prior distribution(s) using one or more sampling method.
@@ -89,6 +91,53 @@ calibR_R6 <- R6::R6Class(
       self$transform_parameters <- .transform
       self$model_interventions <- .intervs
       self$model_predictions$truth <- self$calibration_model()
+
+      invisible(self)
+
+    },
+
+    #' Save Data to User-defined positions
+    #'
+    #' @param .position_ List containing the name(s) of the name slot(s) to
+    #' house the data to be stored into the R6 object.
+    #' @param .data_ Object containing what to be saved into the R6 object.
+    #'
+    #' @return
+    #' @export
+    #'
+    #' @examples
+    #' \dontrun{
+    #' }
+    set_data = function(
+    .position_,
+    .data_) {
+      purrr::pluck( .x = self$data, !!!.position_) <- .data_
+
+      invisible(self)
+
+    },
+
+    #' Save to position if exists
+    #'
+    #' @param .position_ List containing the name(s) of the name slot(s) to
+    #' house the data to be stored into the R6 object.
+    #' @param .data_ Object containing what to be saved into the R6 object.
+    #'
+    #' @return
+    #' @export
+    #'
+    #' @examples
+    #' \dontrun{
+    #' }
+    set_position = function(
+    .position_,
+    .data_) {
+      if(.position_ %in% names(self))
+        self[[.position_]] <-.data_
+      else
+        warning(
+          paste(.position_, "does not exist!")
+        )
 
       invisible(self)
 
@@ -613,7 +662,7 @@ calibR_R6 <- R6::R6Class(
       if("all" %in% .calibration_methods_)
         .calibration_methods_ <- c("random", "directed", "bayesian")
       ## Call private function:----:
-      private$plot_targets_(
+      private$plot_targets(
         .engine_ = .engine_,
         .sim_targets_ = .sim_targets_,
         .calibration_methods_ = .calibration_methods_,
@@ -730,7 +779,8 @@ calibR_R6 <- R6::R6Class(
         .engine_ = .engine_,
         .bins_ = .bins_,
         .legend_pos_ = .legend_pos_,
-        .log_scaled_ = .log_scaled_)
+        .log_scaled_ = .log_scaled_
+      )
 
       ## Save plots:----
       if(.save_) {
@@ -776,11 +826,62 @@ calibR_R6 <- R6::R6Class(
     #' @description
     #' Draw PSA summary tables:----
     #'
+    #' @param .label_effects_ Character indicating the name of the column
+    #' containing the mean values of the effects. Default is `"QALYs"`.
+    #' @param .label_costs_ Character indicating the name of the column
+    #' containing the mean values of the costs. Default is `"Costs"`.
+    #' @param .wtp_key_values_ Numeric vector specifying the willingness-to-pay
+    #' (WTP) values to be used in estimating the NMB and probability of the
+    #' optimal choice being cost-effective. Default is `c(20000, 30000)`.
+    #' @param .highlight_optimal_choices_ Logical for whether to report NMB, PCE
+    #' or EVPI for the optimal choice. Default is `TRUE`. If `FALSE`, the values
+    #' of NMB, PCE or EVPI will be reported for all options.
+    #' @param .currency_symbol_ Character scalar representing the Hex code of
+    #' the currency symbol to use in labeling relevant results. Default is
+    #' `"\u00A3"` for Sterling (GBP). Use `"\u20AC"`for Euros or `"\u0024"` for
+    #' US Dollars.
+    #' @param .output_type_ Character scalar that takes one of three options:
+    #' `"html"`, `"latex"` or `"dataframe"`. Default is `"dataframe"`. If
+    #' `"html"` or `"latex"` were passed to this argument, the function calls
+    #' \link{generate_gt_table} internally to generate the required output. The
+    #' `"html"` is suitable for shiny application; whereas, `"latex"`is suitable
+    #' for PDF document.
+    #' @param .full_output_format_ Character scalar taking one of two options:
+    #' `"wide"` or `"long"` specifying whether the generated results table would
+    #' be in a wide or long format, respectively. Default is `"long"`.
+    #' @param .add_simulated_truth_ Logical scalar for whether to add results
+    #' from the Simulated Truth PSA data to the generated results tables.
+    #' Default is `TRUE`.
+    #' @param .truth_PSA_output_list_path_ Character scalar specifying the path
+    #' where the list containing the Simulated Truth PSA data. The path is
+    #' expected to lead to a `.RDS` file representing the list containing the
+    #' PSA data. This list is expected to contain two dataframes named "e" or
+    #' "effects" and "c" or "costs", containing the effects and costs PSA data,
+    #' respectively; and a character vector containing the names of the
+    #' interventions. This argument is ignored if `.add_simulated_truth_` is set
+    #' to `FALSE`.
+    #' @param .truth_PSA_output_list_ List containing the Simulated Truth PSA
+    #' data. This list is expected to contain two dataframes named "e" or
+    #' "effects" and "c" or "costs", containing the effects and costs PSA data,
+    #' respectively; and a character vector containing the names of the
+    #' interventions. This argument is ignored if `.add_simulated_truth_` is set
+    #' to `FALSE` or if `.truth_PSA_output_list_path_` is set to `NULL`.
+    #' @param .generate_partial_cea_table_ Logical for whether to generate CEA
+    #' tables with fewer results. Default is `TRUE`.
+    #' @param .partial_cea_table_groups_ Character vector specifying what CEA
+    #' measures to report on the tables with fewer results. Default is
+    #' `c("NMB", "PCE", "EVPI")`, but it can take any or all of these values.
+    #' @param .generate_relative_values_ Logical for whether the produced CEA
+    #' results table should be relative to the Simulated Truth or not. Default
+    #' is `TRUE`.
+    #' @param .relative_values_data_ Character vector specifying what CEA
+    #' measures to report on the tables with fewer results. Default is
+    #' `c("NMB")`, but it can take any or all of`c("NMB", "PCE", "EVPI")`.
     #' @param .save_ Logical for whether to save tables data.
-    #' @param .saving_path_ String defining the path for where to save the
-    #' tables data.
-    #' @param .saving_data_dir_ String defining the sub-folder in the path
-    #' where to save the tables data.
+    #' @param .saving_path_ String scalar defining the path for where to save
+    #' the tables data.
+    #' @param .saving_data_dir_ String scalar defining the sub-folder in the
+    #' path where to save the tables data.
     #'
     #' @return
     #' @export
@@ -788,11 +889,41 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    draw_PSA_summary_tables = function(.save_ = FALSE,
+    draw_CEA_results_tables = function(.label_effects_ = "QALYs",
+                                       .label_costs_ = "Costs",
+                                       .wtp_key_values_ = c(20000, 30000),
+                                       .highlight_optimal_choices_ = FALSE,
+                                       .currency_symbol_ = "\u00A3",
+                                       .output_type_ = "html",
+                                       .full_output_format_ = "long",
+                                       .add_simulated_truth_ = TRUE,
+                                       .truth_PSA_output_list_path_ = "../5. Presentations/data/CRS_true_PSA.rds",
+                                       .truth_PSA_output_list_ = NULL,
+                                       .generate_partial_cea_table_ = TRUE,
+                                       .partial_cea_table_groups_ = c("NMB", "PCE", "EVPI"),
+                                       .generate_relative_values_ = TRUE,
+                                       .relative_values_data_ = c("NMB"),
+                                       .save_ = FALSE,
                                        .saving_path_ = here::here(),
                                        .saving_data_dir_ = "/data/PSA tables/") {
-      ## Generate PSA summary tables:----
-      private$generate_PSA_summary_tables()
+
+      ## Generate CEA results tables:----
+      private$generate_cea_tables(
+        .label_effects_ = .label_effects_,
+        .label_costs_ = .label_costs_,
+        .wtp_key_values_ = .wtp_key_values_,
+        .highlight_optimal_choices_ = .highlight_optimal_choices_,
+        .currency_symbol_ = .currency_symbol_,
+        .output_type_ = .output_type_,
+        .full_output_format_ = .full_output_format_,
+        .add_simulated_truth_ = .add_simulated_truth_,
+        .truth_PSA_output_list_path_ = .truth_PSA_output_list_path_,
+        .truth_PSA_output_list_ = .truth_PSA_output_list_,
+        .generate_partial_cea_table_ = .generate_partial_cea_table_,
+        .partial_cea_table_groups_ = .partial_cea_table_groups_,
+        .generate_relative_values_ = .generate_relative_values_,
+        .relative_values_data_ = .relative_values_data_
+      )
 
       ## Save plots:----
       if(.save_) {
@@ -807,46 +938,49 @@ calibR_R6 <- R6::R6Class(
 
         ### Walk through created tables and save them in data_saving_path:----
         purrr::walk(
-          .x = self$PSA_summary_tables %>%
+          .x = self$CEA_results_tables %>%
             names(.),
           .f = function(.group_) {
             purrr::walk(
-              .x = self$PSA_summary_tables[[.group_]] %>%
+              .x = self$CEA_results_tables[[.group_]] %>%
                 names(.),
               .f = function(.calib_category_) {
-                    if(.calib_category_ == "True") {
+                if(.calib_category_ == "True") {
+                  table_name <- glue::glue(
+                    "{.group_}_truth.rds")
+                  saveRDS(
+                    object = self$
+                      CEA_results_tables[[.group_]][[.calib_category_]],
+                    file = glue::glue(
+                      "{data_saving_path}{table_name}"))
+                } else if(.group_ == "Combined") {
+                  table_name <- glue::glue(
+                    "{.group_}_{.calib_category_}.rds")
+                  saveRDS(
+                    object = self$
+                      CEA_results_tables[[.group_]][[.calib_category_]],
+                    file = glue::glue(
+                      "{data_saving_path}{table_name}"))
+                } else {
+                  purrr::walk(
+                    .x = self$CEA_results_tables[[.group_]][[.calib_category_]] %>%
+                      names(.),
+                    .f = function(.calib_method_) {
                       table_name <- glue::glue(
-                        "{.group_}_truth.rds")
+                        "{.group_}_{.calib_category_}_{.calib_method_}.rds")
                       saveRDS(
                         object = self$
-                          PSA_summary_tables[[.group_]][[.calib_category_]],
+                          CEA_results_tables[[.group_]][[.calib_category_]][[.calib_method_]],
                         file = glue::glue(
                           "{data_saving_path}{table_name}"))
-                    } else if(.group_ == "Combined") {
-                      table_name <- glue::glue(
-                        "{.group_}_{.calib_category_}.rds")
-                      saveRDS(
-                        object = self$
-                          PSA_summary_tables[[.group_]][[.calib_category_]],
-                        file = glue::glue(
-                          "{data_saving_path}{table_name}"))
-                    } else {
-                      purrr::walk(
-                        .x = self$PSA_summary_tables[[.group_]][[.calib_category_]] %>%
-                          names(.),
-                        .f = function(.calib_method_) {
-                          table_name <- glue::glue(
-                            "{.group_}_{.calib_category_}_{.calib_method_}.rds")
-                          saveRDS(
-                            object = self$
-                              PSA_summary_tables[[.group_]][[.calib_category_]][[.calib_method_]],
-                            file = glue::glue(
-                              "{data_saving_path}{table_name}"))
-                        })
-
                     }
-              })
-          })
+                    )
+
+                }
+              }
+              )
+          }
+          )
       }
     }
   ),
@@ -1690,741 +1824,6 @@ calibR_R6 <- R6::R6Class(
             .diag_ = .diag_)
       }
     },
-    ### Bayesian helper functions:----
-    #### Sample prior:----
-    # Use Random Grid Sampling (RGS) to sample from prior distribution
-    # This (_) version of the function outputs a vector of values if .n_samples = 1
-    #
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .n_samples An integer specifying the number of samples to be
-    # generated.
-    # @param ... additional arguments, for example: .seed_no to set a seed
-    # number.
-    #
-    # @return A table with each parameter RGS samples in a separate column
-    #
-    # @examples
-    # \dontrun{
-    # v_params_names <- c("p_Mets", "p_DieMets")
-    # v_params_dists <- c("unif", "unif")
-    # args <- list(list(min = 0.04, max = 0.16),
-    #              list(min = 0.04, max = 0.12))
-    # l_params <- list('v_params_names' = v_params_names,
-    #                  'v_params_dists' = v_params_dists,
-    #                  'args' = args)
-    #
-    # sample_prior_RGS_(.l_params = l_params,
-    #                   .n_samples = 1)
-    # }
-    sample_prior_RGS_ = function(
-    .n_samples = 1,
-    .l_params = self$calibration_parameters,
-    ...) {
-      # Grab additional arguments:
-      dots = list(...)
-      if(!is.null(dots[['.ssed_no']]))
-        set.seed(dots[['.ssed_no']])
-      # Define inputs list:
-      l_rgs <- list(.l_params[['v_params_names']],
-                    paste0('r', .l_params[['v_params_dists']]),
-                    .l_params[['args']],
-                    .l_params[['v_params_dists']])
-      # Make sure parameter names are in a named vector:
-      names(l_rgs[[1]]) <- l_rgs[[1]]
-      # Map over parameters and sample values accordingly:
-      if(.n_samples == 1){
-        vec_rgs_samp <- purrr::pmap_dbl(
-          .l = l_rgs,
-          .f = function(.name, .func, .arg, .dist) {
-            assign(.name,
-                   purrr::exec(.func,
-                               .n_samples,
-                               !!!.arg)
-            )
-          }
-        )
-
-        return(vec_rgs_samp)
-      } else {
-        tbl_rgs_samp <- purrr::pmap_dfc(
-          .l = l_rgs,
-          .f = function(.name, .func, .arg, .dist) {
-            assign(.name,
-                   purrr::exec(.func,
-                               .n_samples,
-                               !!!.arg)
-            )
-          }
-        )
-
-        return(tbl_rgs_samp)
-      }
-    },
-
-    # Sample from prior using Latin Hypercube Sampling (LHS) method
-    #
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .n_samples An integer specifying the number of samples to be
-    # generated.
-    #
-    sample_prior_IMIS = function(
-    .n_samples,
-    .l_params = self$calibration_parameters) {
-      # Get the number of parameters:
-      n_params <- length(.l_params[["v_params_names"]])
-      # Get LHS samples:
-      tbl_lhs_unit <- lhs::randomLHS(.n_samples, n_params) %>%
-        as.data.frame()
-      # Define inputs list:
-      l_lhs <- list(.l_params[['v_params_names']],
-                    paste0('q', .l_params[['v_params_dists']]),
-                    tbl_lhs_unit,
-                    .l_params[['args']],
-                    .l_params[['v_params_dists']])
-      # Make sure parameter names are in a named vector:
-      names(l_lhs[[1]]) <- l_lhs[[1]]
-      # Map over parameters to scale up LHS samples to appropriate values:
-      tbl_lhs_samp <- purrr::pmap_dfc(
-        .l = l_lhs,
-        .f = function(.name, .func, p, .arg, .dist) {
-          assign(.name,
-                 purrr::exec(.func,
-                             p,
-                             !!!.arg)
-          )
-        })
-
-      return(tbl_lhs_samp %>% as.matrix())
-    },
-
-    #### Prior densities:----
-    # Calculate log prior
-    #
-    # @param .samples A vector/dataset containing sampled/proposed values.
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters to
-    # their original scale.
-    #
-    log_priors = function(
-    .samples,
-    .l_params = self$calibration_parameters,
-    .transform = self$transform_parameters) {
-
-      v_params_names <- .l_params[['v_params_names']]
-      names(.l_params[['v_params_names']]) <- v_params_names
-      # Ensure .samples is of appropriate class and named properly:
-      if(is.null(dim(.samples))) # If vector, change to matrix
-        .samples <- t(.samples)
-      if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
-        .samples <- .samples %>%
-        as.data.frame() %>%
-        `colnames<-`(v_params_names)
-      # Get appropriate distributions' and distributions' parameters' objects:
-      params_dists <- 'v_params_dists'
-      params_args <- 'args'
-      # Transform the sampled parameters back to their original scale:
-      if(.transform) {
-        .samples <- .samples %>%
-          calibR::backTransform(.t_data_ = ., .l_params_ = .l_params)
-        params_dists <- 'v_true_params_dists'
-        params_args <- 'true_args'
-      }
-      # Define inputs list for the pmap function:
-      l_lprior <- list(.l_params[['v_params_names']],
-                       paste0('d', .l_params[[params_dists]]),
-                       .l_params[[params_dists]],
-                       .l_params[[params_args]],
-                       .samples)
-      # Estimate the log prior:
-      v_lprior <- rowSums(purrr::pmap_df(
-        .l = l_lprior,
-        .f = function(.name, .func, .dist, .arg, .param) {
-          purrr::exec(.func, .param, !!!.arg, log = TRUE)
-        }
-      ))
-
-      return(v_lprior)
-
-    },
-
-    # Calculate log prior (one set of parameters at a time)
-    #
-    # @param .samples A vector/dataset containing sampled/proposed values.
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
-    #
-    log_prior = function(
-    .samples,
-    .l_params = self$calibration_parameters,
-    .transform = self$transform_parameters) {
-
-      v_params_names <- .l_params[['v_params_names']]
-      names(.l_params[['v_params_names']]) <- v_params_names
-      # Ensure .samples is of appropriate class and named properly:
-      if(is.null(dim(.samples))) # If vector, change to matrix
-        .samples <- t(.samples)
-      if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
-        .samples <- .samples %>%
-        as.data.frame() %>%
-        `colnames<-`(v_params_names)
-      # Get appropriate distributions' and distributions' parameters' objects:
-      params_dists <- 'v_params_dists'
-      params_args <- 'args'
-      # Transform the sampled parameters back to their original scale:
-      if(.transform) {
-        .samples <- .samples %>%
-          calibR::backTransform(.t_data_ = ., .l_params_ = .l_params)
-        params_dists <- 'v_true_params_dists'
-        params_args <- 'true_args'
-      }
-      # Define inputs list for the pmap function:
-      l_lprior <- list(.l_params[['v_params_names']],
-                       paste0('d', .l_params[[params_dists]]),
-                       .l_params[[params_dists]],
-                       .l_params[[params_args]],
-                       .samples)
-      # Estimate the log prior:
-      v_lprior <- sum(purrr::pmap_dbl(
-        .l = l_lprior,
-        .f = function(.name, .func, .dist, .arg, .param) {
-          purrr::exec(.func, .param, !!!.arg, log = TRUE)
-        }
-      ))
-
-      return(v_lprior)
-    },
-
-    # Calculate prior densities
-    #
-    # @param .samples A vector/dataset containing sampled/proposed values.
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
-    #
-    calculate_priors = function(
-    .samples,
-    .l_params = self$calibration_parameters,
-    .transform = self$transform_parameters) {
-
-      v_prior <-  exp(private$log_priors(
-        .samples = .samples,
-        .l_params = .l_params,
-        .transform = .transform
-      ))
-
-      return(v_prior)
-    },
-
-    # Calculate prior (one set of parameters at a time)
-    #
-    # @param .samples A vector/dataset containing sampled/proposed values.
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
-    #
-    calculate_prior = function(
-    .samples,
-    .l_params = self$calibration_parameters,
-    .transform = self$transform_parameters) {
-
-      v_prior <-  exp(private$log_prior(
-        .samples = .samples,
-        .l_params = .l_params,
-        .transform = .transform
-      ))
-
-      return(v_prior)
-    },
-
-    #### Likelihood:----
-    # Calculate log likelihood (LLK)
-    #
-    # @param .samples A table or vector of sampled parameter values
-    # @param .func A function defining the model to be calibrated
-    # @param .args A list of arguments to be passed to .func
-    # @param .l_targets A list containing a vector of targets' names, a
-    # vector of targets' weights, a vector of targets' distributions, and
-    # a table for each target that contains the values (column name
-    # 'value') and standard errors (column name 'sd') of the corresponding
-    # target.
-    #
-    log_likelihood = function(
-    .samples,
-    .func = self$calibration_model,
-    .args = self$calibration_model_args,
-    .l_targets = self$calibration_targets) {
-      # Ensure .samples is of appropriate class and named properly:
-      if(is.null(dim(.samples))) # If vector, change to matrix
-        .samples <- t(.samples)
-      if(!any(class(.samples) %in% c("tbl_df", "tbl", "data.frame")))
-        .samples <- .samples %>%
-          as.data.frame()
-      # Run the model using each set of sampled parameters:
-      model_results <- purrr::pmap(
-        .l = as.list(.samples),
-        .f = function(...) {
-          dots <- list(...)
-          purrr::exec(.func, dots, !!!.args)
-        })
-      # Define inputs list for the pmap function:
-      l_llik <- list(.l_targets[['v_targets_names']],
-                     paste0('d', .l_targets[['v_targets_dists']]),
-                     .l_targets[['v_targets_dists']],
-                     .l_targets[['v_targets_weights']])
-
-      # Estimate the overall log likelihood for each model output:
-      overall_lliks <- purrr::map_dbl(
-        .x = model_results,
-        .f = function(.mod_res) {
-          # Log likelihood (for each target):
-          overall_llik <- purrr::pmap(
-            .l = l_llik,
-            .f = function(.name, .func, .dist, .weight) {
-              tryCatch({
-                if(.dist == 'norm') {
-                  sum( # Sum all values of that one target, if many
-                    purrr::exec(.func,
-                                .l_targets[[.name]]$value, # target's sd
-                                .mod_res[[.name]], # mean value
-                                .l_targets[[.name]]$se, # sd value (target's sd)
-                                log = TRUE)
-                  ) * .weight # target weight
-                } else if(.dist == 'binom') {
-                  sum( # Sum all values of that one target, if many
-                    purrr::exec(.func,
-                                prob = .mod_res[[.name]],
-                                x = .l_targets[[.name]]$x,
-                                size = .l_targets[[.name]]$size,
-                                log = TRUE)
-                  ) * .weight # target weight
-                } else if(.dist == 'lnorm') {
-                  sum( # Sum all values of that one target, if many
-                    purrr::exec(.func,
-                                .l_targets[[.name]]$value, # target's mean
-                                log(.mod_res[[.name]]) - (1/2) *
-                                  .l_targets[[.name]]$se^2, # mean value
-                                .l_targets[[.name]]$se, # sd value (target's sd)
-                                log = TRUE)
-                  ) * .weight # target weight
-                }
-              },
-              error = function(e) -Inf
-              )
-            }
-          )
-          # Overall log likelihood (for all targets):
-          overall_llik <- overall_llik %>%
-            purrr::reduce(`+`, .init = 0)
-        })
-
-      # Set NaN values to -Inf to avoid other functions from crashing:
-      overall_lliks[is.na(overall_lliks)] <- -Inf
-
-      return(overall_lliks)
-    },
-
-    # Calculate likelihood
-    #
-    # @param .samples A table or vector of sampled parameter values
-    # @param .func A function defining the model to be calibrated
-    # @param .args A list of arguments to be passed to .func
-    # @param .l_targets A list containing a vector of targets' names, a
-    # vector of targets' weights, a vector of targets' distributions, and
-    # a table for each target that contains the values (column name
-    # 'value') and standard errors (column name 'sd') of the corresponding
-    # target.
-    #
-    calculate_likelihood = function(
-    .samples,
-    .func = self$calibration_model,
-    .args = self$calibration_model_args,
-    .l_targets = self$calibration_targets) {
-
-      v_likelihood <-  exp(private$log_likelihood(
-        .samples = .samples,
-        .func = .func,
-        .args = .args,
-        .l_targets = .l_targets
-      ))
-
-      return(v_likelihood)
-    },
-
-    #### Posterior:----
-    # Calculate log posteriors
-    #
-    # @param .samples A table or vector of sampled parameter values
-    # @param .func A function defining the model to be calibrated
-    # @param .args A list of arguments to be passed to .func
-    # @param .l_targets A list containing a vector of targets' names, a
-    # vector of targets' weights, a vector of targets' distributions, and
-    # a table for each target that contains the values (column name
-    # 'value') and standard errors (column name 'sd') of the corresponding
-    # target.
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
-    #
-    log_posteriors = function(
-    .samples,
-    .func = self$calibration_model,
-    .args = self$calibration_model_args,
-    .l_targets = self$calibration_targets,
-    .l_params = self$calibration_parameters,
-    .transform = self$transform_parameters) {
-      # calculate log prior:
-      l_prior <- private$log_priors(
-        .samples = .samples,
-        .l_params = .l_params,
-        .transform = .transform
-      )
-      # calculate log likelihood:
-      l_lilk <- private$log_likelihood(
-        .samples = .samples,
-        .func = .func,
-        .args = .args,
-        .l_targets = .l_targets
-      )
-      # calculate log posterior:
-      l_posterior <- l_prior + l_lilk
-
-      return(l_posterior)
-    },
-
-    # Calculate log posterior (one set of parameters at a time)
-    #
-    # @param .samples A table or vector of sampled parameter values
-    # @param .func A function defining the model to be calibrated
-    # @param .args A list of arguments to be passed to .func
-    # @param .l_targets A list containing a vector of targets' names, a
-    # vector of targets' weights, a vector of targets' distributions, and
-    # a table for each target that contains the values (column name
-    # 'value') and standard errors (column name 'sd') of the corresponding
-    # target.
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
-    #
-    log_posterior = function(
-    .samples,
-    .func = self$calibration_model,
-    .args = self$calibration_model_args,
-    .l_targets = self$calibration_targets,
-    .l_params = self$calibration_parameters,
-    .transform = self$transform_parameters) {
-      # calculate log prior:
-      l_prior <- private$log_prior(
-        .samples = .samples,
-        .l_params = .l_params,
-        .transform = .transform
-      )
-      # calculate log likelihood:
-      l_lilk <- private$log_likelihood(
-        .samples = .samples,
-        .func = .func,
-        .args = .args,
-        .l_targets = .l_targets
-      )
-      # calculate log posterior:
-      l_posterior <- l_prior + l_lilk
-
-      return(l_posterior)
-    },
-
-    # Calculate posterior densities
-    #
-    # @param .samples A table or vector of sampled parameter values
-    # @param .func A function defining the model to be calibrated
-    # @param .args A list of arguments to be passed to .func
-    # @param .l_targets A list containing a vector of targets' names, a
-    # vector of targets' weights, a vector of targets' distributions, and
-    # a table for each target that contains the values (column name
-    # 'value') and standard errors (column name 'sd') of the corresponding
-    # target.
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
-    #
-    calculate_posteriors = function(
-    .samples,
-    .func = self$calibration_model,
-    .args = self$calibration_model_args,
-    .l_targets = self$calibration_targets,
-    .l_params = self$calibration_parameters,
-    .transform = self$transform_parameters) {
-      # calculate the posterior:
-      posterior <- exp(private$log_posteriors(
-        .samples = .samples,
-        .func = .func,
-        .args = .args,
-        .l_targets = .l_targets,
-        .l_params = .l_params,
-        .transform = .transform
-      ))
-
-      return(posterior)
-    },
-
-    # Calculate posterior (one set of parameters at a time)
-    #
-    # @param .samples A table or vector of sampled parameter values
-    # @param .func A function defining the model to be calibrated
-    # @param .args A list of arguments to be passed to .func
-    # @param .l_targets A list containing a vector of targets' names, a
-    # vector of targets' weights, a vector of targets' distributions, and
-    # a table for each target that contains the values (column name
-    # 'value') and standard errors (column name 'sd') of the corresponding
-    # target.
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
-    #
-    calculate_posterior = function(
-    .samples,
-    .func = self$calibration_model,
-    .args = self$calibration_model_args,
-    .l_targets = self$calibration_targets,
-    .l_params = self$calibration_parameters,
-    .transform = self$transform_parameters) {
-      # calculate the posterior:
-      posterior <- exp(private$log_posterior(
-        .samples = .samples,
-        .func = .func,
-        .args = .args,
-        .l_targets = .l_targets,
-        .l_params = .l_params,
-        .transform = .transform
-      ))
-
-      return(posterior)
-    },
-    #### Bayesian calibration function:----
-    # Calibrate models using Bayesian methods - employing local IMIS_()
-    #
-    # @param .b_method Character defining the Bayesian method to use in
-    # the calibration process. Currently supported methods are `SIR` and
-    # `IMIS`.
-    # @param .func A function defining the decision analytic model to be
-    # calibrated.
-    # @param .args A list of arguments passed to the model function.
-    # @param .l_targets A list containing a vector of targets' names, a
-    # vector of targets' weights, a vector of targets' distributions, and
-    # a table for each target that contains the values (column name
-    # 'value') and standard errors (column name 'sd') of the corresponding
-    # target.
-    # @param .l_params A list that contains a vector of parameter names,
-    # distributions and distributions' arguments.
-    # @param .samples A table or vector of sampled parameter values
-    # @param .n_resample the desired number of draws from the posterior
-    # @param .IMIS_sample the incremental sample size at each IMIS
-    # iteration
-    # @param .IMIS_iterations the maximum number of iterations in IMIS
-    # @param .MCMC_burnIn the number of samples before starting to retain samples
-    # @param .MCMC_samples the total number of samples the MCMC algorithm should
-    # generate including the burn-in sample including the .MCMC_burnIn. This value
-    # should not be equal to or less than .MCMC_burnIn.
-    # @param .MCMC_thin the value used to thin the resulting chain
-    # @param .MCMC_rerun use the proposal distribution covariance matrix from the
-    # first run to re-run the MCMC chain.
-    # @param .transform Logical for whether to back-transform parameters
-    # to their original scale.
-    #
-    calibrateModel_beyesian = function(
-    .b_method = "SIR",
-    .func = self$calibration_model,
-    .args = self$calibration_model_args,
-    .l_targets = self$calibration_targets,
-    .l_params = self$calibration_parameters,
-    .transform = self$transform_parameters,
-    .samples,
-    .n_resample = 1000,
-    .IMIS_sample = 1000,
-    .IMIS_iterations = 30,
-    .MCMC_burnIn = 10000,
-    .MCMC_samples = 50000,
-    .MCMC_thin = 5,
-    .MCMC_rerun = TRUE) {
-      # Ensure that .b_method is supported by the function:
-      stopifnot(".b_method is supported by the function" =
-                  any(.b_method %in% c('SIR', 'IMIS', 'MCMC')))
-
-      if(.b_method == 'IMIS' & is.null(.IMIS_sample))
-        .IMIS_sample <- 1000
-
-      # If user set a .MCMC_burnIn equal to or more than .MCMC_samples:
-      if(.b_method == 'MCMC' & !is.null(.MCMC_samples) & !is.null(.MCMC_burnIn)) {
-        # ensure we can thin the chain as needed:
-        if(.MCMC_samples < .n_resample * .MCMC_thin)
-          .MCMC_samples <- .n_resample * .MCMC_thin
-        # make sure samples are more than burn-in to accommodate it:
-        if(.MCMC_burnIn >= .MCMC_samples)
-          .MCMC_samples <- .MCMC_burnIn * 2
-      }
-
-      # SIR:
-      if(.b_method == 'SIR') {
-        cat(paste("Running SIR...", Sys.time(), "\n"))
-        if(nrow(.samples) != .n_resample)
-          stop(paste("Please pass", .n_resample, "samples to the function."))
-        ## Calculate log-likelihood for each sample value:
-        llik <- private$log_likelihood(
-          .samples = .samples,
-          .func = .func,
-          .args = .args,
-          .l_targets = .l_targets
-        )
-
-        ## Calculate weights for the re-sample:
-        # Note: subtracting off the maximum log-likelihood before
-        # exponentiating helps avoid numerical under/overflow, which would
-        # result in weights of Inf or 0.
-        weight <- exp(llik - max(llik)) / sum(exp(llik - max(llik)))
-        ## Re-sample from samples with wt as sampling weights:
-        SIR_resample  <- sample.int(
-          .n_resample,
-          replace = TRUE,
-          prob = weight
-        )
-        posterior_SIR <- .samples[SIR_resample, ]
-        ## Combine log-likelihood & posterior probability of each sample:
-        SIR_results <- cbind(posterior_SIR,
-                             "Overall_fit" = llik[SIR_resample],
-                             "Posterior_prob" = weight[SIR_resample]) %>%
-          as.data.frame() %>%
-          dplyr::arrange(dplyr::desc(Overall_fit))
-
-        return(list('Results' = SIR_results, 'Method' = "SIR"))
-
-      } else if(.b_method == 'IMIS') { # IMIS:
-        cat(paste("Running IMIS...", Sys.time(), "\n"))
-        ## Run IMIS:
-        fit_IMIS <- calibR::IMIS_(
-          B = .IMIS_sample, # incremental sample size at each iteration
-          B.re = .n_resample, # desired posterior sample size
-          number_k = .IMIS_iterations, # maximum iterations
-          D = 1, # use optimizer >= 1, do not use = 0.
-          sample.prior = private$sample_prior_IMIS,
-          prior = private$calculate_prior,
-          priors = private$calculate_priors,
-          likelihood = private$calculate_likelihood)
-        ## Calculate log-likelihood (overall fit) and posterior probability:
-        m_calib_res <- fit_IMIS$resample
-        Overall_fit <- private$log_likelihood(
-          .samples = m_calib_res,
-          .func = .func,
-          .args = .args,
-          .l_targets = .l_targets)
-        Posterior_prob <- private$calculate_posteriors(
-          .samples = m_calib_res, .func = .func, .args = .args,
-          .l_targets = .l_targets, .l_params = .l_params)
-        ## Group results into one object:
-        IMIS_results <- m_calib_res %>%
-          as.data.frame() %>%
-          dplyr::mutate(
-            "Overall_fit" = Overall_fit,
-            "Posterior_prob" = Posterior_prob / sum(Posterior_prob)) %>%
-          dplyr::arrange(dplyr::desc(Overall_fit))
-        ## Assign column names in the IMIS stats object:
-        stats <- fit_IMIS$stat %>%
-          as.data.frame() %>%
-          `colnames<-`(c("MargLike", "UniquePoint", "MaxWeight", "ESS",
-                         "ImpWt", "ImpWtVar"))
-
-        return(list('Results' = IMIS_results, 'Method' = "IMIS",
-                    'Fit'  = fit_IMIS, 'Stats' = stats))
-
-      } else { # MCMC MH algorithm
-        cat(paste("Running MCMC...", Sys.time(), "\n"))
-        ## Sample a random set of parameters as a starting point for the chain:
-        guess <- private$sample_prior_RGS_(
-          .n_samples = 1,
-          .l_params = .l_params)
-        if(.diag_)
-          cat(paste0(guess, "\n"))
-        ## Run the Metropolis-Hastings algorithm
-        fit_MCMC <- MHadaptive::Metro_Hastings(
-          li_func = private$log_posterior,
-          pars = guess,
-          par_names = .l_params[["v_params_names"]],
-          iterations = .MCMC_samples,
-          burn_in = .MCMC_burnIn,
-          .func = .func,
-          .l_targets = .l_targets,
-          .l_params = .l_params,
-          .args = .args,
-          .transform = .transform)
-        if(.MCMC_rerun){
-          cat(paste("Re-running MCMC...", Sys.time(), "\n"))
-          guess <- private$sample_prior_RGS_(
-            .n_samples = 1,
-            .l_params = .l_params)
-          if(.diag_)
-            cat(paste0(guess, "\n"))
-          fit_MCMC <- MHadaptive::Metro_Hastings(
-            li_func = private$log_posterior,
-            pars = guess,
-            prop_sigma = fit_MCMC$prop_sigma,
-            par_names = .l_params[["v_params_names"]],
-            iterations = .MCMC_samples,
-            burn_in = .MCMC_burnIn,
-            .func = .func,
-            .l_targets = .l_targets,
-            .l_params = .l_params,
-            .args = .args,
-            .transform = .transform)}
-        ## Estimate 95% credible interval:
-        cred_int_95 <- MHadaptive::BCI(
-          mcmc_object = fit_MCMC,
-          interval = c(0.025, 0.975))
-        ## Thin the chain if needed:
-        if(!is.null(.MCMC_thin))
-          fit_MCMC <- MHadaptive::mcmc_thin(
-            mcmc_object = fit_MCMC,
-            thin = .MCMC_thin)
-        ## Calculate log-likelihood (overall fit) and posterior probability:
-        m_calib_res <- fit_MCMC$trace
-        colnames(m_calib_res) <- .l_params[["v_params_names"]]
-        Overall_fit <- private$log_likelihood(
-          .samples = m_calib_res, .func = .func, .args = .args,
-          .l_targets = .l_targets)
-        Posterior_prob <- private$calculate_posteriors(
-          .samples = m_calib_res, .func = .func, .args = .args,
-          .l_targets = .l_targets, .l_params = .l_params)
-        ## Group results into one object:
-        MCMC_results <- m_calib_res %>%
-          as.data.frame() %>%
-          dplyr::mutate(
-            "Overall_fit" = Overall_fit,
-            "Posterior_prob" = Posterior_prob / sum(Posterior_prob)) %>%
-          dplyr::arrange(dplyr::desc(Overall_fit)) %>%
-          # randomly sample from the posterior, if required sample smaller than draws:
-          {if(.n_resample < nrow(.)){
-            dplyr::slice_sample(.data = ., n = .n_resample)
-          } else {
-            .
-          }}
-
-        ## Assign column names to the MCMC proposal distribution covariance matrix:
-        prop_sigma <- fit_MCMC$prop_sigma %>%
-          as.data.frame() %>%
-          `colnames<-`(.l_params[["v_params_names"]])
-
-        return(list('Results' = MCMC_results, 'Method' = "MCMC",
-                    'Cred_int_95' = cred_int_95, 'Fit'  = fit_MCMC,
-                    'Propos_dist_Cov_matrix' = prop_sigma))
-      }
-    },
     ## PSA:----
     ### Sample PSA values for calibration parameters:----
     # Sample PSA values for the calibration parameters
@@ -2525,296 +1924,6 @@ calibR_R6 <- R6::R6Class(
         dplyr::arrange(dplyr::desc(mean_goodness_of_fit))
     },
     ## Plots:----
-    ### Target plots:----
-    # Draw true and predicted  targets
-    #
-    # @param error_ percentage difference between mean target value and
-    # upper/lower values.
-    #
-    draw_targets = function(error_ = 0.1) {
-      # Get MAP values:
-      self$maximum_a_posteriori$parameters <- purrr::map_df(
-        .x = c('random', 'directed', 'bayesian'),
-        .f = function(.category_) {
-          private$get_MAP_values(
-            .l_calib_res_lists = self$calibration_results[[.category_]],
-            .search_method = .category_)
-        }
-      )
-      # Run model using MAP values
-      self$maximum_a_posteriori$simulated_results <- purrr::pmap(
-        .l = self$maximum_a_posteriori$parameters,
-        .f = function(...) {
-          params = list(...)
-          self$calibration_model(params)
-        }
-      )
-      # set names:
-      names(self$maximum_a_posteriori$simulated_results) <-
-        self$maximum_a_posteriori$parameters$Label
-      # Combine MAP results for same calibration targets
-      self$maximum_a_posteriori$simulated_endpoints <- purrr::map(
-        .x = self$calibration_targets$v_targets_names,
-        .f = function(target_) {
-          purrr::map_dfc(
-            .x = self$maximum_a_posteriori$simulated_results,
-            .f = function(results_) {
-              results_[[target_]]
-            }
-          )
-        }
-      )
-      names(self$maximum_a_posteriori$simulated_endpoints) <-
-        self$calibration_targets$v_targets_names
-      # Merge MAP simulated targets with
-      targets <- purrr::map(
-        .x = self$calibration_targets$v_targets_names,
-        .f = function(target) {
-          self$calibration_targets[[target]] %>%
-            dplyr::bind_cols(
-              self$maximum_a_posteriori$simulated_endpoints[[target]]
-            )
-        }
-      )
-      names(targets) <- self$calibration_targets$v_targets_names
-      # Plot targets:
-      ## geom_col:
-      targets_plots <- purrr::map(
-        .x = self$calibration_targets$v_targets_names,
-        .f = function(target_) {
-          data_ <- targets[[target_]] %>%
-            dplyr::mutate(id = dplyr::row_number()) %>%
-            dplyr::rename(target = value)
-          # add lb and ub if missing:
-          if(is.null(data_$lb)) {
-            data$lb = data$target * (1 - error_)
-            data$ub = data$target * (1 + error_)
-          }
-          # query x and y axis variables:
-          x_var = self$calibration_targets$v_targets_axis[[target_]]$x
-          y_var = self$calibration_targets$v_targets_axis[[target_]]$y
-          # prepare data:
-          data_ <- data_  %>%
-            tidyr::pivot_longer(
-              cols = c(target,
-                       self$maximum_a_posteriori$parameters$Label),
-              names_to = "Method",
-              values_to = "Values")
-          # plot line or bar based on number of data points per target
-          if(nrow(targets[[target_]]) < 4) {
-            data_ %>%
-              ggplot2::ggplot() +
-              ggplot2::geom_col(
-                ggplot2::aes(
-                  x = Values,
-                  y = Method,
-                  fill = as.factor(.data[[y_var]]),
-                  colour = as.factor(.data[[y_var]])),
-                alpha = 0.4,
-                show.legend = TRUE,
-                position = "dodge2") +
-              ggplot2::geom_errorbarh(
-                # ggplot2::geom_linerange(
-                data = data_,
-                ggplot2::aes(
-                  y = Method,
-                  xmax = ub,
-                  xmin = lb),
-                colour = "black",
-                position = "dodge2") +
-              ggplot2::labs(
-                title = "Observed and simulated maximum-a-posteriori target(s)",
-                subtitle = if(!is.null(self$
-                                       calibration_targets$
-                                       v_targets_labels[[target_]])) {
-                  self$calibration_targets$
-                    v_targets_labels[[target_]]
-                } else {
-                  target_
-                },
-                caption = "Black bars represent target's 95% confidence internval",
-                fill = y_var,
-                colour = y_var
-              ) +
-              ggplot2::theme(
-                plot.title.position = "plot",
-                plot.subtitle = ggplot2::element_text(
-                  face = "italic"),
-                plot.caption.position= "plot")
-          } else {
-
-          }
-        }
-      )
-      names(targets_plots) <- self$calibration_targets$v_targets_names
-
-      self$plots$targets$col_plots <- targets_plots
-
-      ## geom_point:
-      targets_plots <- purrr::map(
-        .x = self$calibration_targets$v_targets_names,
-        .f = function(target_) {
-          data_ <- targets[[target_]] %>%
-            dplyr::mutate(id = dplyr::row_number()) %>%
-            dplyr::rename(target = value)
-          # add lb and ub if missing:
-          if(is.null(data_$lb)) {
-            data$lb = data$target * (1 - error_)
-            data$ub = data$target * (1 + error_)
-          }
-          # query x and y axis variables:
-          x_var = self$calibration_targets$v_targets_axis[[target_]]$x
-          y_var = self$calibration_targets$v_targets_axis[[target_]]$y
-          if(is.null(x_var)) x_var = id
-          if(is.null(y_var)) y_var = id
-          # prepare data:
-          data_ <- data_ %>%
-            tidyr::pivot_longer(
-              cols = c(target,
-                       self$maximum_a_posteriori$parameters$Label),
-              names_to = "Method",
-              values_to = "Values")
-          # plot line or bar based on number of data points per target
-          if(nrow(targets[[target_]]) < 4) {
-            data_ %>%
-              dplyr::filter(!Method == "target") %>%
-              ggplot2::ggplot() +
-              ggplot2::geom_point(
-                ggplot2::aes(
-                  x = .data[[y_var]],
-                  y = Values,
-                  fill = Method,
-                  colour = Method),
-                alpha = 0.4,
-                show.legend = TRUE) +
-              ggplot2::geom_line(
-                ggplot2::aes(
-                  x = .data[[y_var]],
-                  y = Values,
-                  colour = Method),
-                alpha = 0.4,
-                show.legend = FALSE) +
-              ggplot2::geom_errorbar(
-                data = data_ %>%
-                  dplyr::filter(Method == "target"),
-                ggplot2::aes(
-                  x = .data[[y_var]],
-                  ymax = ub,
-                  ymin = lb,
-                  colour = Method),
-                colour = "black",
-                position = "dodge2") +
-              ggplot2::labs(
-                title = "Observed and simulated maximum-a-posteriori target(s)",
-                subtitle = if(!is.null(self$
-                                       calibration_targets$
-                                       v_targets_labels[[target_]])) {
-                  self$calibration_targets$
-                    v_targets_labels[[target_]]
-                } else {
-                  target_
-                },
-                caption = "Black bars represent target's 95% confidence internval"
-              ) +
-              ggplot2::theme(
-                plot.title.position = "plot",
-                plot.subtitle = ggplot2::element_text(
-                  face = "italic"),
-                plot.caption.position= "plot")
-          } else {
-
-          }
-        }
-      )
-      names(targets_plots) <- self$calibration_targets$v_targets_names
-
-      self$plots$targets$point_plots <- targets_plots
-
-      # geom vlines:
-      ## geom_point:
-      targets_plots <- purrr::map(
-        .x = self$calibration_targets$v_targets_names,
-        .f = function(target_) {
-          data_ <- targets[[target_]] %>%
-            dplyr::mutate(id = dplyr::row_number()) %>%
-            dplyr::rename(target = value)
-          # add lb and ub if missing:
-          if(is.null(data_$lb)) {
-            data$lb = data$target * (1 - error_)
-            data$ub = data$target * (1 + error_)
-          }
-          # query x and y axis variables:
-          x_var = self$calibration_targets$v_targets_axis[[target_]]$x
-          y_var = self$calibration_targets$v_targets_axis[[target_]]$y
-          # prepare data:
-          data_ <- data_ %>%
-            tidyr::pivot_longer(
-              cols = c(target,
-                       self$maximum_a_posteriori$parameters$Label),
-              names_to = "Method",
-              values_to = "Values")
-          # plot line or bar based on number of data points per target
-          if(nrow(targets[[target_]]) < 4) {
-            data_ %>%
-              dplyr::filter(!Method == "target") %>%
-              ggplot2::ggplot() +
-              ggplot2::geom_point(
-                ggplot2::aes(
-                  x = Values,
-                  y = .data[[y_var]],
-                  group = Method,
-                  colour = Method),
-                show.legend = TRUE) +
-              # 95% CI lower bound:
-              ggplot2::geom_vline(
-                data = data_ %>%
-                  dplyr::filter(Method == "target"),
-                ggplot2::aes(
-                  xintercept = lb),
-                lty = 2,
-                colour = "black") +
-              # target mean value:
-              ggplot2::geom_vline(
-                data = data_ %>%
-                  dplyr::filter(Method == "target"),
-                ggplot2::aes(
-                  xintercept = Values),
-                lty = 1,
-                colour = "black") +
-              # 95% CI upper bound:
-              ggplot2::geom_vline(
-                data = data_ %>%
-                  dplyr::filter(Method == "target"),
-                ggplot2::aes(
-                  xintercept = ub),
-                lty = 2,
-                colour = "black") +
-              ggplot2::labs(
-                title = "Observed and simulated maximum-a-posteriori target(s)",
-                subtitle = if(!is.null(self$
-                                       calibration_targets$
-                                       v_targets_labels[[target_]])) {
-                  self$calibration_targets$
-                    v_targets_labels[[target_]]
-                } else {
-                  target_
-                },
-                caption = "Black bars represent target's 95% confidence internval") +
-              ggplot2::theme(
-                plot.title.position = "plot",
-                plot.subtitle = ggplot2::element_text(
-                  face = "italic"),
-                plot.caption.position= "plot")
-          } else {
-
-          }
-        }
-      )
-      names(targets_plots) <- self$calibration_targets$v_targets_names
-
-      self$plots$targets$vline_plots <- targets_plots
-
-    },
     ### Prior-posterior plots:----
     # Create combined prior and posterior line plots
     #
@@ -3140,200 +2249,6 @@ calibR_R6 <- R6::R6Class(
 
       return(plots_)
     },
-    # Draw priors and posteriors plots
-    #
-    # @param prior_sample_method
-    # @param plots_row
-    # @param plots_col
-    #
-    draw_priors_posteriors = function(prior_sample_method = "LHS") {
-      data_ <- c(self$PSA_samples$random,
-                 self$PSA_samples$directed,
-                 self$PSA_samples$bayesian) %>%
-        purrr::transpose() %>%
-        .[['PSA_calib_draws']] %>%
-        dplyr::bind_rows() %>%
-        dplyr::select(
-          !!!dplyr::all_of(
-            dplyr::syms(
-              self$calibration_parameters$v_params_names)), Label)
-
-      data_ <- if(self$transform_parameters) {
-        data_ %>%
-          dplyr::bind_rows(
-            self$prior_samples[[prior_sample_method]] %>%
-              dplyr::mutate(Label = 'Prior') %>%
-              calibR::backTransform(
-                .t_data_ = .,
-                .l_params_ = self$calibration_parameters
-              )
-          )
-      } else {
-        data_ %>%
-          dplyr::bind_rows(
-            self$prior_samples[[prior_sample_method]] %>%
-              dplyr::mutate(Label = 'Prior')
-          )
-      }
-
-      data2_ = data_ %>%
-        tidyr::pivot_longer(
-          cols = self$calibration_parameters$v_params_names,
-          names_to = "Parameter",
-          values_to = "Distribution draws")
-      # If True set are known
-      if(!is.null(self$calibration_parameters$v_params_true_values)) {
-        data2_ = data2_ %>%
-          dplyr::bind_rows(
-            self$calibration_parameters$
-              v_params_true_values %>%
-              as.data.frame(row.names = "Parameter") %>%
-              dplyr::rename(`Distribution draws` = value) %>%
-              dplyr::mutate(Label = "True"))
-      }
-      # Make a quick effort to get the best faceted plot:
-      tot_plots <- length(
-        c(self$PSA_samples$random,
-          self$PSA_samples$directed,
-          self$PSA_samples$bayesian) %>%
-          purrr::transpose() %>%
-          .[['PSA_calib_draws']]) + 1
-      if(tot_plots > ceiling(sqrt(tot_plots))^2 -
-         ceiling(sqrt(tot_plots))) {
-        p_row <- p_col <- ceiling(sqrt(tot_plots))
-      } else {
-        p_row <- ceiling(sqrt(tot_plots))
-        p_col <- ceiling(sqrt(tot_plots)) - 1
-      }
-
-      # One parameter at a time:
-      ## ggplot2:
-      self$plots$prior_posterior$parameters_ggplot$line_log <-
-        private$draw_priors_posteriors_line_plots(
-          data_ = data_,
-          ggplot_ = TRUE,
-          plots_row = p_row,
-          plots_col = p_row,
-          log_scaled = TRUE
-        )
-      self$plots$prior_posterior$parameters_ggplot$line <-
-        private$draw_priors_posteriors_line_plots(
-          data_ = data_,
-          ggplot_ = TRUE,
-          plots_row = p_row,
-          plots_col = p_row,
-          log_scaled = FALSE
-        )
-      self$plots$prior_posterior$parameters_ggplot$box <-
-        private$draw_priors_posteriors_box_plots(
-          data_ = data_,
-          ggplot_ = TRUE,
-          plots_row = p_row,
-          plots_col = p_col,
-          log_scaled = TRUE,
-          facet_scale_ = "free"
-        )
-
-      names(self$plots$prior_posterior$parameters_ggplot$line_log) <-
-        names(self$plots$prior_posterior$parameters_ggplot$line) <-
-        names(self$plots$prior_posterior$parameters_ggplot$box) <-
-        self$calibration_parameters$v_params_names
-      ## trelliscopejs:
-      self$plots$prior_posterior$parameters_trelli$line_log <-
-        private$draw_priors_posteriors_line_plots(
-          data_ = data_,
-          ggplot_ = FALSE,
-          plots_row = p_row,
-          plots_col = p_col,
-          log_scaled = TRUE
-        )
-      self$plots$prior_posterior$parameters_trelli$line <-
-        private$draw_density_line_plots(
-          data_ = data_,
-          ggplot_ = FALSE,
-          plots_row = p_row,
-          plots_col = p_col,
-          log_scaled = FALSE
-        )
-      self$plots$prior_posterior$parameters_trelli$box <-
-        private$draw_priors_posteriors_box_plots(
-          data_ = data_,
-          ggplot_ = FALSE,
-          plots_row = p_row,
-          plots_col = p_col
-        )
-      names(self$plots$prior_posterior$parameters_trelli$line_log) <-
-        names(self$plots$prior_posterior$parameters_trelli$line) <-
-        names(self$plots$prior_posterior$parameters_trelli$box) <-
-        self$calibration_parameters$v_params_names
-
-      # All parameters at once:
-      ## ggplot2:
-      self$plots$prior_posterior$all_ggplot$line_log <-
-        gridExtra::marrangeGrob(
-          grobs = self$plots$prior_posterior$parameters_ggplot$line_log,
-          nrow = 1,
-          ncol = 1)
-      self$plots$prior_posterior$all_ggplot$line <-
-        gridExtra::marrangeGrob(
-          grobs = self$plots$prior_posterior$parameters_ggplot$line,
-          nrow = 1,
-          ncol = 1)
-      self$plots$prior_posterior$all_ggplot$box <-
-        gridExtra::marrangeGrob(
-          grobs = self$plots$prior_posterior$parameters_ggplot$box,
-          nrow = 1,
-          ncol = 1)
-      ## trelliscopejs:
-      all_plots <- data2_ %>%
-        dplyr::filter(!Label %in% c("Prior", "True")) %>%
-        dplyr::rename(Method = Label) %>%
-        ggplot2::ggplot() +
-        ggplot2::geom_density(
-          ggplot2::aes(
-            x = `Distribution draws`,
-            y = ..scaled..),
-          fill = "cadetblue",
-          col = "blue",
-          alpha = 0.4,
-          show.legend = TRUE) +
-        ggplot2::geom_density(
-          data = data2_ %>%
-            dplyr::filter(Label %in% "Prior") %>%
-            dplyr::rename(Prior = Label),
-          ggplot2::aes(
-            x = `Distribution draws`,
-            y = ..scaled..),
-          fill = "red",
-          col = "red",
-          alpha = 0.2,
-          show.legend = TRUE) +
-        ggplot2::theme(
-          axis.ticks.y = ggplot2::element_blank(),
-          axis.text.y = ggplot2::element_blank(),
-          axis.title.y = ggplot2::element_blank()) +
-        ggplot2::scale_x_log10()
-      # If True set are known
-      # if(!is.null(self$calibration_parameters$v_params_true_values)) {
-      #   all_plots <- all_plots +
-      #     ggplot2::geom_vline(
-      #       data = data2_ %>%
-      #         dplyr::filter(Label %in% "TRUE") %>%
-      #         dplyr::rename(True = Label),
-      #       ggplot2::aes(
-      #         xintercept = `Distribution draws`
-      #       )
-      #     )
-      # }
-
-
-      self$plots$prior_posterior$all_trelli <- all_plots +
-        trelliscopejs::facet_trelliscope(
-          facets = Parameter ~ Method,
-          nrow = 2,
-          ncol = 5,
-          self_contained = TRUE)
-    },
     ### Correlation plots:----
     draw_pair_correlations = function() {
       # pair correlations by calibration methods category:
@@ -3568,7 +2483,7 @@ calibR_R6 <- R6::R6Class(
     # @examples
     # \dontrun{
     # }
-    plot_targets_ = function(.engine_ = "ggplot2",
+    plot_targets = function(.engine_ = "ggplot2",
                              .sim_targets_ = FALSE,
                              .calibration_methods_ = c("random", "directed",
                                                        "bayesian"),
@@ -3643,12 +2558,14 @@ calibR_R6 <- R6::R6Class(
     # @examples
     # \dontrun{
     # }
-    plot_distributions = function(.engine_ = "ggplot2",
-                                  .bins_ = 20,
-                                  .legend_pos_ = "bottom",
-                                  .log_scaled_ = FALSE) {
+    plot_distributions = function(
+    .engine_ = "ggplot2",
+    .bins_ = 20,
+    .legend_pos_ = "bottom",
+    .log_scaled_ = FALSE) {
+
       #### Create plots list:----
-      self$plots$distributions <- plot_pri_post_distributions(
+      self$plots$distributions <- calibR::plot_pri_post_distributions(
         .engine_ = .engine_,
         .l_PSA_samples_ = self$PSA_samples,
         .l_params_ = self$calibration_parameters,
@@ -3661,729 +2578,45 @@ calibR_R6 <- R6::R6Class(
 
     },
     ## Tables:----
-    ### PSA tables:----
-    generate_PSA_summary_tables = function(.true_CE_object_path_ = "../5. Presentations/data/CRS_true_PSA.rds",
-                                           .subset_CE_table_ = c("NetBenefit",
-                                                                "ProbabilityCE",
-                                                                "EVPI")) {
-      ### Read true CE data:----
-      true_CE_object <- readRDS(
-        file = .true_CE_object_path_)
-      ### Create ShinyPSA's simulated truth object:----
-      self$PSA_summary[["True"]] <- ShinyPSA::summarise_PSA_(
-        .effs = true_CE_object[["e"]],
-        .costs = true_CE_object[["c"]],
-        .params = true_CE_object[["p"]],
-        .interventions = true_CE_object[["treats"]],
-        .plot = FALSE)
+    ### CEA tables:----
+    generate_cea_tables = function(
+    .label_effects_ = "QALYs",
+    .label_costs_ = "Costs",
+    .wtp_key_values_ = c(20000, 30000),
+    .highlight_optimal_choices_ = FALSE,
+    .currency_symbol_ = "\u00A3",
+    .output_type_ = "html",
+    .full_output_format_ = "long",
+    .add_simulated_truth_ = TRUE,
+    .truth_PSA_output_list_path_ = "../5. Presentations/data/CRS_true_PSA.rds",
+    .truth_PSA_output_list_ = NULL,
+    .generate_partial_cea_table_ = TRUE,
+    .partial_cea_table_groups_ = c("NMB", "PCE", "EVPI"),
+    .generate_relative_values_ = TRUE,
+    .relative_values_data_ = c("NMB")) {
 
-      ### Extract PSA results per outcome (costs/QALYs) for post processing:----
-      #### Loop through PSA results of each calibration method:----
-      PSA_costs_effects <-
-        purrr::map(
-          .x = self$PSA_results,
-          .f = function(.res_) {
-            ##### Loop through PSA results of each calibration method:----
-            c(purrr::map(
-              .x = self$model_interventions$v_interv_outcomes,
-              .f = function(.outcome_) {
-                ##### Loop through PSA outcomes (costs and effects) to use in PSA:----
-                conseq_df <- .res_ %>%
-                  ##### Select all costs or effects column:----
-                dplyr::select(dplyr::contains(.outcome_)) %>%
-                  ##### Remove outcome portion in the column name:----
-                dplyr::rename_with(.fn = function(.x) {
-                  stringr::str_remove(
-                    string = .x,
-                    pattern = paste0(".", .outcome_))},
-                  .cols = dplyr::everything())
-              }),
-              "Calibration_data" = list(
-                .res_ %>%
-                  dplyr::select(
-                    -dplyr::contains(self$model_interventions$v_interv_outcomes))),
-              "Interventions" = list(self$model_interventions$v_interv_names))
-          })
-
-      #### Generate ShinyPSA objects from corresponding calibration results:----
-      self$PSA_summary[["ShinyPSA"]] <- purrr::map(
-        # to group PSA summary objects by calibration methods category
-        .x = self$calibration_results %>%
-          names(.) %>%
-          `names<-`(., .),
-        .f = function(.calib_category_) {
-          purrr::map(
-            # grab the methods names from the calibration results outputs:
-            .x = self$calibration_results[[.calib_category_]] %>%
-              names(.) %>%
-              `names<-`(., .),
-            .f = function(.calib_method) {
-              ####### Loop through each calibration method:----
-              ShinyPSA::summarise_PSA_(
-                .effs = PSA_costs_effects[[.calib_method]][["effects"]],
-                .costs = PSA_costs_effects[[.calib_method]][["costs"]],
-                .params = PSA_costs_effects[[.calib_method]][["params"]],
-                .interventions = PSA_costs_effects[[.calib_method]][["Interventions"]],
-                .plot = FALSE)
-            })
-        })
-
-      #### Generate summary tables from the PSA Results:----
-      ##### Full printable tables:----
-      ###### Calibration methods tables:----
-      self$PSA_summary_tables[["Full"]] <- purrr::map(
-        .x = self$PSA_summary$ShinyPSA %>%
-          names(.) %>%
-          `names<-`(., .),
-        .f = function(.calib_category_) {
-          purrr::map(
-            .x = self$PSA_summary$ShinyPSA[[.calib_category_]] %>%
-              names(.) %>%
-              `names<-`(., .),
-            .f = function(.calib_method_shinyPSA_) {
-              ####### Loop through each calibration methods' shinyPSA object:----
-              ShinyPSA::draw_summary_table_(
-                .PSA_data = self$PSA_summary$
-                  ShinyPSA[[.calib_category_]][[.calib_method_shinyPSA_]],
-                .long_ = TRUE,
-                .beautify_ = TRUE,
-                .latex_ = TRUE,
-                .latex_title_ = paste("Calibration methods PSA results", "-",
-                                      PSA_costs_effects[[.calib_method_shinyPSA_]][["Calibration_data"]]$
-                                        Label[[1]]),
-                .latex_subtitle_ = "The table shows all generated results",
-                .latex_code_ = FALSE,
-                .footnotes_sourcenotes_ = TRUE,
-                .all_sourcenotes_ = FALSE,
-                .dominance_footnote_ = FALSE,
-                .subset_tab_ = FALSE)
-            })
-        })
-
-      ####### Simulated truth table:----
-      self$PSA_summary_tables$Full[["True"]] <- ShinyPSA::draw_summary_table_(
-        .PSA_data = self$PSA_summary$True,
-        .long_ = TRUE,
-        .beautify_ = TRUE,
-        .latex_ = TRUE,
-        .latex_title_ = "Simulated truth PSA results",
-        .latex_subtitle_ = "The table shows all generated results",
-        .latex_code_ = FALSE,
-        .footnotes_sourcenotes_ = TRUE,
-        .all_sourcenotes_ = FALSE,
-        .dominance_footnote_ = FALSE,
-        .subset_tab_ = FALSE)
-
-      ####### Partial printable tables:----
-      ######## Calibration methods tables:----
-      self$PSA_summary_tables[["Partials"]] <- purrr::map(
-        .x = self$PSA_summary$ShinyPSA %>%
-          names(.) %>%
-          `names<-`(., .),
-        .f = function(.calib_category_) {
-          purrr::map(
-            .x = self$PSA_summary$ShinyPSA[[.calib_category_]] %>%
-              names(.) %>%
-              `names<-`(., .),
-            .f = function(.calib_method_shinyPSA_) {
-              ####### Loop through each calibration methods' shinyPSA object:----
-              ShinyPSA::draw_summary_table_(
-                .PSA_data = self$PSA_summary$
-                  ShinyPSA[[.calib_category_]][[.calib_method_shinyPSA_]],
-                .long_ = TRUE,
-                .beautify_ = TRUE,
-                .latex_ = TRUE,
-                .latex_title_ = paste("Calibration methods PSA results", "-",
-                                      PSA_costs_effects[[.calib_method_shinyPSA_]][["Calibration_data"]]$
-                                        Label[[1]]),
-                .latex_subtitle_ = "The table shows a subset of the generated results.",
-                .latex_code_ = FALSE,
-                .dominance_footnote_ = FALSE,
-                .footnotes_sourcenotes_ = TRUE,
-                .all_sourcenotes_ = FALSE,
-                .subset_tab_ = TRUE,
-                .subset_group_ = .subset_CE_table_)
-            })
-        })
-      ######## Simulated truth table:----
-      self$PSA_summary_tables$Partials[["True"]] <- ShinyPSA::draw_summary_table_(
-        .PSA_data = self$PSA_summary$True,
-        .long_ = TRUE,
-        .beautify_ = TRUE,
-        .latex_ = TRUE,
-        .latex_title_ = "Simulated truth PSA results",
-        .latex_subtitle_ = "The table shows a subset of the generated results.",
-        .latex_code_ = FALSE,
-        .dominance_footnote_ = FALSE,
-        .footnotes_sourcenotes_ = TRUE,
-        .all_sourcenotes_ = FALSE,
-        .subset_tab_ = TRUE,
-        .subset_group_ = .subset_CE_table_)
-
-      ####### Combined printable table:----
-      ######## Partial un-printable calibration methods table:----
-      PSA_summary_combo_tab_calibs <- purrr::map_df(
-        .x = self$PSA_summary$ShinyPSA %>%
-          names(.) %>%
-          `names<-`(., .),
-        .f = function(.calib_category_) {
-          purrr::map_df(
-            .x = self$PSA_summary$ShinyPSA[[.calib_category_]] %>%
-              names(.) %>%
-              `names<-`(., .),
-            .f = function(.calib_method_shinyPSA_) {
-              ####### Loop through each calibration methods' shinyPSA object:----
-              ShinyPSA::draw_summary_table_(
-                .PSA_data = self$PSA_summary$
-                  ShinyPSA[[.calib_category_]][[.calib_method_shinyPSA_]],
-                .long_ = TRUE,
-                .beautify_ = FALSE,
-                .latex_ = FALSE,
-                .footnotes_sourcenotes_ = FALSE,
-                .all_sourcenotes_ = FALSE,
-                .dominance_footnote_ = FALSE,
-                .subset_tab_ = TRUE,
-                .subset_group_ = .subset_CE_table_) %>%
-                dplyr::mutate(
-                  Method = PSA_costs_effects[[.calib_method_shinyPSA_]][["Calibration_data"]]$
-                    Label[[1]])
-            })
-        })
-      ######## Partial un-printable truth table:----
-      PSA_summary_combo_tab_truth <- ShinyPSA::draw_summary_table_(
-        .PSA_data = self$PSA_summary$True,
-        .long_ = TRUE,
-        .beautify_ = FALSE,
-        .latex_ = FALSE,
-        .footnotes_sourcenotes_ = FALSE,
-        .all_sourcenotes_ = FALSE,
-        .dominance_footnote_ = FALSE,
-        .subset_tab_ = TRUE,
-        .subset_group_ = .subset_CE_table_) %>%
-        dplyr::mutate(
-          Method = "Simulated truth")
-      ####### Beautified tables:----
-      ######## Absolute values:----
-      ######### Apply clearer calibration methods' names and generate table:----
-      self$PSA_summary_tables[["Combined"]][["Absolute"]] <- dplyr::bind_rows(
-        PSA_summary_combo_tab_truth,
-        PSA_summary_combo_tab_calibs)  %>%
-        dplyr::mutate(
-          Method = dplyr::case_when(
-            Method == "log_likelihood_RGS" ~ "RGS (LLK):",
-            Method == "wSumSquareError_RGS" ~ "RGS (SSE):",
-            Method == "log_likelihood_FGS" ~ "FGS (LLK):",
-            Method == "wSumSquareError_FGS" ~ "FGS (SSE):",
-            Method == "log_likelihood_LHS" ~ "LHS (LLK):",
-            Method == "wSumSquareError_LHS" ~ "LHS (SSE):",
-            Method == "NM_LLK_0" ~ "NM (LLK):",
-            Method == "NM_SSE_0" ~ "NM (SSE):",
-            Method == "NM_LLK_1" ~ "NM (LLK - unconverged):",
-            Method == "NM_SSE_1" ~ "NM (SSE - unconverged):",
-            Method == "BFGS_LLK_0" ~ "BFGS (LLK):",
-            Method == "BFGS_SSE_0" ~ "BFGS (SSE):",
-            Method == "BFGS_LLK_1" ~ "BFGS (LLK - unconverged):",
-            Method == "BFGS_SSE_1" ~ "BFGS (SSE - unconverged):",
-            Method == "SANN_LLK_" ~ "SANN (LLK):",
-            Method == "SANN_SSE_" ~ "SANN (SSE):",
-            TRUE ~ Method)) %>%
-        dplyr::mutate(
-          Ranking = dplyr::case_when(
-            Method == "Simulated truth" ~ 0,
-            Method == "MCMC" ~ 1,
-            Method == "SIR" ~ 2,
-            Method == "IMIS" ~ 3,
-            Method %in% c("FGS (LLK):", "FGS (SSE):") ~ 4,
-            Method %in% c("RGS (LLK):", "RGS (SSE):") ~ 5,
-            Method %in% c("LHS (LLK):", "LHS (SSE):") ~ 6,
-            Method %in% c("BFGS (LLK):", "BFGS (SSE):", "BFGS (LLK - unconverged):",
-                          "BFGS (SSE - unconverged):") ~ 7,
-            Method %in% c("NM (LLK):", "NM (SSE):", "NM (LLK - unconverged):",
-                          "NM (SSE - unconverged):") ~ 8,
-            Method %in% c("SANN (LLK):", "SANN (SSE):") ~ 9)) %>%
-        dplyr::arrange(Ranking) %>%
-        dplyr::select(-Ranking) %>%
-        dplyr::group_by(Method, RowGroup_) %>%
-        gt::gt() %>%
-        gt::tab_style(
-          style = gt::cell_text(
-            weight = "bold"),
-          locations = list(
-            gt::cells_column_labels(),
-            gt::cells_row_groups())) %>%
-        gt::tab_options(
-          row_group.as_column = TRUE) %>%
-        gt::tab_footnote(
-          data = .,
-          footnote = gt::md(
-            "_The ICER threshold values used in computing the results are
-      preceeded by the \"@\" symbol in the corresponding rows._"),
-          locations = gt::cells_row_groups(
-            groups = gt::contains(c(
-              glue::glue("Expected Value of Perfect Information (£)"),
-              glue::glue("Net Benefit (£)"),
-              "Probability Cost-Effective"))))
-
-      ######## Relative values:----
-      PSA_summary_combo_tab_calibs_rel <- purrr::map_dfc(
-        .x = self$model_interventions$v_interv_names,
-        .f = function(.interv_) {
-          ######### Loop over each intervention:----
-          PSA_summary_combo_tab_calibs %>%
-            ######### Filter Net Benefit to estimate relative values:----
-          dplyr::filter(RowGroup_ == "Net Benefit (£)") %>%
-            ######### Make sure relative values are estimated correctly per method:----
-          dplyr::group_by(Method) %>%
-            ######### Estimate absolute difference between calibrations and truth:----
-          dplyr::mutate(
-            ######### Truth and calibration results are estimated by intervention:----
-            dplyr::across(
-              .cols = .interv_,
-              .fns = function(.x) {
-                ######### Remove "£" and "," from values to compute differences:----
-                x_ = gsub(
-                  pattern = "£",
-                  replacement = "",
-                  x = .x)
-                x_ = gsub(
-                  pattern = ",",
-                  replacement = "",
-                  x = x_)
-                ######### Convert characters/strings to numeric:----
-                x_ = as.numeric(x_)
-                ######### Next, grab simulated truth values for same intervention:----
-                y_ = PSA_summary_combo_tab_truth %>%
-                  ######### Keep Net Benefit values:----
-                dplyr::filter(RowGroup_ == "Net Benefit (£)") %>%
-                  ######### Mutate the values of the same intervention above:----
-                dplyr::mutate(
-                  dplyr::across(
-                    .cols = .interv_,
-                    .fns = function(.x) {
-                      ######### Remove the "£" and "," to run calculations:----
-                      x_ = gsub(
-                        pattern = "£",
-                        replacement = "",
-                        x = .x)
-                      x_ = gsub(
-                        pattern = ",",
-                        replacement = "",
-                        x = x_)
-                      ######### Convert the values to numeric for calculations:----
-                      x_ = as.numeric(x_)})) %>%
-                  ######### Extract the values to estimate abs difference from truth:----
-                dplyr::pull(.data[[.interv_]])
-                ######### Estimate absolute difference:----
-                x_ = abs(x_ - y_)
-                x_
-              })) %>%
-            ######### Remove grouping now that abs differences were obtained:----
-          dplyr::ungroup() %>%
-            dplyr::mutate(
-              dplyr::across(
-                .cols = .interv_,
-                .fns = function(.x) {
-                  ######### Re-apply the earlier formatting:----
-                  scales::dollar(
-                    x = .x,
-                    prefix = "£")
-                })) %>%
-            ######### If this was the first intervention in intervention's list:----
-          {if (.interv_ == self$model_interventions$v_interv_names[1]) {
-            ######### Append the auxiliary columns from original data table:----
-            dplyr::select(
-              .data = .,
-              colnames(PSA_summary_combo_tab_calibs)[
-                which(
-                  !colnames(PSA_summary_combo_tab_calibs) %in%
-                    names(self$model_interventions$v_interv_names)[
-                      which(names(self$model_interventions$v_interv_names) !=
-                              .interv_)])])
-          } else {
-            dplyr::select(
-              .data = .,
-              .interv_)
-          }}
-        }) %>%
-        ######### Bind the rows of the other reported results:----
-      dplyr::bind_rows(
-        PSA_summary_combo_tab_calibs %>%
-          dplyr::filter(RowGroup_ != "Net Benefit (£)"),
-        .) %>%
-        ######### Ensure they are ranked as needed:----
-      dplyr::mutate(
-        Ranking = dplyr::case_when(
-          RowGroup_ == "Net Benefit (£)" ~ 1,
-          RowGroup_ == "Probability Cost-Effective" ~ 2,
-          RowGroup_ == "Expected Value of Perfect Information (£)" ~ 3,
-          TRUE ~ NA_real_)) %>%
-        dplyr::arrange(Method, Ranking) %>%
-        dplyr::select(-Ranking) %>%
-        ######### Bind the simulated truth results to the top of the table:----
-      dplyr::bind_rows(
-        PSA_summary_combo_tab_truth,
-        .)
-      ######### Apply clearer calibration methods' names:----
-      PSA_summary_combo_tab_calibs_rel <- PSA_summary_combo_tab_calibs_rel %>%
-        dplyr::mutate(
-          Method = dplyr::case_when(
-            Method == "log_likelihood_RGS" ~ "RGS (LLK):",
-            Method == "wSumSquareError_RGS" ~ "RGS (SSE):",
-            Method == "log_likelihood_FGS" ~ "FGS (LLK):",
-            Method == "wSumSquareError_FGS" ~ "FGS (SSE):",
-            Method == "log_likelihood_LHS" ~ "LHS (LLK):",
-            Method == "wSumSquareError_LHS" ~ "LHS (SSE):",
-            Method == "NM_LLK_0" ~ "NM (LLK):",
-            Method == "NM_SSE_0" ~ "NM (SSE):",
-            Method == "NM_LLK_1" ~ "NM (LLK - unconverged):",
-            Method == "NM_SSE_1" ~ "NM (SSE - unconverged):",
-            Method == "BFGS_LLK_0" ~ "BFGS (LLK):",
-            Method == "BFGS_SSE_0" ~ "BFGS (SSE):",
-            Method == "BFGS_LLK_1" ~ "BFGS (LLK - unconverged):",
-            Method == "BFGS_SSE_1" ~ "BFGS (SSE - unconverged):",
-            Method == "SANN_LLK_" ~ "SANN (LLK):",
-            Method == "SANN_SSE_" ~ "SANN (SSE):",
-            TRUE ~ Method)) %>%
-        dplyr::mutate(
-          Ranking = dplyr::case_when(
-            Method == "Simulated truth" ~ 0,
-            Method == "MCMC" ~ 1,
-            Method == "SIR" ~ 2,
-            Method == "IMIS" ~ 3,
-            Method %in% c("FGS (LLK):", "FGS (SSE):") ~ 4,
-            Method %in% c("RGS (LLK):", "RGS (SSE):") ~ 5,
-            Method %in% c("LHS (LLK):", "LHS (SSE):") ~ 6,
-            Method %in% c("BFGS (LLK):", "BFGS (SSE):", "BFGS (LLK - unconverged):",
-                          "BFGS (SSE - unconverged):") ~ 7,
-            Method %in% c("NM (LLK):", "NM (SSE):", "NM (LLK - unconverged):",
-                          "NM (SSE - unconverged):") ~ 8,
-            Method %in% c("SANN (LLK):", "SANN (SSE):") ~ 9)) %>%
-        dplyr::arrange(Ranking) %>%
-        dplyr::select(-Ranking) %>%
-        dplyr::group_by(Method, RowGroup_)
-
-      ######### Locate footnotes locations:----
-      relative_vals_footnote <- PSA_summary_combo_tab_calibs_rel %>%
-        dplyr::filter(Method != "Simulated truth") %>%
-        dplyr::pull(Method) %>%
-        unique(.) %>%
-        paste(., "-", "Net Benefit (£)")
-
-      ######### Generate beautified tables:----
-      self$PSA_summary_tables[["Combined"]][["Relative"]] <-
-        PSA_summary_combo_tab_calibs_rel %>%
-        gt::gt() %>%
-        gt::tab_style(
-          style = gt::cell_text(
-            weight = "bold"),
-          locations = list(
-            gt::cells_column_labels(),
-            gt::cells_row_groups())) %>%
-        gt::tab_options(
-          row_group.as_column = TRUE) %>%
-        gt::tab_footnote(
-          data = .,
-          footnote = gt::md(
-            "_The ICER threshold values used in computing the results are
-      preceeded by the \"@\" symbol in the corresponding rows._"),
-          locations = gt::cells_row_groups(
-            groups = gt::contains(c(
-              glue::glue("Expected Value of Perfect Information (£)"),
-              glue::glue("Net Benefit (£)"),
-              "Probability Cost-Effective")))) %>%
-        gt::tab_footnote(
-          data = .,
-          footnote = gt::md(
-            "_Absolute values_"),
-          locations = gt::cells_row_groups(
-            groups = gt::contains("True - Net Benefit"))) %>%
-        gt::tab_footnote(
-          data = .,
-          footnote = gt::md(
-            "_Relative to true 'Net Benefit' values_"),
-          locations = gt::cells_row_groups(
-            groups = relative_vals_footnote))
-      ####### Combined group-level printable table:----
-      ######## Partial group-level un-printable calibration methods table:----
-      PSA_summary_combo_tab_calibs_grp <- purrr::map(
-        .x = self$PSA_summary$ShinyPSA %>%
-          names(.) %>%
-          `names<-`(., .),
-        .f = function(.calib_category_) {
-          purrr::map_df(
-            .x = self$PSA_summary$ShinyPSA[[.calib_category_]] %>%
-              names(.) %>%
-              `names<-`(., .),
-            .f = function(.calib_method_shinyPSA_) {
-              ####### Loop through each calibration methods' shinyPSA object:----
-              ShinyPSA::draw_summary_table_(
-                .PSA_data = self$PSA_summary$
-                  ShinyPSA[[.calib_category_]][[.calib_method_shinyPSA_]],
-                .long_ = TRUE,
-                .beautify_ = FALSE,
-                .latex_ = FALSE,
-                .footnotes_sourcenotes_ = FALSE,
-                .all_sourcenotes_ = FALSE,
-                .dominance_footnote_ = FALSE,
-                .subset_tab_ = TRUE,
-                .subset_group_ = .subset_CE_table_) %>%
-                dplyr::mutate(
-                  Method = PSA_costs_effects[[.calib_method_shinyPSA_]][["Calibration_data"]]$
-                    Label[[1]])
-            })
-        })
-      ####### Beautified tables:----
-      ######## Absolute per group values:----
-      ######### Apply clearer calibration methods' names and generate table:----
-      self$PSA_summary_tables[["Comb_grp"]][["Absolute"]] <- purrr::map(
-        .x = PSA_summary_combo_tab_calibs_grp %>%
-          names(.) %>%
-          `names<-`(., .),
-        .f = function(.calib_category_) {
-          dplyr::bind_rows(
-            PSA_summary_combo_tab_truth,
-            PSA_summary_combo_tab_calibs_grp[[.calib_category_]])  %>%
-            dplyr::mutate(
-              Method = dplyr::case_when(
-                Method == "log_likelihood_RGS" ~ "RGS (LLK):",
-                Method == "wSumSquareError_RGS" ~ "RGS (SSE):",
-                Method == "log_likelihood_FGS" ~ "FGS (LLK):",
-                Method == "wSumSquareError_FGS" ~ "FGS (SSE):",
-                Method == "log_likelihood_LHS" ~ "LHS (LLK):",
-                Method == "wSumSquareError_LHS" ~ "LHS (SSE):",
-                Method == "NM_LLK_0" ~ "NM (LLK):",
-                Method == "NM_SSE_0" ~ "NM (SSE):",
-                Method == "NM_LLK_1" ~ "NM (LLK - unconverged):",
-                Method == "NM_SSE_1" ~ "NM (SSE - unconverged):",
-                Method == "BFGS_LLK_0" ~ "BFGS (LLK):",
-                Method == "BFGS_SSE_0" ~ "BFGS (SSE):",
-                Method == "BFGS_LLK_1" ~ "BFGS (LLK - unconverged):",
-                Method == "BFGS_SSE_1" ~ "BFGS (SSE - unconverged):",
-                Method == "SANN_LLK_" ~ "SANN (LLK):",
-                Method == "SANN_SSE_" ~ "SANN (SSE):",
-                TRUE ~ Method)) %>%
-            dplyr::mutate(
-              Ranking = dplyr::case_when(
-                Method == "Simulated truth" ~ 0,
-                Method == "MCMC" ~ 1,
-                Method == "SIR" ~ 2,
-                Method == "IMIS" ~ 3,
-                Method %in% c("FGS (LLK):", "FGS (SSE):") ~ 4,
-                Method %in% c("RGS (LLK):", "RGS (SSE):") ~ 5,
-                Method %in% c("LHS (LLK):", "LHS (SSE):") ~ 6,
-                Method %in% c("BFGS (LLK):", "BFGS (SSE):", "BFGS (LLK - unconverged):",
-                              "BFGS (SSE - unconverged):") ~ 7,
-                Method %in% c("NM (LLK):", "NM (SSE):", "NM (LLK - unconverged):",
-                              "NM (SSE - unconverged):") ~ 8,
-                Method %in% c("SANN (LLK):", "SANN (SSE):") ~ 9)) %>%
-            dplyr::arrange(Ranking) %>%
-            dplyr::select(-Ranking) %>%
-            dplyr::group_by(Method, RowGroup_) %>%
-            gt::gt() %>%
-            gt::tab_style(
-              style = gt::cell_text(
-                weight = "bold"),
-              locations = list(
-                gt::cells_column_labels(),
-                gt::cells_row_groups())) %>%
-            gt::tab_options(
-              row_group.as_column = TRUE) %>%
-            gt::tab_footnote(
-              data = .,
-              footnote = gt::md(
-                "_The ICER threshold values used in computing the results are
-      preceeded by the \"@\" symbol in the corresponding rows._"),
-              locations = gt::cells_row_groups(
-                groups = gt::contains(c(
-                  glue::glue("Expected Value of Perfect Information (£)"),
-                  glue::glue("Net Benefit (£)"),
-                  "Probability Cost-Effective"))))
-        })
-      ######## Relative values:----
-      self$PSA_summary_tables[["Comb_grp"]][["Relative"]] <- purrr::map(
-        .x = PSA_summary_combo_tab_calibs_grp %>%
-          names(.) %>%
-          `names<-`(., .),
-        .f = function(.calib_category_) {
-          PSA_summary_combo_tab_calibs_rel_grp <- purrr::map_dfc(
-            .x = self$model_interventions$v_interv_names,
-            .f = function(.interv_) {
-              ######### Loop over each intervention:----
-              PSA_summary_combo_tab_calibs_grp[[.calib_category_]] %>%
-                ######### Filter Net Benefit to estimate relative values:----
-              dplyr::filter(RowGroup_ == "Net Benefit (£)") %>%
-                ######### Make sure relative values are estimated correctly per method:----
-              dplyr::group_by(Method) %>%
-                ######### Estimate absolute difference between calibrations and truth:----
-              dplyr::mutate(
-                ######### Truth and calibration results are estimated by intervention:----
-                dplyr::across(
-                  .cols = .interv_,
-                  .fns = function(.x) {
-                    ######### Remove "£" and "," from values to compute differences:----
-                    x_ = gsub(
-                      pattern = "£",
-                      replacement = "",
-                      x = .x)
-                    x_ = gsub(
-                      pattern = ",",
-                      replacement = "",
-                      x = x_)
-                    ######### Convert characters/strings to numeric:----
-                    x_ = as.numeric(x_)
-                    ######### Next, grab simulated truth values for same intervention:----
-                    y_ = PSA_summary_combo_tab_truth %>%
-                      ######### Keep Net Benefit values:----
-                    dplyr::filter(RowGroup_ == "Net Benefit (£)") %>%
-                      ######### Mutate the values of the same intervention above:----
-                    dplyr::mutate(
-                      dplyr::across(
-                        .cols = .interv_,
-                        .fns = function(.x) {
-                          ######### Remove the "£" and "," to run calculations:----
-                          x_ = gsub(
-                            pattern = "£",
-                            replacement = "",
-                            x = .x)
-                          x_ = gsub(
-                            pattern = ",",
-                            replacement = "",
-                            x = x_)
-                          ######### Convert the values to numeric for calculations:----
-                          x_ = as.numeric(x_)})) %>%
-                      ######### Extract the values to estimate abs difference from truth:----
-                    dplyr::pull(.data[[.interv_]])
-                    ######### Estimate absolute difference:----
-                    x_ = abs(x_ - y_)
-                    x_
-                  })) %>%
-                ######### Remove grouping now that abs differences were obtained:----
-              dplyr::ungroup() %>%
-                dplyr::mutate(
-                  dplyr::across(
-                    .cols = .interv_,
-                    .fns = function(.x) {
-                      ######### Re-apply the earlier formatting:----
-                      scales::dollar(
-                        x = .x,
-                        prefix = "£")
-                    })) %>%
-                ######### If this was the first intervention in intervention's list:----
-              {if (.interv_ == self$model_interventions$v_interv_names[1]) {
-                ######### Append the auxiliary columns from original data table:----
-                dplyr::select(
-                  .data = .,
-                  colnames(PSA_summary_combo_tab_calibs_grp[[.calib_category_]])[
-                    which(
-                      !colnames(PSA_summary_combo_tab_calibs_grp[[.calib_category_]]) %in%
-                        names(self$model_interventions$v_interv_names)[
-                          which(names(self$model_interventions$v_interv_names) !=
-                                  .interv_)])])
-              } else {
-                dplyr::select(
-                  .data = .,
-                  .interv_)
-              }}
-            }) %>%
-            ######### Bind the rows of the other reported results:----
-          dplyr::bind_rows(
-            PSA_summary_combo_tab_calibs_grp[[.calib_category_]] %>%
-              dplyr::filter(RowGroup_ != "Net Benefit (£)"),
-            .) %>%
-            ######### Ensure they are ranked as needed:----
-          dplyr::mutate(
-            Ranking = dplyr::case_when(
-              RowGroup_ == "Net Benefit (£)" ~ 1,
-              RowGroup_ == "Probability Cost-Effective" ~ 2,
-              RowGroup_ == "Expected Value of Perfect Information (£)" ~ 3,
-              TRUE ~ NA_real_)) %>%
-            dplyr::arrange(Method, Ranking) %>%
-            dplyr::select(-Ranking)
-          PSA_summary_combo_tab_calibs_rel_grp <- PSA_summary_combo_tab_calibs_rel_grp %>%
-            ######### Bind the simulated truth results to the top of the table:----
-          dplyr::bind_rows(
-            PSA_summary_combo_tab_truth,
-            .) %>%
-            ######### Apply clearer calibration methods' names:----
-          dplyr::mutate(
-            Method = dplyr::case_when(
-              Method == "log_likelihood_RGS" ~ "RGS (LLK):",
-              Method == "wSumSquareError_RGS" ~ "RGS (SSE):",
-              Method == "log_likelihood_FGS" ~ "FGS (LLK):",
-              Method == "wSumSquareError_FGS" ~ "FGS (SSE):",
-              Method == "log_likelihood_LHS" ~ "LHS (LLK):",
-              Method == "wSumSquareError_LHS" ~ "LHS (SSE):",
-              Method == "NM_LLK_0" ~ "NM (LLK):",
-              Method == "NM_SSE_0" ~ "NM (SSE):",
-              Method == "NM_LLK_1" ~ "NM (LLK - unconverged):",
-              Method == "NM_SSE_1" ~ "NM (SSE - unconverged):",
-              Method == "BFGS_LLK_0" ~ "BFGS (LLK):",
-              Method == "BFGS_SSE_0" ~ "BFGS (SSE):",
-              Method == "BFGS_LLK_1" ~ "BFGS (LLK - unconverged):",
-              Method == "BFGS_SSE_1" ~ "BFGS (SSE - unconverged):",
-              Method == "SANN_LLK_" ~ "SANN (LLK):",
-              Method == "SANN_SSE_" ~ "SANN (SSE):",
-              TRUE ~ Method)) %>%
-            dplyr::mutate(
-              Ranking = dplyr::case_when(
-                Method == "Simulated truth" ~ 0,
-                Method == "MCMC" ~ 1,
-                Method == "SIR" ~ 2,
-                Method == "IMIS" ~ 3,
-                Method %in% c("FGS (LLK):", "FGS (SSE):") ~ 4,
-                Method %in% c("RGS (LLK):", "RGS (SSE):") ~ 5,
-                Method %in% c("LHS (LLK):", "LHS (SSE):") ~ 6,
-                Method %in% c("BFGS (LLK):", "BFGS (SSE):", "BFGS (LLK - unconverged):",
-                              "BFGS (SSE - unconverged):") ~ 7,
-                Method %in% c("NM (LLK):", "NM (SSE):", "NM (LLK - unconverged):",
-                              "NM (SSE - unconverged):") ~ 8,
-                Method %in% c("SANN (LLK):", "SANN (SSE):") ~ 9)) %>%
-            dplyr::arrange(Ranking) %>%
-            dplyr::select(-Ranking) %>%
-            dplyr::group_by(Method, RowGroup_)
-
-          ######### Locate footnotes locations:----
-          relative_vals_footnote <- PSA_summary_combo_tab_calibs_rel_grp %>%
-            dplyr::filter(Method != "Simulated truth") %>%
-            dplyr::pull(Method) %>%
-            unique(.) %>%
-            paste(., "-", "Net Benefit (£)")
-
-          ######### Generate beautified tables:----
-          PSA_summary_combo_tab_calibs_rel_grp <- PSA_summary_combo_tab_calibs_rel_grp %>%
-            gt::gt() %>%
-            gt::tab_style(
-              style = gt::cell_text(
-                weight = "bold"),
-              locations = list(
-                gt::cells_column_labels(),
-                gt::cells_row_groups())) %>%
-            gt::tab_options(
-              row_group.as_column = TRUE) %>%
-            gt::tab_footnote(
-              data = .,
-              footnote = gt::md(
-                "_The ICER threshold values used in computing the results are
-      preceeded by the \"@\" symbol in the corresponding rows._"),
-              locations = gt::cells_row_groups(
-                groups = gt::contains(c(
-                  glue::glue("Expected Value of Perfect Information (£)"),
-                  glue::glue("Net Benefit (£)"),
-                  "Probability Cost-Effective")))) %>%
-            gt::tab_footnote(
-              data = .,
-              footnote = gt::md(
-                "_Absolute values_"),
-              locations = gt::cells_row_groups(
-                groups = gt::contains("True - Net Benefit"))) %>%
-            gt::tab_footnote(
-              data = .,
-              footnote = gt::md(
-                "_Relative to true 'Net Benefit' values_"),
-              locations = gt::cells_row_groups(
-                groups = relative_vals_footnote))
-        })
-      },
+      # save CEA results tables:----
+      self$CEA_results_tables <- calibR::generate_cea_results_tables(
+        .ls_calibration_results_ = self$calibration_results,
+        .ls_PSA_results_ = self$PSA_results,
+        .model_interventions_ = self$model_interventions$v_interv_names,
+        .model_outcomes_ = self$model_interventions$v_interv_outcomes,
+        .label_effects_ = .label_effects_,
+        .label_costs_ = .label_costs_,
+        .wtp_key_values_ = .wtp_key_values_,
+        .highlight_optimal_choices_ = .highlight_optimal_choices_,
+        .currency_symbol_ = .currency_symbol_,
+        .output_type_ = .output_type_,
+        .full_output_format_ = .full_output_format_,
+        .add_simulated_truth_ = .add_simulated_truth_,
+        .truth_PSA_output_list_path_ = .truth_PSA_output_list_path_,
+        .truth_PSA_output_list_ = .truth_PSA_output_list_,
+        .generate_partial_cea_table_ = .generate_partial_cea_table_,
+        .partial_cea_table_groups_ = .partial_cea_table_groups_,
+        .generate_relative_values_ = .generate_relative_values_,
+        .relative_values_data_ = .relative_values_data_
+      )
+    },
 
     ## Helper functions:----
     # Get Maximum a-posteriori (MAP) values from calibration methods

@@ -88,7 +88,7 @@ CR_CRS_2P1T$
 CR_CRS_2P1T$run_PSA(
   .PSA_unCalib_values_ = NULL)
 #### Generate PSA tables:----
-CR_CRS_2P1T$draw_PSA_summary_tables(
+CR_CRS_2P1T$draw_CEA_results_tables(
   .save_ = TRUE,
   .saving_path_ = data_saving_path,
   .saving_data_dir_ = "PSA tables/")

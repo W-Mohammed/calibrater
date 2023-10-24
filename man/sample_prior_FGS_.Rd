@@ -13,8 +13,7 @@ generated.}
 \item{.l_params}{A list that contains a vector of parameter names,
 distributions and distributions' arguments.}
 
-\item{...}{additional arguments, for example: .seed_no to set a seed
-number.}
+\item{...}{additional arguments, for example: .seed_no to set a seed number.}
 }
 \value{
 A table with each parameter FGS samples in a separate column

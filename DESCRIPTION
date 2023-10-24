@@ -23,6 +23,7 @@ LazyData: true
 LazyDataCompression: bzip2
 SysDataCompression: xz
 Imports: 
+    assertthat,
     DEoptim,
     dplyr,
     emdbook,

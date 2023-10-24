@@ -23,8 +23,10 @@
 #' sample_prior_LHS(.l_params = l_params,
 #'                  .n_samples = 10)
 #' }
-sample_prior_LHS <- function(.n_samples = 1, .l_params = .l_params_,
-                             ...) {
+sample_prior_LHS <- function(
+    .n_samples = 1,
+    .l_params = .l_params_,
+    ...) {
   # Grab additional arguments:
   dots = list(...)
   if(!is.null(dots[['.ssed_no']]))
@@ -123,8 +125,7 @@ sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
 #' distributions and distributions' arguments.
 #' @param .n_samples An integer specifying the number of samples to be
 #' generated.
-#' @param ... additional arguments, for example: .seed_no to set a seed
-#' number.
+#' @param ... additional arguments, for example: .seed_no to set a seed number.
 #'
 #' @return A table with each parameter FGS samples in a separate column
 #' @export
@@ -142,8 +143,10 @@ sample_prior_FGS <- function(.n_samples = 1, .l_params = .l_params_,
 #' sample_prior_FGS(.l_params = l_params,
 #'                  .n_samples = 10)
 #' }
-sample_prior_FGS_ <- function(.n_samples = 1, .l_params = .l_params_,
-                             ...) {
+sample_prior_FGS_ <- function(
+    .n_samples = 1,
+    .l_params = .l_params_,
+    ...) {
   # Grab additional arguments:
   dots = list(...)
   if(!is.null(dots[['.ssed_no']]))
@@ -200,8 +203,10 @@ sample_prior_FGS_ <- function(.n_samples = 1, .l_params = .l_params_,
 #' sample_prior_RGS(.l_params = l_params,
 #'                  .n_samples = 10)
 #' }
-sample_prior_RGS <- function(.n_samples = 1, .l_params = .l_params_,
-                             ...) {
+sample_prior_RGS <- function(
+    .n_samples = 1,
+    .l_params = .l_params_,
+    ...) {
   # Grab additional arguments:
   dots = list(...)
   if(!is.null(dots[['.ssed_no']]))
@@ -254,8 +259,10 @@ sample_prior_RGS <- function(.n_samples = 1, .l_params = .l_params_,
 #' sample_prior_RGS_(.l_params = l_params,
 #'                  .n_samples = 1)
 #' }
-sample_prior_RGS_ <- function(.n_samples = 1, .l_params = .l_params_,
-                             ...) {
+sample_prior_RGS_ <- function(
+    .n_samples = 1,
+    .l_params = .l_params_,
+    ...) {
   # Grab additional arguments:
   dots = list(...)
   if(!is.null(dots[['.ssed_no']]))
@@ -272,10 +279,13 @@ sample_prior_RGS_ <- function(.n_samples = 1, .l_params = .l_params_,
     vec_rgs_samp <- purrr::pmap_dbl(
       .l = l_rgs,
       .f = function(.name, .func, .arg, .dist) {
-        assign(.name,
-               purrr::exec(.func,
-                           .n_samples,
-                           !!!.arg)
+        assign(
+          x = .name,
+          value = purrr::exec(
+            .fn = .func,
+            .n_samples,
+            !!!.arg
+          )
         )
       }
     )
@@ -285,10 +295,13 @@ sample_prior_RGS_ <- function(.n_samples = 1, .l_params = .l_params_,
     tbl_rgs_samp <- purrr::pmap_dfc(
       .l = l_rgs,
       .f = function(.name, .func, .arg, .dist) {
-        assign(.name,
-               purrr::exec(.func,
-                           .n_samples,
-                           !!!.arg)
+        assign(
+          x = .name,
+          value = purrr::exec(
+            .fn = .func,
+            .n_samples,
+            !!!.arg
+          )
         )
       }
     )
