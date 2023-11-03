@@ -145,3 +145,108 @@ l_VOI_ID_7P3T <- list(
 )
 filename <- paste0(data_saving_path, "l_EVPPI_7P3T.rds")
 saveRDS(l_VOI_ID_7P3T, file = filename)
+
+## EVPPI:----
+### Prepare data:----
+filename <- paste0(data_saving_path, "l_EVPPI_7P3T.rds")
+l_EVPPI_7P3T <- readRDS(file = filename)
+.model_outcomes_ <- ID_data_3t$l_intervs$v_interv_outcomes
+Calibrated_parameters <- parameters_list$v_params_names
+unCalibrated_parameters <- PSA_parameters$v_params_names
+params_ <- purrr::map(
+  .x = l_EVPPI_7P3T[["p"]],
+  .f = function(calib_class_results) {
+    purrr::map(
+      .x = calib_class_results,
+      .f = function(calib_method_results) {
+        cbind(calib_method_results[["PSA_calib_draws"]] %>%
+                dplyr::select(
+                  -dplyr::any_of(
+                    c("Label", "Plot_label", "Overall_fit")
+                  )
+                ),
+              l_EVPPI_7P3T[["p"]][[1]])
+      }
+    )
+  }
+)
+params_ <- purrr::map(
+  .x = 1:length(l_EVPPI_7P3T$outcomes) %>%
+    `names<-`(names(l_EVPPI_7P3T[["outcomes"]])),
+  .f = function(calib_method) {
+    params_[[calib_method]][[1]]
+  }
+)
+
+ls_PSA_outputs <- purrr::map(
+  .x = names(l_EVPPI_7P3T[["outcomes"]]) %>%
+    `names<-`(names(l_EVPPI_7P3T[["outcomes"]])),
+  .f = function(.res_) {
+    # loop through PSA results of each calibration method:
+    outcomes <- purrr::map(
+      .x = .model_outcomes_,
+      .f = function(.outcome_) {
+        # loop through PSA outcomes (costs and effects) to use in PSA:
+        conseq_df <- l_EVPPI_7P3T[["outcomes"]][[.res_]] %>%
+          # filter na() in either costs or effects:
+          dplyr::filter(
+            dplyr::if_all(
+              .cols = dplyr::contains(.model_outcomes_),
+              .fns = function(x_) {
+                !is.na(x_)
+              }
+            )
+          ) %>%
+          # select all costs or effects columns:
+          dplyr::select(dplyr::contains(.outcome_)) %>%
+          # remove outcome portion in the column name:
+          dplyr::rename_with(.fn = function(.x) {
+            stringr::str_remove(
+              string = .x,
+              pattern = paste0(".", .outcome_))},
+            .cols = dplyr::everything())
+      }
+    )
+    outcomes[["p"]] <- params_[[.res_]]
+    outcomes[["treats"]] <- ID_data_3t$l_intervs$v_interv_names
+    outcomes
+  }
+)
+
+### Use ShinyPSA:----
+ls_EVPPI_res <- purrr::map(
+  .x = names(ls_PSA_outputs) %>%
+    `names<-`(names(ls_PSA_outputs)),
+  .f = function(calib_method_results) {
+    #### Summarise PSA results:
+    l_PSA_summary <- ShinyPSA::summarise_PSA_(
+      .effs = ls_PSA_outputs[[calib_method_results]]$effects,
+      .costs = ls_PSA_outputs[[calib_method_results]]$costs,
+      .params = ls_PSA_outputs[[calib_method_results]]$p,
+      .interventions = ls_PSA_outputs[[calib_method_results]]$treats)
+
+    ##### Estimate EVPPI:
+    df_EVPPI_ind_res_1 <- ShinyPSA::compute_EVPPIs_(
+      .PSA_data = l_PSA_summary,
+      .set_names = Calibrated_parameters,
+      .subset_ = TRUE,
+      .MAICER_ = 20000,
+      .individual_evppi_ = FALSE,
+      .evppi_population_ = 1000,
+      .time_horion_ = 5
+    )
+    notes <- df_EVPPI_ind_res_1[["Table caption"]]
+    df_EVPPI_ind_res_1 %>%
+      gt::gt() %>%
+      gt::tab_header(
+        calib_method_results
+      ) %>%
+      gt::tab_source_note(
+        notes
+      )
+  }
+)
+
+
+filename <- paste0(data_saving_path, "ls_EVPPI_tables.rds")
+saveRDS(ls_EVPPI_res, file = filename)
