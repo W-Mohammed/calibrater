@@ -268,12 +268,15 @@ sample_prior_RGS_ <- function(
   if(!is.null(dots[['.ssed_no']]))
     set.seed(dots[['.ssed_no']])
   # Define inputs list:
-  l_rgs <- list(.l_params[['v_params_names']],
-                paste0('r', .l_params[['v_params_dists']]),
-                .l_params[['args']],
-                .l_params[['v_params_dists']])
+  l_rgs <- list(
+    .l_params[['v_params_names']],
+    paste0('r', .l_params[['v_params_dists']]),
+    .l_params[['args']],
+    .l_params[['v_params_dists']])
   # Make sure parameter names are in a named vector:
-  names(l_rgs[[1]]) <- l_rgs[[1]]
+  if(is.null(names(l_rgs[[1]]))) {
+    names(l_rgs[[1]]) <- l_rgs[[1]]
+  }
   # Map over parameters and sample values accordingly:
   if(.n_samples == 1){
     vec_rgs_samp <- purrr::pmap_dbl(
@@ -309,5 +312,3 @@ sample_prior_RGS_ <- function(
     return(tbl_rgs_samp)
   }
 }
-
-

@@ -5,13 +5,13 @@
 \title{Estimate Effective Sample Size from Bayesian calibration outputs}
 \usage{
 effective_sample_size(
-  bayes_calib_output_list,
+  .bayes_calib_output_list_,
   .results = "Results",
   .post_prob_ = "Posterior_prob"
 )
 }
 \arguments{
-\item{bayes_calib_output_list}{List of outputs from the Bayesian
+\item{.bayes_calib_output_list_}{List of outputs from the Bayesian
 calibration}
 
 \item{.results}{Name of calibration PSA draws table in the list}

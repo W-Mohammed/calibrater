@@ -221,7 +221,7 @@ plot_pri_post_distributions = function(.engine_ = "ggplot2",
 
           ####### Get effective sample size (ESS):----
           ESS_ <- calibR::effective_sample_size(
-            bayes_calib_output_list = .l_calibration_results_$bayesian[[.data_]])
+            .bayes_calib_output_list_ = .l_calibration_results_$bayesian[[.data_]])
           ESS_ <- round(ESS_)
 
           ####### Log scale plots:----

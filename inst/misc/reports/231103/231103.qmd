@@ -1,0 +1,441 @@
+---
+format:
+  revealjs:
+    # theme: dark
+    # smaller: true
+    width: 1920
+    height: 1080
+    scrollable: true
+    self-contained: true
+---
+
+```{r}
+#| echo: false
+#| include: false
+# Load library:
+devtools::load_all()
+# Read-in data:
+w_mu_b = readRDS(file = file.path(
+  here::here(),
+  "inst/extdata/calibR_R6_flat_2p.rds"
+))
+w_mu_rho = readRDS(file = file.path(
+  here::here(),
+  "inst/extdata/calibR_R6_flat_2p2.rds"
+))
+w_all = readRDS(file = file.path(
+  here::here(),
+  "inst/extdata/calibR_R6_flat.rds"
+))
+wo_mu_b = readRDS(file = file.path(
+  here::here(),
+  "inst/extdata/calibR_R6_flat_2p_unT.rds"
+))
+wo_mu_rho = readRDS(file = file.path(
+  here::here(),
+  "inst/extdata/calibR_R6_flat_2p2_unT.rds"
+))
+wo_all = readRDS(file = file.path(
+  here::here(),
+  "inst/extdata/calibR_R6_flat_unT.rds"
+))
+```
+
+# Calibration of a hypothetical infectious disease model
+
+`r Sys.Date()`
+
+# Introduction
+
+## Model: Infectious disease model
+
+::: panel-tabset
+### Model description
+
+- The model (Nicolas *et al.,*, 2017) is adapted from approaches for modelling HIV in high-burden settings. 
+- The population is divided into five health states including non-susceptible (N), susceptible (S), early disease (E), late disease (L), and treatment (T). The number of individuals by state and year (t) is given by $N_t$, $S_t$, $E_t$, $L_t$, and $T_t$ respectively. 
+- Individuals enter the model distributed across the $N$ and $S$ states, and transition between states to allow for infection ($S$ to $E$), disease progression ($E$ to $L$), treatment initiation ($E$ and $L$ to $T$), and death ($N$, $S$, $E$, $L$ and $T$ to $D$) via background and disease-specific mortality. 
+- See model diagram in the next tab.
+
+### Model structure
+
+![](../../images/HIV_model.JPG){width=50% height=50%}
+
+### Parameter transformations:
+
+-   Two calibration process was carried out twice, with and without parameter-transformation.
+
+-   Parameter-transformation was introduced because some of the employed optimisation algorithms (direct search methods) operate without bounds, i.e. an algorithm could end up passing values from outside the supported parameter space (between $-\infty, \infty$ for rates or probabilities) to the model which could lead to unrealistic results\* (negative survival).
+
+-   The calibration parameters were transformed as follows:
+
+    -   `b` was transformed to the entire real line $(-\infty, \infty)$ using `logit`.
+    -   All other parameters were transformed using `log`.
+:::
+
+## Calibration process specifications:
+
+::: panel-tabset
+### Calibration parameters:
+
+-   `mu_e` Cause-specific mortality rate with early-stage disease
+-   `mu_l` Cause-specific mortality rate with late-stage disease
+-   `mu_t` Cause-specific mortality rate on treatment
+-   `p` Transition rate from early to late-stage disease
+-   `r_l` Rate of uptake onto treatment (r_l = late-stage disease)
+-   `rho` Effective contact rate
+-   `b` Fraction of population in at-risk group
+
+### Calibration targets:
+
+-   `Prev` Prevalence at 10, 20, 30 years
+-   `Surv` HIV survival without treatment
+-   `Trt_vol` Treatment volume at 30 years
+
+### Search method:
+
+-   Random search using:
+    -   Latin-Hypercube Sampling
+-   Directed search using:
+    -   Gradient-based (GB) (uses derivatives)
+    -   Nelder-Mead (NM) algorithm, aka simplex method (derivative free)
+    -   Global optimization techniques:
+        -   Simulated Annealing (SANN)
+-   Bayesian methods:
+    -   Sampling Importance Resampling (SIR)
+    -   Incremental Mixture Importance Sampling (IMIS)
+
+### Goodness-of-fit measure:
+
+-   Sum of log-likelihoods
+:::
+
+# Results
+
+## With parameter transformation
+
+### Two parameters - 1st combination \[mu & b\]
+
+::: panel-tabset
+#### Priors & posteriors:
+
+Note: the black vertical lines are the true values of the parameters:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print log-scaled x-axis density plots:
+w_mu_b$plots$prior_posterior$all_ggplot$line_log
+# Print normally-scaled x-axis density plots:
+w_mu_b$plots$prior_posterior$all_ggplot$line
+# Print box plots:
+w_mu_b$plots$prior_posterior$all_ggplot$box
+
+```
+
+#### Pairwise correlations:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print correlation plots:
+w_mu_b$plots$correlations
+
+```
+
+#### Targets:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print targets' plots:
+w_mu_b$plots$targets$col_plots
+
+```
+
+#### Net benefits:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print PSA summary:
+w_mu_b$PSA_summary %>% 
+  knitr::kable()
+
+```
+:::
+
+------------------------------------------------------------------------
+
+## With parameter transformation
+
+### Two parameters - 2nd combination \[mu & rho\]
+
+::: panel-tabset
+#### Priors & posteriors:
+
+Note: the black vertical lines are the true values of the parameters:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print log-scaled x-axis density plots:
+w_mu_rho$plots$prior_posterior$all_ggplot$line_log
+# Print normally-scaled x-axis density plots:
+w_mu_rho$plots$prior_posterior$all_ggplot$line
+# Print box plots:
+w_mu_rho$plots$prior_posterior$all_ggplot$box
+
+```
+
+#### Pairwise correlations:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print correlation plots:
+w_mu_rho$plots$correlations
+
+```
+
+#### Targets:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print targets' plots:
+w_mu_rho$plots$targets$col_plots
+
+```
+
+#### Net benefits:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print PSA summary:
+w_mu_rho$PSA_summary %>% 
+  knitr::kable()
+
+```
+:::
+
+------------------------------------------------------------------------
+
+## With parameter transformation
+
+### All parameters
+
+::: panel-tabset
+#### Priors & posteriors:
+
+Note: the black vertical lines are the true values of the parameters:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print log-scaled x-axis density plots:
+w_all$plots$prior_posterior$all_ggplot$line_log
+# Print normally-scaled x-axis density plots:
+w_all$plots$prior_posterior$all_ggplot$line
+# Print box plots:
+w_all$plots$prior_posterior$all_ggplot$box
+
+```
+
+#### Pairwise correlations:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print correlation plots:
+w_all$plots$correlations
+
+```
+
+#### Targets:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print targets' plots:
+w_all$plots$targets$col_plots
+
+```
+
+#### Net benefits:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print PSA summary:
+w_all$PSA_summary %>% 
+  knitr::kable()
+
+```
+:::
+
+------------------------------------------------------------------------
+
+## Without parameter transformation
+
+### Two parameters - 1st combination \[mu & b\]
+
+::: panel-tabset
+#### Priors & posteriors:
+
+Note: the black vertical lines are the true values of the parameters:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print log-scaled x-axis density plots:
+wo_mu_b$plots$prior_posterior$all_ggplot$line_log
+# Print normally-scaled x-axis density plots:
+wo_mu_b$plots$prior_posterior$all_ggplot$line
+# Print box plots:
+wo_mu_b$plots$prior_posterior$all_ggplot$box
+
+```
+
+#### Pairwise correlations:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print correlation plots:
+wo_mu_b$plots$correlations
+
+```
+
+#### Targets:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print targets' plots:
+wo_mu_b$plots$targets$col_plots
+
+```
+
+#### Net benefits:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print PSA summary:
+wo_mu_b$PSA_summary %>% 
+  knitr::kable()
+
+```
+:::
+
+------------------------------------------------------------------------
+
+## Without parameter transformation
+
+### Two parameters - 2nd combination \[mu & rho\]
+
+::: panel-tabset
+#### Priors & posteriors:
+
+Note: the black vertical lines are the true values of the parameters:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print log-scaled x-axis density plots:
+wo_mu_rho$plots$prior_posterior$all_ggplot$line_log
+# Print normally-scaled x-axis density plots:
+wo_mu_rho$plots$prior_posterior$all_ggplot$line
+# Print box plots:
+wo_mu_rho$plots$prior_posterior$all_ggplot$box
+
+```
+
+#### Pairwise correlations:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print correlation plots:
+wo_mu_rho$plots$correlations
+
+```
+
+#### Targets:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print targets' plots:
+wo_mu_rho$plots$targets$col_plots
+
+```
+
+#### Net benefits:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print PSA summary:
+wo_mu_rho$PSA_summary %>% 
+  knitr::kable()
+
+```
+:::
+
+------------------------------------------------------------------------
+
+## Without parameter transformation
+
+### All parameters
+
+::: panel-tabset
+#### Priors & posteriors:
+
+Note: the black vertical lines are the true values of the parameters:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print log-scaled x-axis density plots:
+wo_all$plots$prior_posterior$all_ggplot$line_log
+# Print normally-scaled x-axis density plots:
+wo_all$plots$prior_posterior$all_ggplot$line
+# Print box plots:
+wo_all$plots$prior_posterior$all_ggplot$box
+
+```
+
+#### Pairwise correlations:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print correlation plots:
+wo_all$plots$correlations
+
+```
+
+#### Targets:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print targets' plots:
+wo_all$plots$targets$col_plots
+
+```
+
+#### Net benefits:
+
+```{r}
+#| echo: true
+#| out.width: '100%'
+# Print PSA summary:
+wo_all$PSA_summary %>% 
+  knitr::kable()
+
+```
+:::

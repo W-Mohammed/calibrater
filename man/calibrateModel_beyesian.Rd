@@ -14,6 +14,7 @@ calibrateModel_beyesian(
   .n_resample = 1000,
   .IMIS_sample = 1000,
   .IMIS_iterations = 30,
+  .IMIS_optimiser = TRUE,
   .MCMC_burnIn = 10000,
   .MCMC_samples = 50000,
   .MCMC_thin = 5,
@@ -46,6 +47,9 @@ distributions and distributions' arguments.}
 \item{.IMIS_sample}{the incremental sample size at each IMIS iteration}
 
 \item{.IMIS_iterations}{the maximum number of iterations in IMIS}
+
+\item{.IMIS_optimiser}{logical for whether to employ optimisation algorithms
+within the IMIS method}
 
 \item{.MCMC_burnIn}{the number of samples before starting to retain samples}
 

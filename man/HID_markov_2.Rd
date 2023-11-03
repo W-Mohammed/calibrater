@@ -21,12 +21,12 @@ HID_markov_2(
 \item{.v_params_}{a named vector of model parameters in the following
 order: "mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho", "b", "c".}
 
-\item{calibrate_}{If \code{TRUE} (default), the model outputs natural
-history data; otherwise, discounted outcomes \code{(costs and QALYs)}
+\item{calibrate_}{Logical scalar, if \code{TRUE} (default), the model outputs
+natural history data; otherwise, discounted outcomes (costs and QALYs)
 are returned.}
 
-\item{transform_}{Expect transformed parameters and therefore
-back-transform them before they go into the model}
+\item{transform_}{Logical scalar, for whether to expect transformed
+parameters and therefore back-transform them before they go into the model.}
 
 \item{mu_e}{Cause-specific mortality rate with early-stage disease}
 

@@ -89,6 +89,18 @@ CR_CRS_2P1T$run_PSA(
   .PSA_unCalib_values_ = NULL)
 #### Generate PSA tables:----
 CR_CRS_2P1T$draw_CEA_results_tables(
+  .wtp_key_values_ = c(20000, 30000),
+  .highlight_optimal_choices_ = FALSE,
+  .currency_symbol_ = "\u00A3",
+  .output_type_ = "html",
+  .full_output_format_ = "long",
+  .add_simulated_truth_ = TRUE,
+  .truth_PSA_output_list_path_ = "../5. Presentations/data/CRS_true_PSA.rds",
+  .truth_PSA_output_list_ = NULL,
+  .generate_partial_cea_table_ = TRUE,
+  .partial_cea_table_groups_ = c("NMB", "PCE", "EVPI"),
+  .generate_relative_values_ = TRUE,
+  .relative_values_data_ = c("NMB", "PCE", "EVPI"),
   .save_ = TRUE,
   .saving_path_ = data_saving_path,
   .saving_data_dir_ = "PSA tables/")

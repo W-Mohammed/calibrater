@@ -29,6 +29,8 @@ calibR_R6 <- R6::R6Class(
     calibration_targets = NULL,
     #' @field calibration_results calibration interim results
     calibration_results = NULL,
+    #' @field PSA_params un-calibrated PSA parameters
+    PSA_params  = FALSE,
     #' @field model_interventions model interventions to run cost-effectiveness
     #' analysis
     model_interventions = NULL,
@@ -71,6 +73,9 @@ calibR_R6 <- R6::R6Class(
     #' @param .transform Logical for whether the model will use
     #' transformed parameters. This allows some functions to back
     #' transform the parameters to their original scale before using them.
+    #' @param .PSA_params A list containing the information about the other
+    #' (known or uncalibrated) model parameters to be used in Probabilistic
+    #' Sensitivity Analysis.
     #' @param .intervs A list containing the information about the considered
     #' interventions built into the model.
     #'
@@ -81,14 +86,21 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    initialize = function(.model, .args, .params, .targets, .transform,
-                          .intervs = NULL) {
+    initialize = function(
+    .model,
+    .args,
+    .params,
+    .targets,
+    .transform,
+    .PSA_params = NULL,
+    .intervs = NULL) {
       # save passed arguments to dedicated internal objects
       self$calibration_model <- .model
       self$calibration_model_args <- .args
       self$calibration_parameters <- .params
       self$calibration_targets <- .targets
       self$transform_parameters <- .transform
+      self$PSA_params <- .PSA_params
       self$model_interventions <- .intervs
       self$model_predictions$truth <- self$calibration_model()
 
@@ -322,8 +334,9 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    sample_PSA_values = function(.calibration_methods,
-                                 .PSA_samples) {
+    sample_PSA_values = function(
+    .calibration_methods,
+    .PSA_samples) {
       private$sample_PSA_values_(
         .calibration_methods = .calibration_methods,
         .PSA_samples = .PSA_samples
@@ -331,9 +344,8 @@ calibR_R6 <- R6::R6Class(
     },
 
     #' @description
-    #' Run PSA
-    #'
-    #' @param .PSA_unCalib_values_ PSA values for un-calibrated parameters
+    #' Evaluate Probabilistic Sensitivity Analysis (PSA) Parameters'
+    #' Configurations
     #'
     #' @return
     #' @export
@@ -341,14 +353,12 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    run_PSA = function(.PSA_unCalib_values_ = NULL) {
-      private$run_PSA_(
-        .PSA_unCalib_values_ = NULL
-      )
+    run_PSA = function() {
+      private$run_PSA_()
     },
 
     #' @description
-    #' Summarise PSA results
+    #' Summarise robabilistic Sensitivity Analysis (PSA) Results
     #'
     #' @return
     #' @export
@@ -374,8 +384,9 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    draw_plots = function(prior_sample_method = "LHS",
-                          print_pair_correlations = FALSE) {
+    draw_plots = function(
+    prior_sample_method = "LHS",
+    print_pair_correlations = FALSE) {
       private$draw_priors_posteriors(
         prior_sample_method = prior_sample_method)
       # private$draw_pair_correlations()
@@ -433,28 +444,29 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    draw_GOF_measure = function(.engine_ = "plotly",
-                                .blank_contour_ = TRUE,
-                                .gof_ = "LLK",
-                                .percent_sampled_ = 10,
-                                .n_samples_ = 1e4,
-                                .true_points_ = FALSE,
-                                .greys_ = FALSE,
-                                .scale_ = NULL,
-                                .coloring_ = "fill",
-                                .legend_ = FALSE,
-                                .zoom_ = FALSE,
-                                .x_axis_lb_ = NULL,
-                                .x_axis_ub_ = NULL,
-                                .y_axis_lb_ = NULL,
-                                .y_axis_ub_ = NULL,
-                                .save_ = FALSE,
-                                .saving_path_ = here::here(),
-                                .saving_image_dir_ = "/images/GOFs/",
-                                .saving_x_params_ = 1,
-                                .saving_image_scale_ = 2,
-                                .saving_image_width_ = 1000,
-                                .saving_image_height_ = 600) {
+    draw_GOF_measure = function(
+    .engine_ = "plotly",
+    .blank_contour_ = TRUE,
+    .gof_ = "LLK",
+    .percent_sampled_ = 10,
+    .n_samples_ = 1e4,
+    .true_points_ = FALSE,
+    .greys_ = FALSE,
+    .scale_ = NULL,
+    .coloring_ = "fill",
+    .legend_ = FALSE,
+    .zoom_ = FALSE,
+    .x_axis_lb_ = NULL,
+    .x_axis_ub_ = NULL,
+    .y_axis_lb_ = NULL,
+    .y_axis_ub_ = NULL,
+    .save_ = FALSE,
+    .saving_path_ = here::here(),
+    .saving_image_dir_ = "/images/GOFs/",
+    .saving_x_params_ = 1,
+    .saving_image_scale_ = 2,
+    .saving_image_width_ = 1000,
+    .saving_image_height_ = 600) {
       ## Sanity check (stop if .gof not recognised):----
       stopifnot(".gof_ value is not supported by the function" =
                   all(.gof_ %in% c('LLK', 'SSE')))
@@ -641,19 +653,20 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    draw_targets_plots = function(.engine_ = "ggplot2",
-                                  .sim_targets_ = FALSE,
-                                  .calibration_methods_ = "all",
-                                  .legend_pos_ = "none",
-                                  .PSA_samples_ = NULL,
-                                  .PSA_unCalib_values_ = NULL,
-                                  .save_ = FALSE,
-                                  .saving_path_ = here::here(),
-                                  .saving_image_dir_ = "/images/Targets/",
-                                  .saving_image_scale_ = 2,
-                                  .saving_image_width_ = 1000,
-                                  .saving_image_height_ = 600,
-                                  .saving_image_units_ = "px") {
+    draw_targets_plots = function(
+    .engine_ = "ggplot2",
+    .sim_targets_ = FALSE,
+    .calibration_methods_ = "all",
+    .legend_pos_ = "none",
+    .PSA_samples_ = NULL,
+    .PSA_unCalib_values_ = NULL,
+    .save_ = FALSE,
+    .saving_path_ = here::here(),
+    .saving_image_dir_ = "/images/Targets/",
+    .saving_image_scale_ = 2,
+    .saving_image_width_ = 1000,
+    .saving_image_height_ = 600,
+    .saving_image_units_ = "px") {
       ## Sanity checks (stop if .calibration_methods_ not recognised):----
       stopifnot("one or more .calibration_methods_ are not supported by the
                 function" =
@@ -763,17 +776,18 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    draw_distributions_plots = function(.engine_ = "ggplot2",
-                                        .bins_ = 20,
-                                        .legend_pos_ = "none",
-                                        .log_scaled_ = FALSE,
-                                        .save_ = FALSE,
-                                        .saving_path_ = here::here(),
-                                        .saving_image_dir_ = "/images/Prior-posterior/",
-                                        .saving_image_scale_ = 2,
-                                        .saving_image_width_ = 1000,
-                                        .saving_image_height_ = 600,
-                                        .saving_image_units_ = "px") {
+    draw_distributions_plots = function(
+    .engine_ = "ggplot2",
+    .bins_ = 20,
+    .legend_pos_ = "none",
+    .log_scaled_ = FALSE,
+    .save_ = FALSE,
+    .saving_path_ = here::here(),
+    .saving_image_dir_ = "/images/Prior-posterior/",
+    .saving_image_scale_ = 2,
+    .saving_image_width_ = 1000,
+    .saving_image_height_ = 600,
+    .saving_image_units_ = "px") {
       ## Invoke the private plotting function:----
       private$plot_distributions(
         .engine_ = .engine_,
@@ -889,23 +903,24 @@ calibR_R6 <- R6::R6Class(
     #' @examples
     #' \dontrun{
     #' }
-    draw_CEA_results_tables = function(.label_effects_ = "QALYs",
-                                       .label_costs_ = "Costs",
-                                       .wtp_key_values_ = c(20000, 30000),
-                                       .highlight_optimal_choices_ = FALSE,
-                                       .currency_symbol_ = "\u00A3",
-                                       .output_type_ = "html",
-                                       .full_output_format_ = "long",
-                                       .add_simulated_truth_ = TRUE,
-                                       .truth_PSA_output_list_path_ = "../5. Presentations/data/CRS_true_PSA.rds",
-                                       .truth_PSA_output_list_ = NULL,
-                                       .generate_partial_cea_table_ = TRUE,
-                                       .partial_cea_table_groups_ = c("NMB", "PCE", "EVPI"),
-                                       .generate_relative_values_ = TRUE,
-                                       .relative_values_data_ = c("NMB"),
-                                       .save_ = FALSE,
-                                       .saving_path_ = here::here(),
-                                       .saving_data_dir_ = "/data/PSA tables/") {
+    draw_CEA_results_tables = function(
+    .label_effects_ = "QALYs",
+    .label_costs_ = "Costs",
+    .wtp_key_values_ = c(20000, 30000),
+    .highlight_optimal_choices_ = FALSE,
+    .currency_symbol_ = "\u00A3",
+    .output_type_ = "html",
+    .full_output_format_ = "long",
+    .add_simulated_truth_ = TRUE,
+    .truth_PSA_output_list_path_ = "../5. Presentations/data/CRS_true_PSA.rds",
+    .truth_PSA_output_list_ = NULL,
+    .generate_partial_cea_table_ = TRUE,
+    .partial_cea_table_groups_ = c("NMB", "PCE", "EVPI"),
+    .generate_relative_values_ = TRUE,
+    .relative_values_data_ = c("NMB"),
+    .save_ = FALSE,
+    .saving_path_ = here::here(),
+    .saving_data_dir_ = "/data/PSA tables/") {
 
       ## Generate CEA results tables:----
       private$generate_cea_tables(
@@ -1785,6 +1800,7 @@ calibR_R6 <- R6::R6Class(
             .b_method = 'SIR',
             .func = self$calibration_model,
             .args = self$calibration_model_args,
+            .transform = self$transform_parameters,
             .n_resample = .n_resample,
             .samples = samples_,
             .l_params = self$calibration_parameters,
@@ -1834,9 +1850,17 @@ calibR_R6 <- R6::R6Class(
     sample_PSA_values_ = function(
     .calibration_methods,
     .PSA_samples) {
+      # Un-calibrated PSA parameters:
+      if(!is.null(self$PSA_params)) {
+        self$PSA_samples$unCalib <- calibR::generate_PSA_samples(
+          .l_params = self$PSA_params,
+          .PSA_samples = .PSA_samples,
+          .transform_ = self$transform_parameters
+        )
+      }
       # Random calibration methods:
       if('Random' %in% .calibration_methods) {
-        self$PSA_samples$random <- calibR::PSA_calib_values(
+        self$PSA_samples$random <- calibR::get_calib_PSA_samples(
           .l_calib_res_lists = self$calibration_results$random,
           .search_method = 'Random',
           .PSA_samples = .PSA_samples,
@@ -1846,7 +1870,7 @@ calibR_R6 <- R6::R6Class(
       }
       # Directed calibration methods:
       if('Directed' %in% .calibration_methods) {
-        self$PSA_samples$directed <- calibR::PSA_calib_values(
+        self$PSA_samples$directed <- calibR::get_calib_PSA_samples(
           .l_calib_res_lists = self$calibration_results$directed,
           .search_method = 'Directed',
           .PSA_samples = .PSA_samples,
@@ -1856,7 +1880,7 @@ calibR_R6 <- R6::R6Class(
       }
       # Bayesian calibration methods:
       if('Bayesian' %in% .calibration_methods) {
-        self$PSA_samples$bayesian <- calibR::PSA_calib_values(
+        self$PSA_samples$bayesian <- calibR::get_calib_PSA_samples(
           .l_calib_res_lists = self$calibration_results$bayesian,
           .search_method = 'Bayesian',
           .PSA_samples = .PSA_samples,
@@ -1870,58 +1894,17 @@ calibR_R6 <- R6::R6Class(
     #
     # @param .PSA_unCalib_values_ PSA values for un-calibrated parameters
     #
-    run_PSA_ = function(
-    .PSA_unCalib_values_) {
-      self$PSA_results <-
-        # if the model supports parameter transformation:
-        if(!is.null(self$transform_parameters) & self$transform_parameters) {
-          calibR::run_PSA(
-            .func_ = self$calibration_model,
-            .PSA_calib_values_ = c(self$PSA_samples$random,
-                                   self$PSA_samples$directed,
-                                   self$PSA_samples$bayesian),
-            .args_ = c(self$calibration_model_args,
-                       "calibrate_" = FALSE,
-                       "transform_" = self$transform_parameters),
-            .PSA_unCalib_values_ = .PSA_unCalib_values_)
-        } else {
-          calibR::run_PSA(
-            .func_ = self$calibration_model,
-            .PSA_calib_values_ = c(self$PSA_samples$random,
-                                   self$PSA_samples$directed,
-                                   self$PSA_samples$bayesian),
-            .args_ = c(self$calibration_model_args,
-                       "calibrate_" = FALSE),
-            .PSA_unCalib_values_ = .PSA_unCalib_values_)
-        }
-    },
-    ### Summarise PSA:----
-    # Summarise PSA results
-    #
-    summarise_PSA_ = function() {
-      self$PSA_summary <- purrr::map_df(
-        .x = self$PSA_results,
-        .f = function(PSA) {
-          data_ <- dplyr::tibble(
-            'calibration_method' = if(nrow(PSA) == 1) paste(PSA$Label[[1]], "_*") else PSA$Label[[1]],
-            'mean_inc_Costs' = mean(PSA$inc_cost, na.rm = TRUE),
-            'mean_inc_LY' = mean(PSA$inc_LY, na.rm = TRUE),
-            'iNMB' = (mean_inc_LY * 30000) - mean_inc_Costs,
-            'PSA_samples' = nrow(PSA),
-            'mean_goodness_of_fit' = mean(PSA$Overall_fit, na.rm = TRUE),
-            'effective_sample_size' =
-              if(PSA$Label[[1]] %in% c("SIR", "IMIS")) {
-                calibR::effective_sample_size(
-                  bayes_calib_output_list = self$calibration_results$
-                    bayesian[[PSA$Label[[1]]]])
-              } else {
-                NA
-              }
-          )
-        }
-      )
-      self$PSA_summary <- self$PSA_summary %>%
-        dplyr::arrange(dplyr::desc(mean_goodness_of_fit))
+    run_PSA_ = function() {
+      self$PSA_results <- calibR::run_PSA(
+          .func_ = self$calibration_model,
+          .PSA_calib_values_ = c(self$PSA_samples$random,
+                                 self$PSA_samples$directed,
+                                 self$PSA_samples$bayesian),
+          .args_ = c(self$calibration_model_args,
+                     "calibrate_" = FALSE,
+                     "transform_" = FALSE),
+          .PSA_unCalib_values_ = self$PSA_samples[["unCalib"]]
+        )
     },
     ## Plots:----
     ### Prior-posterior plots:----

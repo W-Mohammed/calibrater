@@ -1,3 +1,39 @@
+#' Sample Probabilistic Sensitivity Analysis (PSA) values
+#'
+#' @param .l_params A list that contains a vector of parameter names,
+#' distributions and distributions' arguments.
+#' @param .PSA_samples The number of PSA samples to sample or tabulate.
+#' @param .transform_ Logical, if TRUE the back transformation functions
+#' in the .l_params list will be used to transform the parameters to their
+#' original scale.
+#'
+#' @return A dataframe containing the PSA parameter configuration.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' }
+generate_PSA_samples <- function(
+    .l_params,
+    .PSA_samples,
+    .transform_) {
+  # Sample PSA parameters' configurations:
+  df_PSA_samples <- sample_prior_RGS_(
+    .n_samples = .PSA_samples,
+    .l_params = .l_params
+  )
+
+  # Back transform sampled parameters if any:
+  if(.transform_) {
+    df_PSA_samples <- calibR::backTransform(
+      .t_data_ = df_PSA_samples,
+      .l_params_ = .l_params
+    )
+  }
+
+  return(df_PSA_samples)
+}
+
 #' Merge calibration outputs and sample PSA values
 #'
 #' @param .l_calib_res_lists A list of calibration results lists. The
@@ -12,7 +48,7 @@
 #' in the .l_params list will be used to transform the parameters to their
 #' original scale.
 #'
-#' @return
+#' @return A list of lists containing the calibration parameters ready for PSA.
 #' @export
 #'
 #' @examples
@@ -22,12 +58,14 @@
 #'                       NM_optimise_lLLK, NM_optimise_wSSE,
 #'                       SA_optimise_lLLK, SA_optimise_wSSE)
 #'
-#' calibrated_values <- PSA_calib_values(.l_calib_res_lists = l_optim_lists)
+#' calibrated_values <- get_calib_PSA_samples(.l_calib_res_lists = l_optim_lists)
 #' }
-PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
-                             .search_method = 'Directed',
-                             .PSA_samples = 10000, .l_params = NULL,
-                             .transform_ = FALSE) {
+get_calib_PSA_samples <- function(
+    .l_calib_res_lists,
+    .search_method = 'Directed',
+    .PSA_samples = 10000,
+    .l_params = NULL,
+    .transform_ = FALSE) {
   # Stop the .search_method is not supported by this function:
   stopifnot(".search_method is supported by the function" =
               any(.search_method %in% c('Directed', 'Random', 'Bayesian')))
@@ -47,7 +85,7 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
            if(!is.null(Sigma_)) {
              if(!any(is.na(Sigma_))) {
                if(length(Sigma_ > 0)) {
-                 if(matrixcalc::is.symmetric.matrix(Sigma_)){
+                 if(matrixcalc::is.symmetric.matrix(Sigma_)) {
                    matrixcalc::is.positive.definite(Sigma_)
                  } else FALSE
                } else FALSE
@@ -62,6 +100,33 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
             upper = ub,
             algorithm = "gibbs",
             burn.in.samples = 10000) %>%
+            {
+              # When rtmvnorm() fails to sample from the multi-variate normal:
+              if(any(colSums(is.na(.)) > (.PSA_samples / 10))) {
+                message(
+                  paste(
+                    "Sampling from multivariate normal distribution failed!",
+                    "Sampled PSA values for",
+                    .list_[[1]][["Calibration method"]],
+                    "will be attempted from a univariate normal distribution."
+                  )
+                )
+                calib_estimated_means <- .list_[[1]][["Estimate"]]
+                calib_estimated_sds <- diag(.list_[[1]][["Sigma"]])
+                rnorm(
+                  n = ((.PSA_samples - 1) * length(calib_estimated_means)),
+                  mean = calib_estimated_means,
+                  sd = calib_estimated_sds
+                ) %>%
+                  matrix(
+                    data = .,
+                    nrow = (.PSA_samples - 1),
+                    byrow = TRUE
+                  )
+              } else {
+                .
+              }
+            } %>%
             as.data.frame() %>%
             `colnames<-`(.list_[[1]][["Params"]]) %>%
             dplyr::mutate(
@@ -81,7 +146,12 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
               Plot_label = dplyr::case_when(
                 is.na(Overall_fit) ~ "PSA sets",
                 TRUE ~ "Identified set")) %>%
-            dplyr::select(Label, Plot_label, Overall_fit, dplyr::everything())
+            dplyr::select(
+              dplyr::all_of(
+                c("Label", "Plot_label", "Overall_fit")
+              ),
+              dplyr::everything()
+            )
           # Back transform sampled parameters if any:
           if(.transform_) {
             PSA_calib_draws <- PSA_calib_draws %>%
@@ -97,16 +167,63 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
           )
         } else {
           # Retain the point estimates if sigma is NA or not +ve definite:
-          PSA_calib_draws <- .list_[[1]][["Estimate"]] %>%
-            t() %>%
+          # Sample from univariate normal distribution
+          message(
+            paste(
+              "Sampling from multivariate normal distribution is not possible!",
+              "Sampled PSA values for",
+              .list_[[1]][["Calibration method"]],
+              "will be attempted from a univariate normal distribution."
+            )
+          )
+          calib_estimated_means <- .list_[[1]][["Estimate"]]
+          calib_estimated_sds <- diag(.list_[[1]][["Sigma"]])
+          PSA_calib_draws <- {
+            if(isTRUE(all(!is.na(calib_estimated_sds),
+                          calib_estimated_sds >= 0))) {
+              rnorm(
+                n = ((.PSA_samples - 1) * length(calib_estimated_means)),
+                mean = calib_estimated_means,
+                sd = calib_estimated_sds
+              ) %>%
+                matrix(
+                  data = .,
+                  nrow = (.PSA_samples - 1),
+                  byrow = TRUE
+                )
+            } else {
+              matrix(
+                data = NA,
+                ncol = length(calib_estimated_means),
+                nrow = 0
+              )
+            }
+          } %>%
             as.data.frame() %>%
             `colnames<-`(.list_[[1]][["Params"]]) %>%
             dplyr::mutate(
               Label =
+                .list_[[1]][["Calibration method"]]) %>%
+            dplyr::bind_rows(
+              .list_[[1]][["Estimate"]] %>%
+                t() %>%
+                as.data.frame() %>%
+                `colnames<-`(.list_[[1]][["Params"]])) %>%
+            dplyr::mutate(
+              Overall_fit = dplyr::case_when(
+                is.na(Label) ~ round(.list_[[1]][["GOF value"]], 2),
+                TRUE ~ NA_real_),
+              Label =
                 .list_[[1]][["Calibration method"]],
-              Overall_fit =
-                round(.list_[[1]][["GOF value"]], 2)) %>%
-            dplyr::select(Label, Overall_fit, dplyr::everything())
+              Plot_label = dplyr::case_when(
+                is.na(Overall_fit) ~ "PSA sets",
+                TRUE ~ "Identified set")) %>%
+            dplyr::select(
+              dplyr::all_of(
+                c("Label", "Plot_label", "Overall_fit")
+              ),
+              dplyr::everything()
+            )
           # Back transform sampled parameters if any:
           if(.transform_) {
             PSA_calib_draws <- PSA_calib_draws %>%
@@ -211,27 +328,40 @@ PSA_calib_values <- function(.l_calib_res_lists = l_optim_lists,
 #' @param .args_ Extra arguments passed to .func_, the DAM.
 #' @param .PSA_calib_values_ PSA values sampled for the calibration
 #' parameter(s).
-#' @param .PSA_unCalib_values_ PSA values sampled for un-calibrated
-#' (known) parameters(s).
+#' @param .PSA_unCalib_values_ PSA values sampled for un-calibrated (known)
+#' parameters(s).
 #'
-#' @return
+#' @return A list containing the model outputs resulting from running the PSA
+#' parameters' configurations.
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' }
-run_PSA <- function(.func_, .args_, .PSA_calib_values_,
-                    .PSA_unCalib_values_) {
+run_PSA <- function(
+    .func_,
+    .args_,
+    .PSA_calib_values_,
+    .PSA_unCalib_values_) {
   # Avoid issues when .func_ takes only the .PSA_calib_values_:
-  if(!is.null(.PSA_unCalib_values_))
+  if(!is.null(.PSA_unCalib_values_)) {
     l_PSA_Calib_params_ <- .PSA_calib_values_ %>%
       purrr::transpose() %>%
       .[['PSA_calib_draws']] %>%
-      cbind(.PSA_nonCalib_values_)
-  else
+      purrr::map(
+        .x = .,
+        .f = function(.df_Calib_PSA_draws) {
+          cbind(
+            .df_Calib_PSA_draws,
+            .PSA_unCalib_values_
+          )
+        }
+      )
+  } else {
     l_PSA_Calib_params_ <- .PSA_calib_values_ %>%
       purrr::transpose() %>%
       .[['PSA_calib_draws']]
+  }
 
   # Run PSA using combined draws:
   l_PSA_results <- purrr::map(
@@ -241,18 +371,34 @@ run_PSA <- function(.func_, .args_, .PSA_calib_values_,
         .l = method_draws,
         .f = function(...) {
           params_ <- list(...)
-          results <- purrr::exec(.fn = .func_,
-                                 params_[-c(1, 2)],
-                                 !!!.args_) %>%
+          purrr::exec(
+            .fn = .func_,
+            params_[-c(1, 2)],
+            !!!.args_
+          ) %>%
             unlist()
-        }
+        },
+        .progress = list(
+          type = "iterator",
+          format = "Running PSA {cli::pb_bar} {cli::pb_percent}",
+          clear = TRUE
+        )
       )
       dplyr::bind_rows(PSA_runs) %>%
         dplyr::bind_cols(
           method_draws %>%
             dplyr::select(
-              Label, Plot_label, Overall_fit))
-    }
+              dplyr::all_of(
+                c("Label", "Plot_label", "Overall_fit")
+              )
+            )
+        )
+    },
+    .progress = list(
+      type = "iterator",
+      format = "Calibration methods PSA {cli::pb_bar} {cli::pb_percent}",
+      clear = TRUE
+    )
   )
 
   return(l_PSA_results)

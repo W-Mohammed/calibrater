@@ -1726,9 +1726,18 @@ plot_cea_results_table <- function(
 
   # Identify dominated interventions:----
   df_cea_results <- df_cea_results %>%
-    identify_all_dominance() %>%
-    calculate_icers() %>%
-    identify_all_e_dominance() %>%
+    identify_all_dominance(
+      .label_effects_ = .label_effects_,
+      .label_costs_ = .label_costs_
+    ) %>%
+    calculate_icers(
+      .label_effects_ = .label_effects_,
+      .label_costs_ = .label_costs_
+    ) %>%
+    identify_all_e_dominance(
+      .label_effects_ = .label_effects_,
+      .label_costs_ = .label_costs_
+    ) %>%
     `row.names<-`(NULL)
 
   # Add NMB:----
@@ -1905,6 +1914,9 @@ plot_cea_results_table <- function(
           scientific = FALSE
         )
       )
+      if(length(df_cea_results[!is.na(df_cea_results[[costs_col]]), costs_col]) == 0) {
+        df_cea_results[is.na(df_cea_results[[costs_col]]), costs_col] <- NA_character_
+      }
     }
     for (effs_col in effects_columns) {
       df_cea_results[!is.na(df_cea_results[[effs_col]]), effs_col] <- format(
@@ -1914,6 +1926,9 @@ plot_cea_results_table <- function(
         trim = TRUE,
         scientific = FALSE
       )
+      if(length(df_cea_results[!is.na(df_cea_results[[effs_col]]), effs_col]) == 0) {
+        df_cea_results[is.na(df_cea_results[[effs_col]]), effs_col] <- NA_character_
+      }
     }
     if(length(pce_columns) > 0) {
       for (prb_col in pce_columns) {
@@ -1923,6 +1938,9 @@ plot_cea_results_table <- function(
           trim = TRUE,
           scientific = FALSE
         )
+        if(length(df_cea_results[!is.na(df_cea_results[[prb_col]]), prb_col]) == 0) {
+          df_cea_results[is.na(df_cea_results[[prb_col]]), prb_col] <- NA_character_
+        }
       }
     }
   }
@@ -1946,6 +1964,14 @@ plot_cea_results_table <- function(
   # Long format:----
   if(.output_format_ == "long") {
     df_cea_results <- df_cea_results %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = dplyr::everything(),
+          .fns = function(.x) {
+            as.character(.x)
+          }
+        )
+      ) %>%
       tidyr::pivot_longer(
         cols = - tidyr::all_of("Intervention"),
         names_to = " "
@@ -2445,7 +2471,7 @@ generate_cea_results_tables = function(
     .output_type_ = "html",
     .full_output_format_ = "long",
     .add_simulated_truth_ = TRUE,
-    .truth_PSA_output_list_path_ = "../5. Presentations/data/CRS_true_PSA.rds",
+    .truth_PSA_output_list_path_,
     .truth_PSA_output_list_ = NULL,
     .generate_partial_cea_table_ = TRUE,
     .partial_cea_table_groups_ = c("NMB", "PCE", "EVPI"),
@@ -2574,6 +2600,15 @@ generate_cea_results_tables = function(
           .f = function(.outcome_) {
             # loop through PSA outcomes (costs and effects) to use in PSA:
             conseq_df <- .res_ %>%
+              # filter na() in either costs or effects:
+              dplyr::filter(
+                dplyr::if_all(
+                  .cols = dplyr::contains(.model_outcomes_),
+                  .fns = function(x_) {
+                    !is.na(x_)
+                  }
+                )
+              ) %>%
               # select all costs or effects columns:
               dplyr::select(dplyr::contains(.outcome_)) %>%
               # remove outcome portion in the column name:
@@ -2613,6 +2648,8 @@ generate_cea_results_tables = function(
             .df_costs_ = ls_PSA_costs_effects[[.calib_method]][["costs"]],
             .interventions_labels_ = ls_PSA_costs_effects[[.calib_method]][["Interventions"]] %>%
               `names<-`(colnames(ls_PSA_costs_effects[[.calib_method]][["effects"]])),
+            .label_effects_ = .label_effects_,
+            .label_costs_ = .label_costs_,
             .highlight_optimal_choices_ = .highlight_optimal_choices_,
             .wtp_key_values_ = .wtp_key_values_,
             .currency_symbol_ = .currency_symbol_,
@@ -2635,6 +2672,8 @@ generate_cea_results_tables = function(
       .df_costs_ = truth_PSA_output_list[["c"]],
       .interventions_labels_ = truth_PSA_output_list[["treats"]] %>%
         `names<-`(colnames(truth_PSA_output_list[["e"]])),
+      .label_effects_ = .label_effects_,
+      .label_costs_ = .label_costs_,
       .highlight_optimal_choices_ = .highlight_optimal_choices_,
       .wtp_key_values_ = .wtp_key_values_,
       .currency_symbol_ = .currency_symbol_,
@@ -2727,6 +2766,8 @@ generate_cea_results_tables = function(
             .df_costs_ = truth_PSA_output_list[["c"]],
             .interventions_labels_ = truth_PSA_output_list[["treats"]] %>%
               `names<-`(colnames(truth_PSA_output_list[["e"]])),
+            .label_effects_ = .label_effects_,
+            .label_costs_ = .label_costs_,
             .wtp_key_values_ = .wtp_key_values_,
             .highlight_optimal_choices_ = .highlight_optimal_choices_,
             .currency_symbol_ = .currency_symbol_,
@@ -2759,6 +2800,8 @@ generate_cea_results_tables = function(
                 .df_costs_ = ls_PSA_costs_effects[[.calib_method]][["costs"]],
                 .interventions_labels_ = ls_PSA_costs_effects[[.calib_method]][["Interventions"]] %>%
                   `names<-`(colnames(ls_PSA_costs_effects[[.calib_method]][["effects"]])),
+                .label_effects_ = .label_effects_,
+                .label_costs_ = .label_costs_,
                 .wtp_key_values_ = .wtp_key_values_,
                 .highlight_optimal_choices_ = .highlight_optimal_choices_,
                 .currency_symbol_ = .currency_symbol_,
@@ -2911,6 +2954,8 @@ generate_cea_results_tables = function(
               .df_costs_ = truth_PSA_output_list[["c"]],
               .interventions_labels_ = truth_PSA_output_list[["treats"]] %>%
                 `names<-`(colnames(truth_PSA_output_list[["e"]])),
+              .label_effects_ = .label_effects_,
+              .label_costs_ = .label_costs_,
               .wtp_key_values_ = .wtp_key_values_,
               .highlight_optimal_choices_ = .highlight_optimal_choices_,
               .currency_symbol_ = .currency_symbol_,
@@ -2934,6 +2979,8 @@ generate_cea_results_tables = function(
                 .df_costs_ = ls_PSA_costs_effects[[.calib_method]][["costs"]],
                 .interventions_labels_ = ls_PSA_costs_effects[[.calib_method]][["Interventions"]] %>%
                   `names<-`(colnames(ls_PSA_costs_effects[[.calib_method]][["effects"]])),
+                .label_effects_ = .label_effects_,
+                .label_costs_ = .label_costs_,
                 .wtp_key_values_ = .wtp_key_values_,
                 .highlight_optimal_choices_ = .highlight_optimal_choices_,
                 .currency_symbol_ = .currency_symbol_,

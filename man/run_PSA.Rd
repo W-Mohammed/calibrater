@@ -16,8 +16,12 @@ for which Probabilistic Sensitivity Analysis (PSA) will be conducted.}
 \item{.PSA_calib_values_}{PSA values sampled for the calibration
 parameter(s).}
 
-\item{.PSA_unCalib_values_}{PSA values sampled for un-calibrated
-(known) parameters(s).}
+\item{.PSA_unCalib_values_}{PSA values sampled for un-calibrated (known)
+parameters(s).}
+}
+\value{
+A list containing the model outputs resulting from running the PSA
+parameters' configurations.
 }
 \description{
 Run Probabilistic Sensitivity Analysis (PSA) for a Decision Analytic

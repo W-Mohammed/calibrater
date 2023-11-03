@@ -26,14 +26,20 @@
 #' @examples
 #' \dontrun{
 #' }
-IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
-                  sample.prior = .sample.prior_, priors = .priors_,
-                  prior = .prior_, likelihood = .likelihood_,
-                  .l_params_, # prior/sample.prior
-                  .func_, # calculate_likelihood
-                  .args_, # calculate_likelihood
-                  .l_targets_, # calculate_likelihood
-                  .transform_) { # prior
+IMIS_ <- function(
+    B = 1000,
+    B.re = 3000,
+    number_k = 100,
+    D = 0,
+    sample.prior = .sample.prior_,
+    priors = .priors_,
+    prior = .prior_,
+    likelihood = .likelihood_,
+    .l_params_, # prior/sample.prior
+    .func_, # calculate_likelihood
+    .args_, # calculate_likelihood
+    .l_targets_, # calculate_likelihood
+    .transform_) { # prior
   # The IMIS function, from the IMIS package: ----
   B0 = B*10
   X_all = X_k = sample.prior(B0, .l_params = .l_params_) # Draw initial samples from the prior distribution
@@ -42,8 +48,8 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
   stat_all = matrix(NA, 6, number_k)				# 6 diagnostic statistics at each iteration
   center_all = prior_all = like_all = NULL			# centers of Gaussian components, prior densities, and likelihoods
   sigma_all = list()						# covariance matrices of Gaussian components
-  if (D>=1)	option.opt = 1					# use optimizer
-  if (D==0){	option.opt = 0; D=1	}			# NOT use optimizer
+  if (D>=1){option.opt = 1}					# use optimizer
+  if (D==0){option.opt = 0; D=1}		# NOT use optimizer
 
   for (k in 1:number_k ){
 
@@ -63,14 +69,17 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
     if (k==1)
       envelop_all = prior_all # envelop stores the sampling densities
     if (k>1)
-      envelop_all = apply(rbind(prior_all*B0/B, gaussian_all), 2, sum) /
-      (B0/B+D+(k-2))
+      envelop_all = apply(
+        X = rbind(prior_all*B0/B, gaussian_all),
+        2,
+        sum,
+        na.rm = TRUE) / (B0/B+D+(k-2))
     Weights = prior_all*like_all / envelop_all	# importance weight is determined by the posterior density divided by the sampling density
-    stat_all[1,k] = log(mean(Weights))			# the raw marginal likelihood
-    Weights = Weights / sum(Weights)
-    stat_all[2,k] = sum(1-(1-Weights)^B.re)		# the expected number of unique points
-    stat_all[3,k] = max(Weights)				# the maximum weight
-    stat_all[4,k] = 1/sum(Weights^2)			# the effictive sample size
+    stat_all[1,k] = log(mean(Weights, na.rm = TRUE))			# the raw marginal likelihood
+    Weights = Weights / sum(Weights, na.rm = TRUE)
+    stat_all[2,k] = sum(1 - ((1-Weights)^B.re), na.rm = TRUE)		# the expected number of unique points
+    stat_all[3,k] = max(Weights, na.rm = TRUE)				# the maximum weight
+    stat_all[4,k] = 1/sum((Weights^2), na.rm = TRUE)			# the effictive sample size
     stat_all[5,k] = -sum(Weights*log(Weights), na.rm = TRUE) /
       log(length(Weights))	# the entropy relative to uniform
     stat_all[6,k] = stats::var(Weights/mean(Weights))	# the variance of scaled weights
@@ -105,7 +114,6 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
           -log(likelihood(theta, .func = .func_, .args = .args_,
                           .l_targets = .l_targets_))
         }
-
         if (is.vector(X_all)){
           if (length(important)==0)
             X_imp = center_all[1]
@@ -141,8 +149,9 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
 
         if (is.matrix(X_all)){
           # The rough optimizer uses the Nelder-Mead algorithm.
-          if (length(important)==0)
+          if (length(important)==0) {
             X_imp = center_all[1,]
+          }
           ptm.opt = proc.time()
           optimizer = stats::optim(
             X_imp,
@@ -171,8 +180,8 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
               )
             }, error = function(e) {
               message(
-                paste0("BFGS - first attempt failed: ",
-                       e))
+                paste0("BFGS - first attempt failed: ", e)
+              )
 
               tryCatch(
                 expr = {
@@ -188,8 +197,8 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                   )
                 }, error = function(e) {
                   message(
-                    paste0("BFGS - second attempt failed: ",
-                           e))
+                    paste0("BFGS - second attempt failed: ", e)
+                  )
 
                   tryCatch(
                     expr = {
@@ -205,8 +214,8 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                       )
                     }, error = function(e) {
                       message(
-                        paste0("BFGS - third attempt failed: ",
-                               e))
+                        paste0("BFGS - third attempt failed: ", e)
+                      )
 
                       tryCatch(
                         expr = {
@@ -222,8 +231,8 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
                           )
                         }, error = function(e) {
                           message(
-                            paste0("BFGS - fourth attempt failed: ",
-                                   e))
+                            paste0("BFGS - fourth attempt failed: ", e)
+                          )
 
                           optimizer
                         }
@@ -314,10 +323,12 @@ IMIS_ <- function(B = 1000, B.re = 3000, number_k = 100, D = 0,
       label_nr = sort(distance_all, decreasing = FALSE, index=TRUE) # Sort the distances
       which_var = label_nr$ix[1:B] # Pick B inputs for covariance calculation
       if (is.matrix(X_all))
-        Sig2 = stats::cov.wt(X_all[which_var,],
-                      wt = Weights[which_var]+1/length(Weights),
-                      cor = FALSE,
-                      center = X_imp, method = "unbias")$cov
+        Sig2 = stats::cov.wt(
+          x = X_all[which_var,],
+          wt = Weights[which_var]+1/length(Weights),
+          cor = FALSE,
+          center = X_imp,
+          method = "unbias")$cov
 
       if (is.vector(X_all)){
         Weights_var = Weights[which_var]+1/length(X_all)

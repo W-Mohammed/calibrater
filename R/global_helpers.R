@@ -115,6 +115,77 @@ backTransform <- function(.t_data_, .l_params_) {
   return(data_)
 }
 
+#' Convert Log-Normal Distribution Parameters to Normal Distribution Parameters
+#'
+#' @description
+#' https://konvexity.com/relationship-between-normal-and-lognormal-distributions
+#' https://rdrr.io/github/davidski/collector/src/R/fit_distributions.R
+#'
+#' @param .mean_log_ Numeric scalar representing the Mean of the Log-Normal
+#' distribution.
+#' @param .sd_log_ Numeric scalar representing the Standard Deviation of the
+#' Log-Normal distribution.
+#'
+#' @return A list containing the Mean and Standard Deviation of the Normal
+#' distribution corresponding to those of the Log-Normal distribution
+#' characterised by the inputs.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' lognormal_to_normal(
+#'  .mean_log_ = 1,
+#'  .sd_log_ = 3
+#'  )
+#' }
+lognormal_to_normal <- function(
+    .mean_log_,
+    .sd_log_) {
+  mean_norm <- exp(.mean_log_ + .sd_log_^2 / 2)
+  sd_norm <- sqrt(
+    (exp(.sd_log_^2) - 1) * exp(2*.mean_log_ + .sd_log_^2)
+  )
+
+  return(
+    list(mean = mean_norm, sd = sd_norm)
+  )
+}
+
+#' Convert Normal Distribution Parameters to Log-Normal Distribution Parameters
+#'
+#' @description
+#' https://konvexity.com/relationship-between-normal-and-lognormal-distributions
+#' https://rdrr.io/github/davidski/collector/src/R/fit_distributions.R
+#'
+#' @param .mean_norm_ Numeric scalar representing the Mean of the Normal
+#' distribution.
+#' @param .sd_norm_ Numeric scalar representing the Standard Deviation of the
+#' Normal distribution.
+#'
+#' @return A list containing the Mean and Standard Deviation of the Normal
+#' distribution corresponding to those of the Log-Normal distribution
+#' characterised by the inputs.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' normal_to_lognormal(
+#'  .mean_norm_ = 20,
+#'  .sd_norm_ = 3
+#'  )
+#' }
+normal_to_lognormal <- function(
+    .mean_norm_,
+    .sd_norm_) {
+  phi <- sqrt(.sd_norm_ ^ 2 + .mean_norm_ ^ 2)
+  mean_log <- log(.mean_norm_ ^ 2 / phi)
+  sd_log <- sqrt(log(phi ^ 2 / .mean_norm_ ^ 2))
+
+  return(
+    list(meanlog = mean_log, sdlog = sd_log)
+  )
+}
+
 #' Run the example shiny app.
 #'
 #' @param example_app The example shiny app to run.

@@ -139,11 +139,11 @@ HID_markov <- function(.v_params_ = NULL, calibrate_ = TRUE,
 #'
 #' @param .v_params_ a named vector of model parameters in the following
 #' order: "mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho", "b", "c".
-#' @param calibrate_ If \code{TRUE} (default), the model outputs natural
-#' history data; otherwise, discounted outcomes \code{(costs and QALYs)}
+#' @param calibrate_ Logical scalar, if `TRUE` (default), the model outputs
+#' natural history data; otherwise, discounted outcomes (costs and QALYs)
 #' are returned.
-#' @param transform_ Expect transformed parameters and therefore
-#' back-transform them before they go into the model
+#' @param transform_ Logical scalar, for whether to expect transformed
+#' parameters and therefore back-transform them before they go into the model.
 #' @param mu_e Cause-specific mortality rate with early-stage disease
 #' @param mu_l Cause-specific mortality rate with late-stage disease
 #' @param mu_t Cause-specific mortality rate on treatment
@@ -440,22 +440,4 @@ HID_markov_3 <- function(.v_params_ = NULL, calibrate_ = TRUE, transform_ = TRUE
       )
     }
   })
-}
-
-#' Helper function to set the hypothetical infectious disease (HID) model
-#'
-#' @param .v_params an un-named vector of model parameters in the following
-#' order: "mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho", "b", "c".
-#'
-#' @return
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' }
-name_HID_params <- function(.v_params) {
-  names(.v_params) <- c("mu_e", "mu_l", "mu_t", "p", "r_l", "r_e", "rho",
-                        "b", "c")
-
-  return(.v_params)
 }

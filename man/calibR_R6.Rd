@@ -137,6 +137,8 @@ model}
 
 \item{\code{calibration_results}}{calibration interim results}
 
+\item{\code{PSA_params}}{un-calibrated PSA parameters}
+
 \item{\code{model_interventions}}{model interventions to run cost-effectiveness
 analysis}
 
@@ -197,7 +199,15 @@ samples}
 Sample prior distribution(s) using one or more sampling method.
 This function currently supports: LHS, FGS and RGS.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$new(.model, .args, .params, .targets, .transform, .intervs = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$new(
+  .model,
+  .args,
+  .params,
+  .targets,
+  .transform,
+  .PSA_params = NULL,
+  .intervs = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -214,6 +224,10 @@ This function currently supports: LHS, FGS and RGS.
 \item{\code{.transform}}{Logical for whether the model will use
 transformed parameters. This allows some functions to back
 transform the parameters to their original scale before using them.}
+
+\item{\code{.PSA_params}}{A list containing the information about the other
+(known or uncalibrated) model parameters to be used in Probabilistic
+Sensitivity Analysis.}
 
 \item{\code{.intervs}}{A list containing the information about the considered
 interventions built into the model.}
@@ -536,18 +550,12 @@ Sample PSA values for the calibration parameters
 \if{html}{\out{<a id="method-calibR_R6-run_PSA"></a>}}
 \if{latex}{\out{\hypertarget{method-calibR_R6-run_PSA}{}}}
 \subsection{Method \code{run_PSA()}}{
-Run PSA
+Evaluate Probabilistic Sensitivity Analysis (PSA) Parameters'
+Configurations
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$run_PSA(.PSA_unCalib_values_ = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{calibR_R6$run_PSA()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{.PSA_unCalib_values_}}{PSA values for un-calibrated parameters}
-}
-\if{html}{\out{</div>}}
-}
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
@@ -562,7 +570,7 @@ Run PSA
 \if{html}{\out{<a id="method-calibR_R6-summarise_PSA"></a>}}
 \if{latex}{\out{\hypertarget{method-calibR_R6-summarise_PSA}{}}}
 \subsection{Method \code{summarise_PSA()}}{
-Summarise PSA results
+Summarise robabilistic Sensitivity Analysis (PSA) Results
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{calibR_R6$summarise_PSA()}\if{html}{\out{</div>}}
 }
