@@ -400,11 +400,11 @@ test_that("plot_cea_results_table generates expected outputs", {
     "delta.c" = c(NA_real_, NA_real_, NA_real_, NA_real_),
     "icer" = c("SD", "SD", "SD", NA)
   )
-  class(df_expcted) <- c(class(df_expcted), "icer_tbl")
+  class(df_expcted) <- c(class(df_expcted), "cea_tbl")
 
   # Run tests:
   expect_identical(df_results, df_expcted)
-  expect_true("icer_tbl" %in% class(df_results))
+  expect_true("cea_tbl" %in% class(df_results))
 
   # Define test data.frame:
   df_test <- data.frame(
@@ -431,10 +431,10 @@ test_that("plot_cea_results_table generates expected outputs", {
     "delta.c" = c(NA, NA, NA, "$67"),
     "icer" = c("SD", "SD", NA, "$34")
   )
-  class(df_expcted) <- c(class(df_expcted), "icer_tbl")
+  class(df_expcted) <- c(class(df_expcted), "cea_tbl")
   # Run test:
   expect_identical(df_results, df_expcted)
-  expect_true("icer_tbl" %in% class(df_results))
+  expect_true("cea_tbl" %in% class(df_results))
 })
 
 test_that("plot_cea_results_table generates gt objects", {
