@@ -15,29 +15,53 @@ format:
 # Load library:
 devtools::load_all()
 # Read-in data:
-w_mu_b = readRDS(file = file.path(
+evppi_1 = readRDS(file = file.path(
   here::here(),
-  "inst/extdata/calibR_R6_flat_2p.rds"
+  "inst/misc/reports/231103/Case_study_1/data/ls_EVPPI_tables.rds"
 ))
-w_mu_rho = readRDS(file = file.path(
+abTab_1 = readRDS(file = file.path(
   here::here(),
-  "inst/extdata/calibR_R6_flat_2p2.rds"
+  "inst/misc/reports/231103/Case_study_1/data/Combined_Absolute.rds"
 ))
-w_all = readRDS(file = file.path(
+reTab_1 = readRDS(file = file.path(
   here::here(),
-  "inst/extdata/calibR_R6_flat.rds"
+  "inst/misc/reports/231103/Case_study_1/data/Combined_Relative.rds"
 ))
-wo_mu_b = readRDS(file = file.path(
+evppi_2 = readRDS(file = file.path(
   here::here(),
-  "inst/extdata/calibR_R6_flat_2p_unT.rds"
+  "inst/misc/reports/231103/Case_study_2/data/ls_EVPPI_tables.rds"
 ))
-wo_mu_rho = readRDS(file = file.path(
+abTab_2 = readRDS(file = file.path(
   here::here(),
-  "inst/extdata/calibR_R6_flat_2p2_unT.rds"
+  "inst/misc/reports/231103/Case_study_2/data/Combined_Absolute.rds"
 ))
-wo_all = readRDS(file = file.path(
+reTab_2 = readRDS(file = file.path(
   here::here(),
-  "inst/extdata/calibR_R6_flat_unT.rds"
+  "inst/misc/reports/231103/Case_study_2/data/Combined_Relative.rds"
+))
+evppi_3 = readRDS(file = file.path(
+  here::here(),
+  "inst/misc/reports/231103/Case_study_3/data/ls_EVPPI_tables.rds"
+))
+abTab_3 = readRDS(file = file.path(
+  here::here(),
+  "inst/misc/reports/231103/Case_study_3/data/Combined_Absolute.rds"
+))
+reTab_3 = readRDS(file = file.path(
+  here::here(),
+  "inst/misc/reports/231103/Case_study_3/data/Combined_Relative.rds"
+))
+evppi_4 = readRDS(file = file.path(
+  here::here(),
+  "inst/misc/reports/231103/Case_study_4/data/ls_EVPPI_tables.rds"
+))
+abTab_4 = readRDS(file = file.path(
+  here::here(),
+  "inst/misc/reports/231103/Case_study_4/data/Combined_Absolute.rds"
+))
+reTab_4 = readRDS(file = file.path(
+  here::here(),
+  "inst/misc/reports/231103/Case_study_4/data/Combined_Relative.rds"
 ))
 ```
 
@@ -59,7 +83,7 @@ wo_all = readRDS(file = file.path(
 
 ### Model structure
 
-![](../../images/HIV_model.JPG){width=50% height=50%}
+![](HIV_model.JPG){width=50% height=50%}
 
 ### Parameter transformations:
 
@@ -95,347 +119,163 @@ wo_all = readRDS(file = file.path(
 ### Search method:
 
 -   Random search using:
-    -   Latin-Hypercube Sampling
+    -   RGS
 -   Directed search using:
-    -   Gradient-based (GB) (uses derivatives)
     -   Nelder-Mead (NM) algorithm, aka simplex method (derivative free)
-    -   Global optimization techniques:
-        -   Simulated Annealing (SANN)
 -   Bayesian methods:
-    -   Sampling Importance Resampling (SIR)
     -   Incremental Mixture Importance Sampling (IMIS)
 
 ### Goodness-of-fit measure:
 
 -   Sum of log-likelihoods
+
+### Calibration scenarios:
+
+Four calibration scenarios were analysed.
+-   Scenario 1 involved **2** parameters
+-   Scenario 1 involved **3** parameters
+-   Scenario 1 included **6** parameters
+-   Scenario 4 included all **7** parameters
 :::
 
 # Results
 
-## With parameter transformation
+## Scenario 1:
 
-### Two parameters - 1st combination \[mu & b\]
+### Two parameters:
 
 ::: panel-tabset
-#### Priors & posteriors:
-
-Note: the black vertical lines are the true values of the parameters:
+#### Cost-effectiveness results:
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print log-scaled x-axis density plots:
-w_mu_b$plots$prior_posterior$all_ggplot$line_log
-# Print normally-scaled x-axis density plots:
-w_mu_b$plots$prior_posterior$all_ggplot$line
-# Print box plots:
-w_mu_b$plots$prior_posterior$all_ggplot$box
-
+# Print absolute results tables:
+abTab_1
 ```
 
-#### Pairwise correlations:
+#### Cost-effectiveness results (relative):
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print correlation plots:
-w_mu_b$plots$correlations
-
+# Print relative results tables:
+reTab_1
 ```
 
-#### Targets:
+#### EVPPI:
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print targets' plots:
-w_mu_b$plots$targets$col_plots
-
-```
-
-#### Net benefits:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print PSA summary:
-w_mu_b$PSA_summary %>% 
-  knitr::kable()
-
+# Print relative results tables:
+evppi_1
 ```
 :::
 
 ------------------------------------------------------------------------
 
-## With parameter transformation
+## Scenario 2:
 
-### Two parameters - 2nd combination \[mu & rho\]
+### Three parameters:
 
 ::: panel-tabset
-#### Priors & posteriors:
-
-Note: the black vertical lines are the true values of the parameters:
+#### Cost-effectiveness results:
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print log-scaled x-axis density plots:
-w_mu_rho$plots$prior_posterior$all_ggplot$line_log
-# Print normally-scaled x-axis density plots:
-w_mu_rho$plots$prior_posterior$all_ggplot$line
-# Print box plots:
-w_mu_rho$plots$prior_posterior$all_ggplot$box
-
+# Print absolute results tables:
+abTab_2
 ```
 
-#### Pairwise correlations:
+#### Cost-effectiveness results (relative):
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print correlation plots:
-w_mu_rho$plots$correlations
-
+# Print relative results tables:
+reTab_2
 ```
 
-#### Targets:
+#### EVPPI:
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print targets' plots:
-w_mu_rho$plots$targets$col_plots
-
-```
-
-#### Net benefits:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print PSA summary:
-w_mu_rho$PSA_summary %>% 
-  knitr::kable()
-
+# Print relative results tables:
+evppi_2
 ```
 :::
 
 ------------------------------------------------------------------------
 
-## With parameter transformation
+## Scenario 3:
 
-### All parameters
+### Six parameters:
 
 ::: panel-tabset
-#### Priors & posteriors:
-
-Note: the black vertical lines are the true values of the parameters:
+#### Cost-effectiveness results:
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print log-scaled x-axis density plots:
-w_all$plots$prior_posterior$all_ggplot$line_log
-# Print normally-scaled x-axis density plots:
-w_all$plots$prior_posterior$all_ggplot$line
-# Print box plots:
-w_all$plots$prior_posterior$all_ggplot$box
-
+# Print absolute results tables:
+abTab_3
 ```
 
-#### Pairwise correlations:
+#### Cost-effectiveness results (relative):
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print correlation plots:
-w_all$plots$correlations
-
+# Print relative results tables:
+reTab_3
 ```
 
-#### Targets:
+#### EVPPI:
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print targets' plots:
-w_all$plots$targets$col_plots
-
-```
-
-#### Net benefits:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print PSA summary:
-w_all$PSA_summary %>% 
-  knitr::kable()
-
+# Print relative results tables:
+evppi_3
 ```
 :::
 
 ------------------------------------------------------------------------
 
-## Without parameter transformation
+## Scenario 4:
 
-### Two parameters - 1st combination \[mu & b\]
+### Seven parameters:
 
 ::: panel-tabset
-#### Priors & posteriors:
-
-Note: the black vertical lines are the true values of the parameters:
+#### Cost-effectiveness results:
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print log-scaled x-axis density plots:
-wo_mu_b$plots$prior_posterior$all_ggplot$line_log
-# Print normally-scaled x-axis density plots:
-wo_mu_b$plots$prior_posterior$all_ggplot$line
-# Print box plots:
-wo_mu_b$plots$prior_posterior$all_ggplot$box
-
+# Print absolute results tables:
+abTab_4
 ```
 
-#### Pairwise correlations:
+#### Cost-effectiveness results (relative):
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print correlation plots:
-wo_mu_b$plots$correlations
-
+# Print relative results tables:
+reTab_4
 ```
 
-#### Targets:
+#### EVPPI:
 
 ```{r}
-#| echo: true
+#| echo: false
 #| out.width: '100%'
-# Print targets' plots:
-wo_mu_b$plots$targets$col_plots
-
-```
-
-#### Net benefits:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print PSA summary:
-wo_mu_b$PSA_summary %>% 
-  knitr::kable()
-
+# Print relative results tables:
+evppi_4
 ```
 :::
 
 ------------------------------------------------------------------------
-
-## Without parameter transformation
-
-### Two parameters - 2nd combination \[mu & rho\]
-
-::: panel-tabset
-#### Priors & posteriors:
-
-Note: the black vertical lines are the true values of the parameters:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print log-scaled x-axis density plots:
-wo_mu_rho$plots$prior_posterior$all_ggplot$line_log
-# Print normally-scaled x-axis density plots:
-wo_mu_rho$plots$prior_posterior$all_ggplot$line
-# Print box plots:
-wo_mu_rho$plots$prior_posterior$all_ggplot$box
-
-```
-
-#### Pairwise correlations:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print correlation plots:
-wo_mu_rho$plots$correlations
-
-```
-
-#### Targets:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print targets' plots:
-wo_mu_rho$plots$targets$col_plots
-
-```
-
-#### Net benefits:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print PSA summary:
-wo_mu_rho$PSA_summary %>% 
-  knitr::kable()
-
-```
-:::
-
-------------------------------------------------------------------------
-
-## Without parameter transformation
-
-### All parameters
-
-::: panel-tabset
-#### Priors & posteriors:
-
-Note: the black vertical lines are the true values of the parameters:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print log-scaled x-axis density plots:
-wo_all$plots$prior_posterior$all_ggplot$line_log
-# Print normally-scaled x-axis density plots:
-wo_all$plots$prior_posterior$all_ggplot$line
-# Print box plots:
-wo_all$plots$prior_posterior$all_ggplot$box
-
-```
-
-#### Pairwise correlations:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print correlation plots:
-wo_all$plots$correlations
-
-```
-
-#### Targets:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print targets' plots:
-wo_all$plots$targets$col_plots
-
-```
-
-#### Net benefits:
-
-```{r}
-#| echo: true
-#| out.width: '100%'
-# Print PSA summary:
-wo_all$PSA_summary %>% 
-  knitr::kable()
-
-```
-:::
