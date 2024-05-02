@@ -1,0 +1,317 @@
+---
+title: "Expected value of more precise/context-relevant calibration target data"
+format: docx
+---
+
+## Introduction
+
+Calibration target data is one of the key elements of any calibration process. However, like any data, calibration targets are prone to precision and/or validity issues.
+
+The Standard error (SE) is a measure of the precision of a statistical estimate. Specifically, it quantifies the variability or imprecision of a sample statistic, such as the mean or proportion, compared to the true population parameter. We quantify the Expected Value of Perfect Information (EVPI) as the value of reducing uncertainty in decision-making. The EVPI represents the maximum amount a decision-maker would be willing to pay for perfect information that eliminates all uncertainty associated with a decision, reducing the SE to zero.
+
+Bias, on the other hand, refers to the systematic or consistent error in measurements or estimates. It can lead to inaccuracies in the results, and it can result from flaws in study design, data collection methods, or other systematic errors.
+
+## Methods
+
+### Model
+
+We use a simple decision model with two inputs, `x1` and `x2`. The model, shown in the code below, estimates mortality (used in the calibration process) and net benefit (to inform our decision).
+
+```{r}
+# Define the model:
+model.function <- function(.x1, .x2) {
+  .model.mortality <- .x1 + .x2
+  .inb <- .x1 * 100
+  return(list(model.mortality = .model.mortality, inb = .inb))
+}
+```
+
+### Calibration parameters
+
+The prior of parameters `x1` and `x2` is a bivariate normal distribution.
+
+```{r}
+# Define model parameters:
+## Priors:
+m1 <- 0
+m2 <- 190
+mu <- c(m1, m2)
+
+v1 <- 1000
+v2 <- 100
+rho <- 0
+Sigma <- matrix(c(v1, rho * v1 * v2, rho * v1 * v2, v2), 2, 2)
+
+set.seed(1)
+n <- 1e6
+x <- MASS::mvrnorm(n, mu, Sigma)
+x1 <- x[, 1]
+x2 <- x[, 2]
+```
+
+### Calibration target data
+
+We simulate mortality data to be used as the calibration target. We start with `d.n = 100` simulated population. The sample size of the simulated population affects the precision of the simulated calibration target.
+
+```{r}
+# Simulate mortality data
+simulate_mortatlity_data <- function(d.mean = 200, d.var = 1000, d.n) {
+  d.sd <- sqrt(d.var)
+  d <- rnorm(d.n, d.mean, d.sd)
+  
+  # compute calibration target from dummy data
+  c("mean" = mean(d), "sd" = sd(d))
+}
+set.seed(10)
+
+d.n = 100
+simulated_mortatlity_estimates <- simulate_mortatlity_data(d.n = d.n)
+
+target.mortality.mean <- simulated_mortatlity_estimates["mean"]
+target.mortality.mean
+
+target.mortality.sd <- simulated_mortatlity_estimates["sd"]
+target.mortality.sd
+
+```
+
+We assume that the calibration target follows a normal distribution.
+
+```{r}
+# Define a likelihood for calibration
+likelihood <- function(.parameter, .target.mean, .target.se) {
+  dnorm(.target.mean, .parameter, .target.se)
+}
+```
+
+
+## Calibration process
+
+We employ the sampling importance re-sampling (SIR) method to sample from the joint posterior distribution of parameters `x1` and `x2`. 
+
+```{r}
+# Evaluate the model using prior samples
+prior.output <- model.function(x1, x2)
+prior.inb <- prior.output$inb
+prior.evpi <- mean(pmax(prior.inb, 0)) - max(mean(prior.inb), 0)
+prior.evpi
+
+# Estimate the likelihood of prior samples
+likelihood.values <- likelihood(prior.output$model.mortality,
+                                .target.mean = target.mortality.mean,
+                                .target.se = target.mortality.sd / sqrt(d.n))
+
+# Re-sampling x1 and x2 with weights equal to the likelihood values
+
+posterior.index <- sample(1:n, n, replace = TRUE, prob = likelihood.values)
+posterior.x <- x[posterior.index, ]
+
+posterior.output <- model.function(posterior.x[, 1], posterior.x[, 2])
+
+posterior.inb <- posterior.output$inb
+
+mean(posterior.inb)
+sd(posterior.inb)
+posterior.evpi <- mean(pmax(posterior.inb, 0)) - max(mean(posterior.inb), 0)
+posterior.evpi
+
+```
+
+### Graphical representations
+
+```{r}
+# Prior for inputs
+
+bivariate.density.prior <- MASS::kde2d(x1, x2, n = 50)
+
+#dev.new()
+persp(bivariate.density.prior,
+      theta = 20, phi = 25, expand = 0.6, ticktype = 'detailed',
+      xlab = "x1", ylab = "x2", zlab = "",
+      main = "Prior density for inputs x1 and x2")
+
+# Save the parameters' posterior distribution:
+#savePlot(filename = paste0(report_directoy, "1_x1_x2_prior"), type = "tiff")
+
+# Posterior for inputs
+# note the induced correlation
+
+bivariate.density.posterior <- MASS::kde2d(posterior.x[, 1], posterior.x[, 2], n = 50)
+
+#dev.new()
+persp(bivariate.density.posterior,
+      theta = 20, phi = 25, expand = 0.6, ticktype = 'detailed',
+      xlab = "x1", ylab = "x2", zlab = "",
+      main = "Posterior density for inputs x1 and x2")
+
+# Save the parameters' posterior distribution:
+#savePlot(filename = paste0(report_directoy, "1_x1_x2_post"), type = "tiff")
+
+# Prior and posterior for INB output
+
+#dev.new()
+den.prior <- density(prior.inb)
+den.post <- density(posterior.inb)
+plot(den.prior,
+     xlim = c(min(den.prior$x, den.post$x), max(den.prior$x, den.post$x)),
+     ylim = c(min(den.prior$y, den.post$y), max(den.prior$y, den.post$y)),
+     main = "Prior and posterior distributions for INB",
+     xlab = "INB"
+)
+
+lines(den.post, col = 2, lty = 2)
+legend(x = "topleft", legend = c("Prior", "Posterior"), col = c(1, 2), lty = c(1, 2))
+
+# Save the INB:
+#savePlot(filename = paste0(report_directoy, "1_pre_post_inmb"), type = "tiff")
+
+```
+
+\newpage
+
+## Precision and EVPI
+
+Below we demonstrate the association between the sample size of the dummy calibration target data (which affects the SE) and the EVPI.
+
+```{r}
+# Generate a vector of different population sizes:
+pop_size <- runif(100, 20, 1000) |> round()
+# Empty results object:
+SE_EVPI <- matrix(ncol = 2, nrow = length(pop_size))
+# Loop over different precision values:
+set.seed(10)
+for (i in 1:length(pop_size)) {
+  SE_EVPI [i, 1] <- pop_size[i]
+  d.n <- pop_size[i]
+  # Estimate the target data moments:
+  simulated_mortatlity_estimates <- simulate_mortatlity_data(d.n = d.n)
+  
+  target.mortality.mean <- simulated_mortatlity_estimates["mean"]
+  
+  target.mortality.sd <- simulated_mortatlity_estimates["sd"]
+  
+  # Estimate the likelihood of prior samples
+  likelihood.values <- likelihood(
+    prior.output$model.mortality,
+    .target.mean = target.mortality.mean,
+    .target.se = target.mortality.sd / sqrt(d.n)
+  )
+  
+  # Re-sampling x1 and x2 with weights equal to the likelihood values
+  
+  posterior.index <- sample(1:n, n, replace = TRUE, prob = likelihood.values)
+  posterior.x <- x[posterior.index, ]
+  
+  posterior.output <- model.function(posterior.x[, 1], posterior.x[, 2])
+
+  # Compute posterior NMB and EVPI  
+  posterior.inb <- posterior.output$inb
+
+  SE_EVPI [i, 2] <- mean(pmax(posterior.inb, 0)) - max(mean(posterior.inb), 0)
+}
+
+head(SE_EVPI)
+
+plot(SE_EVPI,
+     xlab = "Population size",
+     ylab = "EVPI"
+)
+
+```
+
+
+\newpage
+
+## Expected value of perfect calibration target data
+
+Below we estimate the INB and EVPI from a nested loop Monte Carlo where the outer loop allows the propagation of the uncertainty associated with calibration target.
+
+```{r}
+# Empty results object:
+target_nmb <- matrix(ncol = 2, nrow = 100)
+# Loop over different target data mean values:
+set.seed(10)
+d.n = 100
+simulated_mortatlity_estimates <- simulate_mortatlity_data(d.n = d.n)
+
+target.mortality.mean <- simulated_mortatlity_estimates["mean"]
+
+target.mortality.sd <- simulated_mortatlity_estimates["sd"]
+target.mortality.se <- target.mortality.sd / sqrt(d.n)
+
+set.seed(10)
+for (i in 1:nrow(target_nmb)) {
+  # Sample a target data mean.
+  target_nmb[i, 1] <- rnorm(1, target.mortality.mean, target.mortality.se)
+  
+  # Estimate the likelihood of prior samples
+  likelihood.values <- likelihood(
+    prior.output$model.mortality,
+    .target.mean = target_nmb[i, 1],
+    .target.se = target.mortality.sd / sqrt(d.n)
+  )
+  
+  # Re-sampling x1 and x2 with weights equal to the likelihood values
+  
+  posterior.index <- sample(1:n, n, replace = TRUE, prob = likelihood.values)
+  posterior.x <- x[posterior.index, ]
+  
+  posterior.output <- model.function(posterior.x[, 1], posterior.x[, 2])
+
+  # Compute posterior NMB
+  target_nmb[i, 2] <- mean(posterior.output$inb)
+}
+
+head(target_nmb)
+
+# Compute posterior EVPI
+target_data_evpi <- mean(pmax(target_nmb[, 2], 0)) - max(mean(target_nmb[, 2]), 0)
+target_data_evpi
+
+```
+
+\newpage
+
+## Expected value of sample information
+
+```{r}
+# Empty results object:
+target_nmb <- matrix(ncol = 2, nrow = 100)
+# Loop over different target data mean values:
+set.seed(10)
+d.n = 100
+simulated_mortatlity_estimates <- simulate_mortatlity_data(d.n = d.n)
+
+target.mortality.mean <- simulated_mortatlity_estimates["mean"]
+
+target.mortality.sd <- simulated_mortatlity_estimates["sd"]
+
+set.seed(10)
+for (i in 1:nrow(target_nmb)) {
+  # Sample a target data mean.
+  target_nmb[i, 1] <- rnorm(1, target.mortality.mean, target.mortality.sd)
+  
+  # Estimate the likelihood of prior samples
+  likelihood.values <- likelihood(
+    prior.output$model.mortality,
+    .target.mean = target_nmb[i, 1],
+    .target.se = target.mortality.sd / sqrt(d.n)
+  )
+  
+  # Re-sampling x1 and x2 with weights equal to the likelihood values
+  
+  posterior.index <- sample(1:n, n, replace = TRUE, prob = likelihood.values)
+  posterior.x <- x[posterior.index, ]
+  
+  posterior.output <- model.function(posterior.x[, 1], posterior.x[, 2])
+
+  # Compute posterior NMB
+  target_nmb[i, 2] <- mean(posterior.output$inb)
+}
+
+head(target_nmb)
+
+# Compute posterior EVSI
+evsi <- mean(pmax(target_nmb[, 2], 0)) - max(mean(posterior.inb, 0))
+evsi
+```

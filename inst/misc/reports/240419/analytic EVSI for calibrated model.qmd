@@ -1,0 +1,565 @@
+---
+title: "Analytic EVSI for calibrated model"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: inline
+---
+
+$$
+\newcommand{\E}   {\mbox{$\mathbb{E}$}}
+\newcommand{\Var}   {\mbox{$\mathrm{\mathbb{V}ar}$}}
+\newcommand{\x}   {\mbox{$\mathbf{x}$}}
+\newcommand{\y}   {\mbox{$\mathbf{y}$}}
+\newcommand{\m}   {\mbox{$\mathbf{m}$}}
+\newcommand{\EVPI}   {\mbox{$\operatorname{EVPI}$}}
+\newcommand{\INB}   {\mbox{$\operatorname{INB}$}}
+\newcommand{\dd}   {\mbox{$\mathrm{d}$}}
+\newcommand{\bmu}   {\mbox{$\boldsymbol{\mu}$}}
+$$
+
+### MODEL
+
+The model has three inputs, $x_1$, $x_2$ and $x_3$, and we define $\x = (x_1, x_2, x_3)^\top$.
+
+The model has two outputs, mortality (which we denote $z$) and incremental net benefit (which we denote INB).
+
+We have mortality data that we can use to calibrate the model.
+
+We are going to use the predicted INB to make our decision.
+
+The following functions define the model: $$
+z = x_1 + x_2 = \x^\top \m_1,
+$$ where $\m_1 = (1, 1, 0)^\top$ and $$
+\textrm{INB} = x_1 + x_3 = \x^\top \m_2.
+$$ where $\m_2 = (1, 0, 1)^\top$.
+
+```{r}
+m1 <- c(1, 1, 0)
+m2 <- c(1, 0, 1)
+
+model.function <- function(.x) { 
+  .z <- .x %*% m1
+  .INB <- .x %*% m2
+  return(list(z = .z, INB = .INB)) 
+}
+```
+
+### MODEL INPUTS AND PRIORS FOR INPUTS
+
+Our beliefs about the true values of the model inputs is described by a multivariate normal distribution: $$
+X \sim N(\bmu, \Sigma).
+$$ Let's assume the following mean vector$$
+\bmu = (1, 3, 2)^\top,
+$$and variance matrix$$
+\Sigma = \begin{pmatrix}
+\sigma^2_1 & \rho_{12} \sigma_1 \sigma_2 & \rho_{13} \sigma_1 \sigma_3 \\
+\rho_{12} \sigma_1 \sigma_2 & \sigma^2_2 & \rho_{23} \sigma_2 \sigma_3 \\
+\rho_{13} \sigma_1 \sigma_3 & \rho_{23} \sigma_2 \sigma_3 & \sigma^2_3 
+\end{pmatrix},
+$$ where variances are $\sigma^2_1 = 4$, $\sigma^2_2 = 9$ and $\sigma^2_2 = 16$, and correlations are $\rho_{12} = 0.2$, $\rho_{23} = 0.4$ and $\rho_{13} = 0.3$.
+
+```{r}
+mu1 <- 1
+mu2 <- 3
+mu3 <- 2
+
+mu <- c(mu1, mu2, mu3)
+
+sigma2_1 <- 4
+sigma2_2 <- 9
+sigma2_3 <- 6
+
+rho12 <- 0.2
+rho23 <- 0.4
+rho13 <- 0.3
+
+Sigma <- matrix(c(sigma2_1, 
+                  rho12 * sqrt(sigma2_1 * sigma2_2), 
+                  rho13 * sqrt(sigma2_1 * sigma2_3),
+                  
+                  rho12 * sqrt(sigma2_1 * sigma2_2), 
+                  sigma2_2, 
+                  rho23 * sqrt(sigma2_2 * sigma2_3),
+
+                  rho13 * sqrt(sigma2_1 * sigma2_3), 
+                  rho23 * sqrt(sigma2_2 * sigma2_3),
+                  sigma2_3), 
+                nrow = 3)
+round(Sigma, 2)
+cov2cor(Sigma)
+```
+
+### RUN MODEL
+
+#### Incremental Net Benefit
+
+We can estimate the mean incremental net benefit, averaged over the model input distribution, using Monte Carlo:
+
+```{r}
+n <- 1e6
+set.seed(1)
+x <- MASS::mvrnorm(n, mu, Sigma)
+output.sample <- model.function(x)
+INB <- output.sample$INB
+z <- output.sample$z
+mean(INB)
+```
+
+The analytic result in this case is simply $\bmu ^ \top \m_2=$ `r mu %*% m2`.
+
+#### EVPI
+
+We can obtain the EVPI via
+
+```{r}
+evpi <- mean(pmax(INB, 0)) - max(mean(INB), 0)
+evpi
+```
+
+The distribution of the INB is univariate normal so we can obtain the EVPI analytically using the closed form expression for a truncated normal distribution.
+
+Given the form of the model, INB has distribution $$
+\INB \sim N(\bmu^\top \m_2, \m_2^\top\Sigma \m_2).
+$$
+
+The EVPI is given by $$
+\EVPI = \E \{\max (\INB, 0)\} - \max \{\E (\INB), 0\},
+$$ with the first term therefore being
+
+$$
+\int^\infty_0 \,\INB\, p(\INB) \,\dd  \INB.
+$$
+
+This has the following closed form solution $$
+\left\{\mu^* + \sigma^* \frac{ \phi(\alpha)}{ 1 - \Phi(\alpha) }\right\} \left\{1 - \Phi(\alpha)\right\},
+$$ where $\alpha = \dfrac{0 - \mu^*}{\sigma^*}$, $\mu^* = \bmu^\top \m_2$ and $\sigma^* = \sqrt{\m_2^\top \Sigma \m_2}$.
+
+The analytic EVPI is therefore
+
+$$
+\left\{\mu^* + \sigma^* \frac{ \phi(\alpha)}{ 1 - \Phi(\alpha) }\right\} \left\{1 - \Phi(\alpha)\right\} - \max(\mu^*, 0).
+$$
+
+We can evaluate this:
+
+```{r}
+sigma.star <- sqrt(m2 %*% Sigma %*% m2)
+mu.star <- mu %*% m2
+alpha <- (0 - mu.star) / sigma.star
+analytic.evpi <- (mu.star + sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+analytic.evpi
+```
+
+#### EVPPI for each input
+
+We can obtain the EVPPI for each input using regression:
+
+```{r}
+model1 <- lm(INB ~ x[, 1])
+regression.evppi.x1 <- mean(pmax(fitted(model1), 0)) - max(mean(fitted(model1)), 0)
+regression.evppi.x1
+
+model2 <- lm(INB ~ x[, 2])
+regression.evppi.x2 <- mean(pmax(fitted(model2), 0)) - max(mean(fitted(model2)), 0)
+regression.evppi.x2
+
+model3 <- lm(INB ~ x[, 3])
+regression.evppi.x3 <- mean(pmax(fitted(model3), 0)) - max(mean(fitted(model3)), 0)
+regression.evppi.x3
+```
+
+We can derive these values analytically as follows. The expression for EVPPI is $$
+\EVPI = \E_{X_i} [\max \{\E_{X_j|X_i}(\INB), 0\}] - \max \{\E (\INB), 0\},
+$$ for parameter of interest $X_i$, with the remaining parameters denoted $X_j.$
+
+First, we need to derive the distribution (with respect to $X_i$) of the expected INB, conditional on the parameter of interest, $\E_{X_j|X_i} (\INB).$
+
+We first derive the distribution (with respect to $X_i$) of the conditional expectation of the model parameters, $\E_{X_j|X_i} (X).$ Because expectation is a linear operator, this will have a multivariate normal distribution.
+
+Firstly, we derive its mean:
+
+$$
+\E_{X_i} \{\E_{X_j|X_i} (X)\}= \E_X (X),
+$$ by the law of total expectation. Then we derive its variance $\Var_{X_i} \{\E_{X_j|X_i} (X)\}$. We note by the variance decomposition formula that
+
+$$
+\Var_{X_i} \{\E_{X_j|X_i} (X)\} = \Var_X(X) - \E_{X_i} \{\Var_{X_j|X_i} (X)\}.
+$$
+
+We need to derive $\Var_{X_j|X_i} (X)$. We assume, without loss of generality, that the indices of the parameters of interest, $i$, are less than the indices of the remaining parameters $j$. This allows us to write the variance matrix $\Var_{X_j|X_i} (X)$ neatly.
+
+We note that the variance of $X_i$ and the covariances that involve $X_i$, conditional on $X_i$, are all zero because $X_i$ is assumed constant in $\Var_{X_j|X_i} (X)$. We can derive the variances and covariances that *don't* involve $X_i$ from the properties of the multivariate normal distribution. This gives us
+
+$$
+\Var_{X_j|X_i} (X) = 
+\left(\begin{array}{@{}c|c@{}}
+  0 & 0 \\
+\hline
+  0 & \Sigma_{jj} - \Sigma_{ji} \Sigma_{ii}^{-1} \Sigma_{ij} 
+\end{array}\right).
+$$
+
+Because this expression does not have any terms that contain $X_i$ it is equal to its own expectation with respect to $X_i$ and therefore
+
+$$
+\begin{align}
+\Var_{X_i} \{\E_{X_j|X_i} (X)\} 
+&= \Var_X(X) - \E_{X_i} \{\Var_{X_j|X_i} (X)\}\\
+&= \left(\begin{array}{@{}c|c@{}}
+  \Sigma_{ii} & \Sigma_{ij}  \\
+\hline
+  \Sigma_{ji}  & \Sigma_{jj}
+\end{array}\right) - 
+\left(\begin{array}{@{}c|c@{}}
+  0 & 0 \\
+\hline
+  0 & \Sigma_{jj} - \Sigma_{ji} \Sigma_{ii}^{-1} \Sigma_{ij} 
+\end{array}\right)\\
+&=\left(\begin{array}{@{}c|c@{}}
+  \Sigma_{ii} & \Sigma_{ij}  \\
+\hline
+  \Sigma_{ji}  & \Sigma_{ji} \Sigma_{ii}^{-1} \Sigma_{ij} 
+\end{array}\right),
+\end{align} 
+$$ which we denote $\Sigma^\dagger$.
+
+Given this, we can derive the distribution of the expectation of INB, conditional on $X_i$:
+
+$$
+\E_{X|X_i}(\INB)  \sim N(\bmu^\top \m_2, \m_2^\top\Sigma^\dagger \m_2).
+$$
+
+We can check this in R via Monte Carlo, and also analytically using the closed for expression for the truncated normal:
+
+```{r}
+# EVPPI for x1
+i <- 1
+j <- setdiff(1:length(mu), i)
+Sigma.dagger <- Sigma
+Sigma.dagger[j, j] <- Sigma[j, i] %*% solve(Sigma[i, i]) %*% Sigma[i, j]
+
+inb.samples <- rnorm(n, mu %*% m2, sqrt(m2 %*% Sigma.dagger %*% m2))
+monte.carlo.evppi.x1 <- mean(pmax(inb.samples, 0)) - max(mean(inb.samples, 0))
+
+Sigma.star <- sqrt(m2 %*% Sigma.dagger %*% m2)
+mu.star <- mu %*% m2
+alpha <- (0 - mu.star) / Sigma.star
+analytic.evppi.x1 <- (mu.star + Sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+
+analytic.evppi.x1
+monte.carlo.evppi.x1 
+regression.evppi.x1
+```
+
+```{r}
+# EVPPI for x2
+i <- 2
+j <- setdiff(1:length(mu), i)
+Sigma.dagger <- Sigma
+Sigma.dagger[j, j] <- Sigma[j, i] %*% solve(Sigma[i, i]) %*% Sigma[i, j]
+
+inb.samples <- rnorm(n, mu %*% m2, sqrt(m2 %*% Sigma.dagger %*% m2))
+monte.carlo.evppi.x2 <- mean(pmax(inb.samples, 0)) - max(mean(inb.samples, 0))
+
+Sigma.star <- sqrt(m2 %*% Sigma.dagger %*% m2)
+mu.star <- mu %*% m2
+alpha <- (0 - mu.star) / Sigma.star
+analytic.evppi.x2 <- (mu.star + Sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+
+analytic.evppi.x2
+monte.carlo.evppi.x2
+regression.evppi.x2
+```
+
+```{r}
+# EVPPI for x3
+i <- 3
+j <- setdiff(1:length(mu), i)
+Sigma.dagger <- Sigma
+Sigma.dagger[j, j] <- Sigma[j, i] %*% solve(Sigma[i, i]) %*% Sigma[i, j]
+
+inb.samples <- rnorm(n, mu %*% m2, sqrt(m2 %*% Sigma.dagger %*% m2))
+monte.carlo.evppi.x3 <- mean(pmax(inb.samples, 0)) - max(mean(inb.samples, 0))
+
+Sigma.star <- sqrt(m2 %*% Sigma.dagger %*% m2)
+mu.star <- mu %*% m2
+alpha <- (0 - mu.star) / Sigma.star
+analytic.evppi.x3 <- (mu.star + Sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+
+analytic.evppi.x3
+monte.carlo.evppi.x3
+regression.evppi.x3
+```
+
+#### EVSI for a study to learn about a single model input
+
+Let's assume we can learn about $x_3$ through a study. The study involves $n_y = 100$ observations, $y_k, k = 1, \ldots, n_y$ on $x_3$, where $y_k$ has data generating distribution $$
+y_k \sim N(x_3, \phi^2),
+$$ where $\phi = 50$.
+
+The regression approach to EVSI involves generating $n$ datasets, conditional on the $n$ prior samples of $x_3$, summarising each dataset with a low dimensional statistic (which here would be the mean) and then regressing the $n$ sampled INB values on the $n$ summary statistics.
+
+In R
+
+```{r}
+phi <- 20
+n_y <- 100
+generate.sum.statistics <- function(.x) mean(rnorm(n_y, .x, phi))
+sum.statistics <- sapply(x[, 3], generate.sum.statistics)
+model.evsi <- lm(INB ~ sum.statistics)
+evsi.x3 <- mean(pmax(fitted(model.evsi), 0)) - max(mean(fitted(model.evsi)), 0)
+evsi.x3
+```
+
+Because the prior and likelihood (data generating distribution) are both normal, the posterior is normal and we can therefore derive the EVSI analytically.
+
+Construct vector $\y = (0, 0, y)^\top$. This has mean $X$ and variance $$
+\Sigma_y = \begin{pmatrix}
+\infty&0&0\\
+0&\infty&0\\
+0&0&\phi^2
+\end{pmatrix},
+$$ where the infinite variance ensures that we only update $x_3$ directly.
+
+The multivariate normal posterior distribution has variance $$
+\Sigma^\ddagger = \left( \Sigma^{-1}+n_y \Sigma_y^{-1}\right)^{-1},
+$$ and mean $$
+\bmu^\ddagger = \Sigma^\ddagger\left(\Sigma^{-1}{\bmu }+n_y \Sigma_y ^{-1}\mathbf{\bar{y}} \right),
+$$ where $\mathbf{\bar{y}} = (0, 0, \bar{y})^\top$, the sample average of the $n_y$ observations on $y$
+
+Therefore, $$
+(X|\mathbf{\bar{y}}) \sim N(\bmu^\ddagger, \Sigma^\ddagger),$$ and $$
+\INB \sim N(\m_2^\top\bmu^\ddagger, \m_2^\top \Sigma^\ddagger\m_2)$$
+
+and we can obtain the EVSI analytically using the properties of the truncated normal distribution in the same way that we derived the analytic expression for EVPPI.
+
+First we need to derive the distribution for the posterior expectation of $X$ given observed data $y$. The expectation is $\E_y\{\E_{X|y}(X)\} = \E(X)$ and the variance is $$
+\Var\{\E_{X|y}(X)\}= \Var_X - \E_y\{\Var_{X|y}(X)\}= \Sigma - \Sigma^\ddagger,
+$$ which we denote $\Sigma^\S$.
+
+Finally, we derive the distribution for the posterior expectation of INB given observed data $y$, $$
+\E_{X|y}(\INB) \sim N(\bmu^\top \m_2, \m_2^\top \Sigma^\S \m_2).
+$$
+
+```{r}
+Sigma.y <- matrix(c(Inf, 0, 0, 0, Inf, 0, 0, 0, phi^2), 3, 3)
+Sigma.ddagger <- solve(solve(Sigma) + n_y * solve(Sigma.y))
+Sigma.S <- Sigma - Sigma.ddagger
+sigma.star <- sqrt(m2 %*% Sigma.S %*% m2)
+mu.star <- mu %*% m2
+
+alpha <- (0 - mu.star ) / sigma.star
+analytic.evsi.x3 <- (mu.star  + sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star , 0)
+
+analytic.evsi.x3
+evsi.x3
+```
+
+### Calibration
+
+First let's calibrate the model. We can do this via Monte Carlo, re-weighting the model inputs by the likelihood values for the calibration target.
+
+We denote the calibration target data $d$, which we observe to be 2.5. We assume that the data generating distribution is normal, with variance $\tau^2 = 20$.
+
+We begin assuming that the model is correct, and given the true values of the inputs, $X$, will return the true value of the mortality, $z$. For the purposes of calibration we can therefore write
+
+$$
+(d|z) \sim N(z, \tau^2),
+$$ or in terms of the model inputs,
+
+$$
+(d|X=\x) \sim N(\x^\top \m_1, \tau^2).
+$$
+
+In R we can derive the value of the likelihood $p(d|z)$ for each sample $z$ as follows
+
+```{r}
+d <- 1.5
+tau <- sqrt(20)
+likelihood.values <- dnorm(d, output.sample$z, tau)
+```
+
+We can then re-weight the model input values and rerun the model to give the calibrated model output:
+
+```{r}
+resamp.posterior.index <- sample(1:n, n, replace = TRUE, prob = likelihood.values)
+resamp.posterior.x <- x[resamp.posterior.index, ]
+calibrated.INB <- model.function(resamp.posterior.x)$INB
+mean(calibrated.INB)
+mean(INB)
+```
+
+Or, we can re-weight the INB values directly:
+
+```{r}
+resampled.inb <- sample(INB, n, replace = TRUE, prob = likelihood.values)
+mean(resampled.inb)
+mean(calibrated.INB)
+calibrated.evpi <- mean(pmax(calibrated.INB, 0)) - max(mean(calibrated.INB, 0))
+calibrated.evpi
+```
+
+Now, let's derive the posterior for the model inputs and the INB analytically. This will be normal so we will also be able to derive the calibrated model's EVPI analytically too. The model inputs have posterior distribution
+
+$$
+p(X|d) = \frac{p(d|X)p(X)}{p(d)}\propto p(d|X)p(X).
+$$ The distribution of the data is $$
+p(d|X=\x) \propto \exp\left(-\frac{(d-\x^\top \m_1)^2}{2\tau^2}\right),
+$$ and distribution of the prior is $$
+p(X=\x) \propto \exp\left(-\frac{1}{2}(\x-\bmu)^\top\Sigma^{-1}(\x-\bmu)\right),
+$$ so $$
+\begin{align}p(X=\x|d) 
+&\propto \exp\left(-\frac{(d-\x^\top \m_1)^2}{2\tau^2}\right)\exp\left(-\frac{1}{2}(\x-\bmu)^\top\Sigma^{-1}(\x-\bmu)\right)\\ 
+&\propto \exp\left(d\frac{\x^\top\m_1}{\tau^2}-\frac{\x^\top \m_1\m_1^\top  \x}{2\tau^2}-\frac{\x^\top\Sigma^{-1}\x-2\bmu^\top\Sigma^{-1}\x}{2}\right) \\ 
+& \propto \exp\left(-\frac{1}{2}\x^\top\left(\Sigma^{-1}+\frac{\m_1\m_1^\top}{\tau^2}\right)\x +\left(\frac{d \m_1^\top}{\tau^2}+\bmu^\top\Sigma^{-1}\right)\x\right).\end{align}
+$$ This expression is in multivariate normal form, i.e. it is proportional to $$\exp\left(-\frac{1}{2}(\x-\bmu_{p})^\top\Sigma_{p}^{-1}(\x-\bmu_{p})\right)\propto\exp\left(-\frac{1}{2}\x^\top\Sigma_{p}^{-1}\x+\bmu_{p}^\top\Sigma_{p}^{-1}\x\right).$$
+
+So, by matching terms we can obtain the mean and variance of the posterior distribution for $X$ given calibration data $d$: $$\begin{align}
+\Sigma_p&=\left(\Sigma^{-1}+\frac{\m_1\m_1^\top}{\tau^2}\right)^{-1},\\ \bmu_{p}&=\left(\frac{d\m_1^\top}{\tau^2}+\bmu^\top \Sigma^{-1}\right)\Sigma_{p}.
+\end{align}$$ The distribution of the posterior INB is therefore $$
+p(\INB | d) \sim N(\bmu_p^\top\m_2, \m_2^\top \Sigma_p \m_2).
+$$ We can sample values from this distribution and see if the EVPI of the calibrated model agrees with the regression estimate.
+
+```{r}
+Sigma_p <- solve(solve(Sigma) + outer(m1, m1) / tau^2)
+mu_p <- t((d * m1 / tau^2 + mu %*% solve(Sigma)) %*% Sigma_p)
+posterior.MC.samples <- MASS::mvrnorm(n, m2 %*% mu_p, m2 %*% Sigma_p %*% m2)
+MC.calibrated.evpi <- mean(pmax(posterior.MC.samples, 0)) - max(mean(posterior.MC.samples), 0)
+MC.calibrated.evpi
+```
+
+And, finally, we can use the properties of the truncated normal distribution to obtain an analytic value for the EVPI for the calibrated model.
+
+```{r}
+sigma.star <- sqrt(m2 %*% Sigma_p %*% m2)
+mu.star <- m2 %*% mu_p
+
+alpha <- (0 - mu.star ) / sigma.star
+analytic.calibrated.evpi <- (mu.star  + sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star , 0)
+
+analytic.calibrated.evpi
+MC.calibrated.evpi
+calibrated.evpi
+```
+
+### EVPI for mortality
+
+What is the value of obtaining perfect calibration data about mortality? I.e. the value of learning the true value of $z$?
+
+We can obtain this via regression very easily:
+
+```{r}
+model.evppi.z <- lm(INB ~ z)
+regression.evppi.z <- mean(pmax(fitted(model.evppi.z), 0)) - max(mean(fitted(model.evppi.z)), 0)
+regression.evppi.z
+```
+
+To obtain this analytically we need to derive the distribution, with respect to $z$ of the expectation of the INB, given $z$, i.e. $\E_{X|z}(\INB)$.
+
+Using the various results above, we can show that $\E_{X|z}(X)$ has mean $\E(X)$ and variance $$
+\Sigma - \left(\Sigma^{-1}+\frac{\m_1\m_1^\top}{0}\right)^{-1}.
+$$ In order to avoid numerical problems we replace 0 in the denominator by some small quantity (\~ $10^{-14}$).
+
+In R via Monte Carlo:
+
+```{r}
+Sigma_p <- solve(solve(Sigma) + outer(m1, m1) / 1e-14)
+Sigma_d <- Sigma - Sigma_p
+
+inb.samples <- rnorm(n, mu %*% m2, sqrt(m2 %*% Sigma_d %*% m2))
+monte.carlo.evppi.z <- mean(pmax(inb.samples, 0)) - max(mean(inb.samples, 0))
+monte.carlo.evppi.z 
+```
+
+And analytically:
+
+```{r}
+Sigma.star <- sqrt(m2 %*% Sigma_d %*% m2)
+mu.star <- mu %*% m2
+alpha <- (0 - mu.star) / Sigma.star
+analytic.evppi.z <- (mu.star + Sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+
+analytic.evppi.z
+```
+
+### EVSI for mortality calibration target data
+
+What is the value of obtaining calibration data about mortality? I.e. the value of learning about $z$?
+
+Let's assume that the data generating mechanism is normal with mean equal to the true value of mortality, and variance equal to 100. The sample size for the study that collects the calibration data is $n_c = 100$
+
+We can obtain this via regression very easily:
+
+```{r}
+v <- 100
+n_c <- 50
+sampled.targets <- rnorm(n, z, sqrt(v / n_c))
+model.evsi.z <- lm(INB ~ sampled.targets)
+regression.evsi.z <- mean(pmax(fitted(model.evsi.z), 0)) - max(mean(fitted(model.evsi.z)), 0)
+regression.evsi.z
+```
+And analytically
+
+
+```{r}
+Sigma_p <- solve(solve(Sigma) + n_c * outer(m1, m1) / v)
+Sigma_d <- Sigma - Sigma_p
+
+inb.samples <- rnorm(n, mu %*% m2, sqrt(m2 %*% Sigma_d %*% m2))
+monte.carlo.evsi.z <- mean(pmax(inb.samples, 0)) - max(mean(inb.samples, 0))
+monte.carlo.evsi.z 
+
+Sigma.star <- sqrt(m2 %*% Sigma_d %*% m2)
+mu.star <- mu %*% m2
+alpha <- (0 - mu.star) / Sigma.star
+analytic.evsi.z <- (mu.star + Sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+
+analytic.evsi.z
+analytic.evppi.z
+```
+
+Plot calibration EVSI against sample size:
+
+```{r}
+analytic.evsi.vector <- numeric(250)
+for (n_c in 1:250) {
+  Sigma_p <- solve(solve(Sigma) + n_c * outer(m1, m1) / v)
+  Sigma_d <- Sigma - Sigma_p
+
+  Sigma.star <- sqrt(m2 %*% Sigma_d %*% m2)
+  mu.star <- mu %*% m2
+  alpha <- (0 - mu.star) / Sigma.star
+  analytic.evsi.vector[n_c] <- (mu.star + Sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+
+}
+plot(1:n_c, analytic.evsi.vector, type = "l", 
+     ylim = c(0, analytic.evppi.z * 1.3),
+     xlab = "Study sample size", 
+     ylab = "EVSI")
+abline(h = analytic.evppi.z, lty = 3)
+text(10, analytic.evppi.z, "EVPPI", pos = 3)
+```
+### Things to do
+
+1) include a bias term in the EVSI to represent judgements about how "wrong" the calibration targets might be
+
+2) Derive the analytic solution for collecting a second set of normally distributed data for an already calibrated model

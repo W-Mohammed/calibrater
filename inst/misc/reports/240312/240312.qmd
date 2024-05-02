@@ -1,0 +1,370 @@
+---
+title: "Expected value of more precise/context-relevant calibration target data"
+format: docx
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+## Introduction
+
+Calibration target data is one of the key elements of any calibration
+process. However, like any data, calibration targets are prone to
+precision and/or validity issues.
+
+The Standard error (SE) is a measure of the precision of a statistical
+estimate. Specifically, it quantifies the variability or imprecision of
+a sample statistic, such as the mean or proportion, compared to the true
+population parameter. We quantify the Expected Value of Perfect
+Information (EVPI) as the value of reducing uncertainty in
+decision-making. The EVPI represents the maximum amount a decision-maker
+would be willing to pay for perfect information that eliminates all
+uncertainty associated with a decision, reducing the SE to zero.
+
+Bias, on the other hand, refers to the systematic or consistent error in
+measurements or estimates. It can lead to inaccuracies in the results,
+and it can result from flaws in study design, data collection methods,
+or other systematic errors.
+
+## Theoretical derivations
+
+### The problem
+
+#### Prior
+
+$$ 
+\begin{equation}
+    x\sim N(\mu, \Sigma)
+\end{equation}
+$$ *where* $$
+\begin{equation}
+    \mu = \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix}
+\end{equation}
+$$ $$
+\begin{equation}
+    \Sigma =
+    \begin{pmatrix} \sigma_1^2 & \rho \sigma_1\sigma_2 \\
+    \rho \sigma_1\sigma_2 & \sigma_2^2  \end{pmatrix}
+\end{equation}
+$$ The probability density function (PDF) for a multivariate normal
+distribution with a mean vector $\mu$ and a covariance matrix $\Sigma$
+is given by: $$
+\begin{equation}
+    f(\mathbf{x}; \boldsymbol{\mu}, \boldsymbol{\Sigma}) = \frac{1}{(2\pi)^{n/2} |\boldsymbol{\Sigma}|^{1/2}} \exp\left(-\frac{1}{2} (\mathbf{x} - \boldsymbol{\mu})^T \boldsymbol{\Sigma}^{-1} (\mathbf{x} - \boldsymbol{\mu})\right)
+\end{equation}
+$$
+
+#### Measurement
+
+$$
+\begin{equation}
+    y = L^Tx + \varepsilon
+\end{equation}
+$$ *where*
+
+-   $L$ is a matrix (or row-matrix, depending on the context) that
+    transforms the vector $x$ into another vector (or scalar, depending
+    on the context). The transformation is defined by the structure and
+    values of $L$. $L^T$ represents the transposition of the matrix $L$.
+    Transposing a matrix involves flipping it over its diagonal, turning
+    the matrix's rows into columns and vice versa.
+
+In the current example: $\text{NB} = x_1$ and
+$\text{Mortality} = x_1 + x_2$. If $y = \text{NB}$,
+$x = \begin{bmatrix} x_1 \\ x_2 \end{bmatrix}$,
+$L = \begin{bmatrix} 1 \\ 0 \end{bmatrix}$ and
+$L^T = \begin{bmatrix} 1 & 0 \end{bmatrix}$.
+
+-   $\varepsilon$ is the measurement error
+    $\varepsilon \sim N(0,s_N^2)$.
+
+The likelihood is given by:
+
+$$
+\begin{align*}
+    L(x, s_N^2; y) & = \frac{1}{\sqrt{2\pi s_N^2}} \exp\left(-\frac{(y - L^Tx)^2}{2s_N^2}\right) \\
+    L(x, s_N^2 | y_1, y_2, \ldots, y_n) & = \prod_{i=1}^{n} \frac{1}{\sqrt{2\pi s_N^2}} \exp\left(-\frac{(y_i - L^Tx)^2}{2s_N^2}\right)
+\end{align*}
+$$
+
+#### Decision \[Mark ??\]
+
+The decision is to use intervention if $x_1>0$ and keep the status quo
+otherwise.
+
+The incremental net benefit is \[Mark ??\]
+
+$$
+\begin{align*}
+    NB & = y = x_1\\
+    INB(x) & = x_1 . \theta(x_1)
+\end{align*}
+$$ *where* $$
+\begin{equation}
+\theta(x) = \begin{cases}
+    1,& \text{if } x\geq 0\\
+    0,              & \text{otherwise}
+\end{cases}
+\end{equation}
+$$
+
+#### Reduced normals
+
+To calculate the distribution of $x$ conditional on observing
+measurement $y$, $P(x|y)$, note
+
+$$
+\begin{equation}
+P(x \& y) \propto \exp\left[-Q(x_1,x_2)/2\right]
+\end{equation}
+$$
+
+Given the function $$
+\begin{equation}
+Q = \frac{(L^Tx - y)^2}{s_N^2} + (x - \mu)^T \Sigma^{-1} (x - \mu) \end{equation}
+$$ and the assertion that $$
+\begin{equation}
+Q = (x - a)^T M^{-1} (x - a)
+\end{equation}
+$$ our goal is to derive expressions for $M$ and $a$.
+
+##### Expanding $Q$
+
+First, we expand both parts of $Q$:
+
+$$
+\begin{align*}
+\frac{(L^Tx - y)^2}{s_N^2} &= \frac{(L^Tx)^T(L^Tx) - 2yL^Tx + y^2}{s_N^2} \\
+(x - \mu)^T \Sigma^{-1} (x - \mu) &= x^T\Sigma^{-1}x - x^T\Sigma^{-1}\mu - \mu^T\Sigma^{-1}x + \mu^T\Sigma^{-1}\mu
+\end{align*}
+$$
+
+##### Combining and Rearranging
+
+Next, we combine these expansions and rearrange terms to form a
+quadratic expression in $x$:
+
+$$
+\begin{align*}
+Q &= \frac{(L^Tx)^T(L^Tx)}{s_N^2} - \frac{2yL^Tx}{s_N^2} + \frac{y^2}{s_N^2} + x^T\Sigma^{-1}x - 2x^T\Sigma^{-1}\mu + \mu^T\Sigma^{-1}\mu
+\end{align*}
+$$ The goal is to rewrite $Q$ in the form of $(x - a)^T M^{-1} (x - a)$.
+This form is a general quadratic expression which can be expanded as:
+
+$$
+\begin{equation}
+(x - a)^T M^{-1} (x - a) = x^T M^{-1} x - x^T M^{-1} a - a^T M^{-1} x + a^T M^{-1} a
+\end{equation}
+$$
+
+##### Comparing Coefficients
+
+By comparing coefficients from the expanded form of $Q$ and the general
+quadratic form, we can identify $M^{-1}$ and $a$:
+
+$$
+\begin{align*}
+    \text{For the quadratic term in } x (x^T M^{-1} x): \\
+    & \frac{LL^T}{s_N^2} + \Sigma^{-1} = M^{-1} \\
+    & \therefore \; M^{-1} = \Sigma^{-1} + \frac{LL^T}{s_N^2} \\
+    \text{For the linear term in } x (x^T M^{-1} a): \\
+    & \Sigma^{-1}\mu + \frac{Ly}{s_N^2} = M^{-1} a \\
+    & \text{Multiplying both sides by } M \text{ gives:} \\
+    & \therefore \; a = M \left( \Sigma^{-1}\mu + \frac{Ly}{s_N^2} \right)
+\end{align*}
+$$
+
+#### Posterior hyperparameters
+
+So, the posterior distribution of the $NB$ is: $$
+\begin{align*}
+    & P(x | y) = & N(x; a,M) \label{cond} \\
+    where: & & \\
+    & M^{-1} = & \Sigma^{-1} + \frac{LL^T}{s_N^2} \\
+    & a = & M \left( \Sigma^{-1}\mu + \frac{Ly}{s_N^2} \right)
+\end{align*}
+$$
+
+#### A useful integral}
+
+Using integration by parts: $$
+\begin{align*}
+\int_0^\infty \mathrm{d}x~ x.N(x;m,s^2) = &
+s^2.N(0,m,s^2) + m. \left[1-\Phi\left(-\frac{m}{s}\right)\right] &
+\stackrel{\text{def}}{=} f(m,s)\label{f}
+\end{align*}
+$$
+
+where $N(x;m,s^2)$ is the density of a normal distribution and $\Phi(x)$
+is the cdf of the standard normal distribution, and the last equation
+serves to define the function $f$.
+
+### EVPI:
+
+The Standard error (SE) measures the precision of a statistical
+estimate. Specifically, it quantifies the variability or imprecision of
+a sample statistic, such as the mean or proportion, compared to the true
+population parameter.
+
+In a set of competing options, $D$, the optimal choice for
+decision-makers like NICE is that associated with the highest "utility".
+The net benefit (NB) is a utility function given by the following
+notation for each choice or option $d$. $$
+\begin{align*}
+    \text{NB}_d(\theta) \\
+\end{align*}
+$$ $\theta = (\theta_1, \dots, \theta_n)$ is the model input parameters
+representing real-world quantities. Since observed data (parameters) may
+not be known with certainty, we are uncertain about the value(s) of
+$\theta$ and, therefore, uncertain about the $NB$. Because of the
+uncertainty associated with the $NB$, the optimal choice is determined
+based on maximising the *expected* $NB$.
+
+$$
+\begin{align*}
+    \mathbb{E}\{\text{NB}_d(\theta)\} \\
+\end{align*}
+$$ Which for the set of options, $D$, becomes: $$
+\begin{align*}
+    \text{max}_{\text{d} \in \text{D}} \mathbb{E}\{\text{NB}_d(\theta)\}
+\end{align*}
+$$
+
+We quantify the Expected Value of Perfect Information (EVPI) as the
+value of reducing uncertainty in decision-making. The EVPI represents
+the maximum amount a decision-maker would be willing to pay for perfect
+information that eliminates all uncertainty associated with their
+decision, reducing the SE to zero. The EVPI is given by:
+
+$$
+\begin{align*}
+    EVPI  = \mathbb{E}\{\text{max}_{\text{d} \in \text{D}}\text{NB}_d(\theta)\} -
+    \text{max}_{\text{d} \in \text{D}} \mathbb{E}\{\text{NB}_d(\theta)\}
+\end{align*}
+$$ In the current example we have one choice $d_1$ where the
+$NB = y = x_1$ and the $NB$ posterior distribution, and its moments, is
+given by:
+
+$$
+\begin{align*}
+    & P(x | y) = & N(x; a,M) \label{cond} \\
+    where: & & \\
+    & M^{-1} = & \Sigma^{-1} + \frac{LL^T}{s_N^2} \\
+    & a = & M \left( \Sigma^{-1}\mu + \frac{Ly}{s_N^2} \right)
+\end{align*}
+$$
+
+To estimate the EVPI, we assume a second choice $d_2$ where the
+$NB = 0$. Hence the EVPI becomes: $$
+\begin{align*}
+    EVPI  & = \mathbb{E}\{\text{max}(P(x | y), 0)\} -
+    \text{max}(\mathbb{E}\{P(x | y)\}, 0) \\
+    & = \mathbb{E}\{\text{max}(P(x | y), 0)\} -
+    \text{max}(a, 0)
+\end{align*}
+$$
+
+## Methods
+
+### Inputs
+
+We use a simple decision model with two inputs, $x_1$ and $x_2$.
+
+```{r}
+# Define model inputs:
+m1 <- 0
+m2 <- 190
+mu <- c(m1, m2)
+
+n_observed <- 100
+L <- c(2, 0)
+s_N_squared <- 2 # Variance of the measurement error, assuming identical for all observations
+
+v1 <- 1000
+v2 <- 100
+rho <- 0
+Sigma <- matrix(c(v1, rho * v1 * v2, rho * v1 * v2, v2), 2, 2)
+
+# Calculate the inverse of Sigma
+Sigma_inv <- solve(Sigma)
+
+set.seed(1)
+n <- 1e6
+x <- MASS::mvrnorm(n, mu, Sigma)
+x1 <- x[, 1]
+x2 <- x[, 2]
+
+# y <- t(L)%*%colMeans(x) 
+```
+
+### Getting the hyperparameters
+
+```{r}
+# Calculation of M^-1 and a requires adjustment for multiple observations
+# Adjust L and y to match the dimensions
+M_inv <- Sigma_inv + (t(L) %*% L) / s_N_squared 
+M <- solve(M_inv)
+
+a <- M %*% ((Sigma_inv %*% mu) + ((t(L) %*% y) / s_N_squared))
+
+# Print the results
+print("Hyperparameter a:")
+print(a)
+print("Covariance matrix M:")
+print(M)
+
+# Sample from the posterior
+hyper_params_samples <- MASS::mvrnorm(n, a, M)[,1]
+
+# Get the EVPI:
+hyper_params_evpi <- mean(pmax(hyper_params_samples, 0)) - pmax(mean(hyper_params_samples), 0)
+
+print("Hyper parameters EVPI:")
+print(hyper_params_evpi)
+```
+
+### EVSI
+
+```{r}
+# Define the variables
+l1 <- L[1]
+l2 <- L[2]
+sN2 <- s_N_squared
+sigma1 <- v1
+sigma2 <- v2
+rho <- rho
+mu1 <- m1
+mu2 <- m2
+y <- 2500
+
+# Compute components of a1
+denominator_common = (l1^2 * sigma1^2 / (sN2 * (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2))) +
+  (2 * l1 * l2 * rho * sigma1 * sigma2 / (sN2 * (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2))) +
+  (l2^2 * sigma2^2 / (sN2 * (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2))) -
+  (rho^2 * sigma1^2 * sigma2^2 / ((sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2)^2)) +
+  (sigma1^2 * sigma2^2 / ((sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2)^2))
+
+part1_numerator = ((l2^2 / sN2) + (sigma1^2 / (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2))) * 
+  ((l1 * y / sN2) + (mu1 * sigma2^2 / (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2)) - 
+  (mu2 * rho * sigma1 * sigma2 / (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2)))
+
+part2_numerator = ((rho * sigma1 * sigma2 / (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2)) - 
+  (l1 * l2 / sN2)) * 
+  ((l2 * y / sN2) - (mu1 * rho * sigma1 * sigma2 / (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2)) + 
+  (mu2 * sigma1^2 / (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2)))
+
+# Final expression for a1
+a1 <- (part1_numerator / denominator_common) + (part2_numerator / denominator_common)
+
+# Output a1
+a1
+
+# Compute M11
+M11_numerator = ((l2^2 / sN2) + (sigma1^2 / (sigma1^2 * sigma2^2 - rho^2 * sigma1^2 * sigma2^2)))
+M11 <- M11_numerator / denominator_common
+
+# Output M11
+M11
+
+
+```
