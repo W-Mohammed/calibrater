@@ -1,0 +1,545 @@
+---
+title: "Analytic EVSI for calibrated model"
+format: html
+editor: visual
+bibliography: "bib.bib"
+csl: "wael-harvard.csl"
+---
+
+$$
+\newcommand{\E}   {\mbox{$\mathbb{E}$}}
+\newcommand{\Var}   {\mbox{$\mathrm{\mathbb{V}ar}$}}
+\newcommand{\Cov}   {\mbox{$\mathrm{\mathbb{C}ov}$}}
+\newcommand{\x}   {\mbox{$\mathbf{x}$}}
+\newcommand{\y}   {\mbox{$\mathbf{y}$}}
+\newcommand{\m}   {\mbox{$\mathbf{m}$}}
+\newcommand{\EVPI}   {\mbox{$\operatorname{EVPI}$}}
+\newcommand{\INB}   {\mbox{$\operatorname{INB}$}}
+\newcommand{\dd}   {\mbox{$\mathrm{d}$}}
+\newcommand{\bmu}   {\mbox{$\boldsymbol{\mu}$}}
+$$
+
+## Introduction
+
+The selection of calibration target(s) should be based on the simulator outputs, the availability of good-quality data, and the decision problem addressed by the model. Calibration target(s) data should be obtained from studies relevant to the context of the decision-maker. The studies generating this data should also be of high quality and conducted in populations similar to those the decision will impact [@dahabreh2017].
+
+However, the calibration targets are likely “imperfect” or “incompatible” in some way. For example, the observed endpoints could be estimated in studies conducted in a “different” decision setting (different population), using a relatively “weak” or more “prone to bias” study design or are outdated [@kennedy2001; @mandrik2022].
+
+Calibration exercises that fail to guard against, and calibration methods that do not account for, these uncertainties or imperfections can introduce biases into the calibrated model, its simulated outputs and the subsequent cost-effectiveness recommendations [@muehleisen2016; @mandrik2022].
+
+Value-of-information (VOI) analysis is a set of methods used in health economics to assess the value of gathering additional information before making a decision regarding health interventions. This analysis helps to identify whether the costs of obtaining more information (e.g., through further research or data collection) are justified by the potential to improve decision-making outcomes. The primary metrics used in VOI analysis are the Expected Value of Perfect Information (EVPI), the Expected Value of Partial Perfect Information (EVPPI), and the Expected Value of Sample Information (EVSI) [@wilson2015; @drummond2015].
+
+EVPI measures the maximum amount a decision-maker should be willing to pay for completely eliminating uncertainty when making a decision. It is calculated as the difference between the expected utility (or benefit) with perfect information and the expected utility with current information. Essentially, it represents the potential improvement in outcomes if one knew the true effects of all interventions precisely without any uncertainty. It gives a theoretical upper limit on the value of information since it assumes information is perfect and complete [@wilson2015; @drummond2015].
+
+EVPPI quantifies the value of eliminating uncertainty for a specific subset of parameters or data inputs in a decision model. While EVPI considers perfect information about all uncertain parameters, EVPPI focuses on the value of resolving uncertainty about one or more specific parameters (but not all). This is useful in prioritizing research efforts because it identifies which particular uncertainties have the greatest impact on the decision. Calculating EVPPI helps in targeting data collection to reduce the most critical uncertainties [@wilson2015; @drummond2015].
+
+EVSI estimates the expected value of obtaining additional information from a new study or sample before making a final decision. Unlike EVPI, which assumes perfect knowledge, EVSI considers the value of obtaining more but imperfect information through further research. EVSI is calculated as the difference between the expected utility with additional sample information and the expected utility under the current state of knowledge, minus the cost of obtaining the new information. This metric is especially useful for determining whether conducting a specific study is worthwhile given its costs [@wilson2015; @drummond2015].
+
+Each of these metrics provides crucial insights into how much should be invested in additional research and which areas of uncertainty should be prioritized to optimize healthcare decision-making. They play a fundamental role in health economics by facilitating more informed, efficient, and effective allocation of healthcare resources.
+
+Given the potential misalignment and biases inherent in the calibration target(s), due to variations in study populations, outdated data, and/or weak study designs, these VOI metrics can also provide a structured approach to quantifying the benefits of refining these targets. By applying EVPI, EVPPI, and EVSI, we can systematically evaluate the economic worth of enhancing data quality or conducting new, more robust studies that better inform the calibration process. This approach will help in making informed decisions about where to allocate resources in the data collection process, thus enhancing the reliability of the calibrated health economic models.
+
+## Model
+
+### Model description
+
+We will use a simple 'toy' model. This model has three inputs, $x_1$, $x_2$ and $x_3$, and we define $\x = (x_1, x_2, x_3)^\top$. The model has two outputs, mortality (which we denote $z$) and incremental net benefit (which we denote *INB*). The parameters $x_1$ and $x_2$ inform the simulated mortality $z$, while $x_1$ and $x_3$ inform the *INB*.
+
+We have mortality data that we can use to calibrate the model. We are going to use the predicted INB to make our decision.
+
+The following functions define the model: $$
+z = x_1 + x_2 = \x^\top \m_1,
+$$ where $\m_1 = (1, 1, 0)^\top$ and $$
+\textrm{INB} = x_1 + x_3 = \x^\top \m_2.
+$$ where $\m_2 = (1, 0, 1)^\top$.
+
+Using R, the model is programmed as follows.
+
+```{r, define_toy_model}
+m1 <- c(1, 1, 0)
+m2 <- c(1, 0, 1)
+
+model.function <- function(.x) { 
+  .z <- .x %*% m1
+  .INB <- .x %*% m2
+  return(list(z = .z, INB = .INB)) 
+}
+```
+
+### Model inputs and their prior distributions
+
+Our beliefs about the true values of the model inputs is described by a multivariate normal distribution: $$
+X \sim N(\bmu, \Sigma).
+$$ Let's assume the following mean vector
+
+$$
+\bmu = (1, 3, 2)^\top,
+$$ and variance matrix
+
+$$
+\Sigma = \begin{pmatrix}
+\sigma^2_1 & \rho_{12} \sigma_1 \sigma_2 & \rho_{13} \sigma_1 \sigma_3 \\
+\rho_{12} \sigma_1 \sigma_2 & \sigma^2_2 & \rho_{23} \sigma_2 \sigma_3 \\
+\rho_{13} \sigma_1 \sigma_3 & \rho_{23} \sigma_2 \sigma_3 & \sigma^2_3 
+\end{pmatrix},
+$$
+
+where:
+
+-   variances are $\sigma^2_1 = 4$, $\sigma^2_2 = 9$ and $\sigma^2_2 = 16$, and
+-   correlations are $\rho_{12} = 0.2$, $\rho_{23} = 0.4$ and $\rho_{13} = 0.3$.
+
+```{r, define_inputs_priors}
+mu1 <- 1
+mu2 <- 3
+mu3 <- 2
+
+mu <- c(mu1, mu2, mu3)
+
+sigma2_1 <- 4
+sigma2_2 <- 9
+sigma2_3 <- 6
+
+rho12 <- 0.2
+rho23 <- 0.4
+rho13 <- 0.3
+
+Sigma <- matrix(c(sigma2_1, 
+                  rho12 * sqrt(sigma2_1 * sigma2_2), 
+                  rho13 * sqrt(sigma2_1 * sigma2_3),
+                  
+                  rho12 * sqrt(sigma2_1 * sigma2_2), 
+                  sigma2_2, 
+                  rho23 * sqrt(sigma2_2 * sigma2_3),
+
+                  rho13 * sqrt(sigma2_1 * sigma2_3), 
+                  rho23 * sqrt(sigma2_2 * sigma2_3),
+                  sigma2_3), 
+                nrow = 3)
+## Sigma (variance-covariance matrix):
+round(Sigma, 2)
+## Correlation matrix:
+cov2cor(Sigma)
+```
+
+## The mean Incremental Net Benefit (INB)
+
+Given the form of the model, the INB has the univariate distribution with mean $\bmu^\top \m_2$ and variance $\m_2^\top\Sigma \m_2$.
+
+$$
+\INB \sim N(\bmu^\top \m_2, \m_2^\top\Sigma \m_2).
+$$
+
+The moments of the $\INB$ distribution are obtained by the general rules for the linear combinations of random variables where:
+
+$$
+\E(aX + bY) = a\E(X) + b\E(Y) \\
+\Var(X + Y) = \Var(X) + \Var(Y) + 2\Cov(X, Y)
+$$
+
+Soch, Joram, et al. (2024). StatProofBook/StatProofBook.github.io: The Book of Statistical Proofs (Version 2023). Zenodo. https://doi.org/10.5281/ZENODO.4305949 (Ref)
+
+In our model, $\INB = x_1 + x_3$, only $x_1$ and $x_3$ contribute to the $\INB$; therefore $\m_2$ scales $\bmu$ and $\Sigma$ to estimate the mean and variance of the $\INB$ distribution following the rules for linear combinations of random variables above.
+
+### Analytically:
+
+Following the rule of linear combinations of random variables, the analytic result given our prior beliefs in this case is simply
+
+$\bmu ^ \top \m_2=$ `r mu %*% m2`.
+
+### Simulation:
+
+We can estimate the mean incremental net benefit, averaged over the model input distribution, using Monte Carlo:
+
+```{r, estimate_inb}
+# set seed for results reproducibility
+set.seed(1)
+
+# sample size
+n <- 1e6
+
+# sample input from the prior multivariate normal distribution defined earlier
+x <- MASS::mvrnorm(n, mu, Sigma)
+
+# run the model using sampled parameters
+output.sample <- model.function(x)
+
+# extract predicted mortality
+z <- output.sample$z
+
+# extract the INB
+INB <- output.sample$INB
+
+# estimate mean INB
+mean(INB)
+```
+
+## The Expected Value of Perfect Information (EVPI)
+
+The EVPI is given by:
+
+$$
+\EVPI = \E \{\max (\INB, 0)\} - \max \{\E (\INB), 0\}
+$$
+
+### Analytically:
+
+Since the $\INB$ has a univariate normal distribution, $\INB \sim N(\bmu^\top \m_2, \m_2^\top\Sigma \m_2)$, the first term of the EVPI, $\E \{\max (\INB, 0)\}$, can be interpreted as the expected value of $\INB$ assuming $\INB$ is non-negative (since negative values yield no benefit and thus are treated as zero). This expected value reflects the potential upside of the decision where only positive outcomes are considered. The first term is therefore:
+
+$$
+\E \{\max (\INB, 0)\} = \int^\infty_0 \,\INB\, p(\INB) \,\dd \INB,
+$$
+
+This integral sums up all possible positive values of $\INB$, multiplying each value by its probability (as given by the density function), effectively computing the average of all positive outcomes.
+
+This has the following closed form solution
+
+$$
+\left\{\mu^* + \sigma^* \frac{ \phi(\alpha)}{ 1 - \Phi(\alpha) }\right\} \left\{1 - \Phi(\alpha)\right\},
+$$
+
+where
+
+-   $\alpha = \dfrac{0 - \mu^*}{\sigma^*}$,
+-   $\mu^* = \bmu^\top \m_2$, and
+-   $\sigma^* = \sqrt{\m_2^\top \Sigma \m_2}$.
+
+The closed form solution can be explained as follows.
+
+-   *Standardize the Normal Variable:* Transform INB into a standard normal variable $Z$ by
+
+$$
+Z = \frac{\INB - \mu^*}{\sigma^*},
+$$
+
+The transformation of INB to $Z$ allows us to utilize the properties of the standard normal distribution. Hence, the integral transforms into:
+
+$$ 
+\int_0^\infty \INB \, \frac{1}{\sigma^*} \phi\left(\frac{\INB - \mu^*}{\sigma^*}\right) \dd \INB.
+$$
+
+-   *Change of Variables:* Using $z = \frac{\INB - \mu^*}{\sigma^*}$, where $\phi(z)$ is the standard normal PDF, the differential changes as
+
+$$
+\dd Z = \frac{\dd(\INB - \bmu^*)}{\sigma^*}; \; \dd \bmu^* = 0 \\
+\dd Z = \frac{\dd(\INB - 0)}{\sigma^*} \\
+\dd Z = \frac{\dd(\INB)}{\sigma^*} \\
+\dd \INB = \sigma^* \dd Z
+$$.
+
+The limits of integration in terms of $z$ become:
+
+$$
+\alpha = \frac{0 - \mu^*}{\sigma^*}
+$$
+
+leading to:
+
+$$
+\int_{\alpha}^\infty (\mu^* + \sigma^* z) \phi(z) dz.
+$$
+
+-   *Solve the Integral:* This can be split into two parts:
+
+$$
+\mu^* \int_{\alpha}^\infty \phi(z) dz + \sigma^* \int_{\alpha}^\infty z \phi(z) dz.
+$$
+
+These are solved using the properties of the normal distribution, resulting in:
+
+$$
+\left(\mu^* + \sigma^* \frac{\phi(\alpha)}{1 - \Phi(\alpha)}\right) (1 - \Phi(\alpha)).
+$$
+
+This results in the closed-form expression for the expected value of the positive part of INB:
+
+$$
+\left\{\mu^* + \sigma^* \frac{\phi(\alpha)}{1 - \Phi(\alpha)}\right\} \left\{1 - \Phi(\alpha)\right\},
+$$
+
+where:
+
+-   $\phi$ is the standard normal probability density function, and
+-   $\Phi$ is the cumulative distribution function evaluated at $\alpha$.
+
+**The analytic EVPI is therefore:**
+
+$$
+\left\{\mu^* + \sigma^* \frac{ \phi(\alpha)}{ 1 - \Phi(\alpha) }\right\} \left\{1 - \Phi(\alpha)\right\} - \max(\mu^*, 0).
+$$
+
+We can evaluate this:
+
+```{r, calculate_analytic_evpi}
+# calculate the moments of the INB univariate normal distribution
+sigma.star <- sqrt(m2 %*% Sigma %*% m2)
+mu.star <- mu %*% m2
+
+# calculate the lower limit of the integration at inb = 0
+alpha <- (0 - mu.star) / sigma.star
+
+# calculate the analytic EVPI
+analytic.evpi <- (mu.star + sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+analytic.evpi
+```
+
+### Simulation:
+
+We can obtain the EVPI from the outputs of the Monte Carlo simulation as follows:
+
+```{r, estimate_evpi}
+
+evpi <- mean(pmax(INB, 0)) - max(mean(INB), 0)
+evpi
+```
+
+## The Expected Value of Partial Perfect Information (EVPPI)
+
+The expression for EVPPI is
+
+$$
+\EVPI = \E_{X_i} [\max \{\E_{X_j|X_i}(\INB), 0\}] - \max \{\E (\INB), 0\},
+$$
+
+for parameter of interest $X_i$, with the remaining parameters denoted $X_j.$
+
+### Analytically:
+
+We can derive these values analytically as follows.
+
+First, we need to derive the distribution (with respect to $X_i$) of the expected INB, conditional on the parameter of interest, $\E_{X_j|X_i} (\INB).$
+
+We first derive the distribution (with respect to $X_i$) of the conditional expectation of the model parameters, $\E_{X_j|X_i} (X).$ Because expectation is a linear operator, this will have a multivariate normal distribution.
+
+Firstly, we derive its mean:
+
+$$
+\E_{X_i} \{\E_{X_j|X_i} (X)\}= \E_X (X),
+$$
+
+by the law of total expectation. Then we derive its variance $\Var_{X_i} \{\E_{X_j|X_i} (X)\}$. We note by the variance decomposition formula that
+
+$$
+\Var_{X_i} \{\E_{X_j|X_i} (X)\} = \Var_X(X) - \E_{X_i} \{\Var_{X_j|X_i} (X)\}.
+$$
+
+We need to derive $\Var_{X_j|X_i} (X)$. We assume, without loss of generality, that the indices of the parameters of interest, $i$, are less than the indices of the remaining parameters $j$. This allows us to write the variance matrix $\Var_{X_j|X_i} (X)$ neatly.
+
+We note that the variance of $X_i$ and the covariances that involve $X_i$, conditional on $X_i$, are all zero because $X_i$ is assumed constant in $\Var_{X_j|X_i} (X)$. We can derive the variances and covariances that *don't* involve $X_i$ from the properties of the multivariate normal distribution. This gives us
+
+$$
+\Var_{X_j|X_i} (X) = 
+\left(\begin{array}{@{}c|c@{}}
+  0 & 0 \\
+\hline
+  0 & \Sigma_{jj} - \Sigma_{ji} \Sigma_{ii}^{-1} \Sigma_{ij} 
+\end{array}\right).
+$$
+
+Because this expression does not have any terms that contain $X_i$ it is equal to its own expectation with respect to $X_i$ and therefore
+
+$$
+\begin{align}
+\Var_{X_i} \{\E_{X_j|X_i} (X)\} 
+&= \Var_X(X) - \E_{X_i} \{\Var_{X_j|X_i} (X)\}\\
+&= \left(\begin{array}{@{}c|c@{}}
+  \Sigma_{ii} & \Sigma_{ij}  \\
+\hline
+  \Sigma_{ji}  & \Sigma_{jj}
+\end{array}\right) - 
+\left(\begin{array}{@{}c|c@{}}
+  0 & 0 \\
+\hline
+  0 & \Sigma_{jj} - \Sigma_{ji} \Sigma_{ii}^{-1} \Sigma_{ij} 
+\end{array}\right)\\
+&=\left(\begin{array}{@{}c|c@{}}
+  \Sigma_{ii} & \Sigma_{ij}  \\
+\hline
+  \Sigma_{ji}  & \Sigma_{ji} \Sigma_{ii}^{-1} \Sigma_{ij} 
+\end{array}\right),
+\end{align} 
+$$
+
+which we denote $\Sigma^\dagger$.
+
+Given this, we can derive the distribution of the expectation of INB, conditional on $X_i$:
+
+$$
+\E_{X|X_i}(\INB)  \sim N(\bmu^\top \m_2, \m_2^\top\Sigma^\dagger \m_2).
+$$
+
+We can check this in R via Monte Carlo, and also analytically using the closed form expression for the truncated normal:
+
+```{r}
+# EVPPI for x1
+i <- 1
+j <- setdiff(1:length(mu), i)
+Sigma.dagger <- Sigma
+Sigma.dagger[j, j] <- Sigma[j, i] %*% solve(Sigma[i, i]) %*% Sigma[i, j]
+
+inb.samples <- rnorm(n, mu %*% m2, sqrt(m2 %*% Sigma.dagger %*% m2))
+monte.carlo.evppi.x1 <- mean(pmax(inb.samples, 0)) - max(mean(inb.samples, 0))
+monte.carlo.evppi.x1
+
+Sigma.star <- sqrt(m2 %*% Sigma.dagger %*% m2)
+mu.star <- mu %*% m2
+alpha <- (0 - mu.star) / Sigma.star
+analytic.evppi.x1 <- (mu.star + Sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+
+analytic.evppi.x1
+```
+
+```{r}
+# EVPPI for x2
+i <- 2
+j <- setdiff(1:length(mu), i)
+Sigma.dagger <- Sigma
+Sigma.dagger[j, j] <- Sigma[j, i] %*% solve(Sigma[i, i]) %*% Sigma[i, j]
+
+inb.samples <- rnorm(n, mu %*% m2, sqrt(m2 %*% Sigma.dagger %*% m2))
+monte.carlo.evppi.x2 <- mean(pmax(inb.samples, 0)) - max(mean(inb.samples, 0))
+monte.carlo.evppi.x2
+
+Sigma.star <- sqrt(m2 %*% Sigma.dagger %*% m2)
+mu.star <- mu %*% m2
+alpha <- (0 - mu.star) / Sigma.star
+analytic.evppi.x2 <- (mu.star + Sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+
+analytic.evppi.x2
+```
+
+```{r}
+# EVPPI for x3
+i <- 3
+j <- setdiff(1:length(mu), i)
+Sigma.dagger <- Sigma
+Sigma.dagger[j, j] <- Sigma[j, i] %*% solve(Sigma[i, i]) %*% Sigma[i, j]
+
+inb.samples <- rnorm(n, mu %*% m2, sqrt(m2 %*% Sigma.dagger %*% m2))
+monte.carlo.evppi.x3 <- mean(pmax(inb.samples, 0)) - max(mean(inb.samples, 0))
+monte.carlo.evppi.x3
+
+Sigma.star <- sqrt(m2 %*% Sigma.dagger %*% m2)
+mu.star <- mu %*% m2
+alpha <- (0 - mu.star) / Sigma.star
+analytic.evppi.x3 <- (mu.star + Sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star, 0)
+
+analytic.evppi.x3
+```
+
+### Simulation:
+
+We can obtain the EVPPI for each input using regression:
+
+```{r, regress_evppi}
+model1 <- lm(INB ~ x[, 1])
+regression.evppi.x1 <- mean(pmax(fitted(model1), 0)) - max(mean(fitted(model1)), 0)
+regression.evppi.x1
+
+model2 <- lm(INB ~ x[, 2])
+regression.evppi.x2 <- mean(pmax(fitted(model2), 0)) - max(mean(fitted(model2)), 0)
+regression.evppi.x2
+
+model3 <- lm(INB ~ x[, 3])
+regression.evppi.x3 <- mean(pmax(fitted(model3), 0)) - max(mean(fitted(model3)), 0)
+regression.evppi.x3
+```
+
+## The Expected Value of Sample Information (EVSI)
+
+**EVSI for a study to learn about a single model input** Let's assume we can learn about $x_3$ through a study. The study involves $n_y = 100$ observations, $y_k, k = 1, \ldots, n_y$ on $x_3$, where $y_k$ has data generating distribution
+
+$$
+y_k \sim N(x_3, \phi^2),
+$$
+
+where $\phi = 50$.
+
+### Analytically:
+
+Because the prior and likelihood (data generating distribution) are both normal, the posterior is normal and we can therefore derive the EVSI analytically.
+
+Construct vector $\y = (0, 0, y)^\top$. This has mean $X$ and variance
+
+$$
+\Sigma_y = \begin{pmatrix}
+\infty&0&0\\
+0&\infty&0\\
+0&0&\phi^2
+\end{pmatrix},
+$$
+
+where the infinite variance ensures that we only update $x_3$ directly.
+
+The multivariate normal posterior distribution has variance
+
+$$
+\Sigma^\ddagger = \left( \Sigma^{-1}+n_y \Sigma_y^{-1}\right)^{-1},
+$$
+
+and mean
+
+$$
+\bmu^\ddagger = \Sigma^\ddagger\left(\Sigma^{-1}{\bmu }+n_y \Sigma_y ^{-1}\mathbf{\bar{y}} \right),
+$$ where $\mathbf{\bar{y}} = (0, 0, \bar{y})^\top$, the sample average of the $n_y$ observations on $y$
+
+Therefore,
+
+$$
+(X|\mathbf{\bar{y}}) \sim N(\bmu^\ddagger, \Sigma^\ddagger),
+$$
+
+and
+
+$$
+\INB \sim N(\m_2^\top\bmu^\ddagger, \m_2^\top \Sigma^\ddagger\m_2)
+$$
+
+and we can obtain the EVSI analytically using the properties of the truncated normal distribution in the same way that we derived the analytic expression for EVPPI.
+
+First we need to derive the distribution for the posterior expectation of $X$ given observed data $y$. The expectation is $\E_y\{\E_{X|y}(X)\} = \E(X)$ and the variance is $\Var\{\E_{X|y}(X)\}= \Var_X - \E_y\{\Var_{X|y}(X)\}= \Sigma - \Sigma^\ddagger,$ which we denote $\Sigma^\S$.
+
+Finally, we derive the distribution for the posterior expectation of INB given observed data $y$,
+
+$$
+\E_{X|y}(\INB) \sim N(\bmu^\top \m_2, \m_2^\top \Sigma^\S \m_2).
+$$
+
+```{r, analytic_evsi}
+Sigma.y <- matrix(c(Inf, 0, 0, 0, Inf, 0, 0, 0, phi^2), 3, 3)
+Sigma.ddagger <- solve(solve(Sigma) + n_y * solve(Sigma.y))
+Sigma.S <- Sigma - Sigma.ddagger
+sigma.star <- sqrt(m2 %*% Sigma.S %*% m2)
+mu.star <- mu %*% m2
+
+alpha <- (0 - mu.star ) / sigma.star
+analytic.evsi.x3 <- (mu.star  + sigma.star * dnorm(alpha) / 
+                          (1 - pnorm(alpha))) * (1 - pnorm(alpha)) - 
+                          max(mu.star , 0)
+
+analytic.evsi.x3
+```
+
+### Simulation:
+
+The regression approach to EVSI involves generating $n$ datasets, conditional on the $n$ prior samples of $x_3$, summarising each dataset with a low dimensional statistic (which here would be the mean) and then regressing the $n$ sampled INB values on the $n$ summary statistics.
+
+```{r, regress_evsi}
+phi <- 20
+n_y <- 100
+generate.sum.statistics <- function(.x) mean(rnorm(n_y, .x, phi))
+sum.statistics <- sapply(x[, 3], generate.sum.statistics)
+model.evsi <- lm(INB ~ sum.statistics)
+evsi.x3 <- mean(pmax(fitted(model.evsi), 0)) - max(mean(fitted(model.evsi)), 0)
+evsi.x3
+```
+
+## References
